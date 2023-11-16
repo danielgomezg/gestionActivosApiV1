@@ -1,9 +1,11 @@
 from sqlalchemy import Table, Column
 from sqlalchemy.sql.sqltypes import Integer, String
-from database import meta, engine
+#from database import meta, engine
+from database import Base
 
-company = Table("companies", meta,
-                  Column("id", Integer, primary_key=True),
-                  Column("name", String(255)))
+class Company(Base):
+    __tablename__ = 'companies'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, unique=True)
 
-meta.create_all(engine)
+#meta.create_all(engine)

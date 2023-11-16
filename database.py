@@ -1,7 +1,21 @@
 from sqlalchemy import create_engine, MetaData
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 engine = create_engine("postgresql://postgres:admin@localhost:5432/gestion_activos")
 
-meta = MetaData()
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+Base = declarative_base()
 
-connection = engine.connect()
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+
+#meta = MetaData()
+
+#connection = engine.connect()
