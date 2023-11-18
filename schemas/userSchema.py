@@ -6,14 +6,18 @@ T = TypeVar('T')
 
 class Response(BaseModel, Generic[T]):
     code: str
-    status: str
     message: str
     result: Optional[T]
 
 class UserSchema(BaseModel):
     id: Optional[int] = None
-    name: Optional[str] = None
-    email: Optional[str] = None
+    firstName: str
+    secondName: Optional[str] = None
+    lastName: str
+    secondLastName: Optional[str] = None
+    email: str
+    password: str
+    rut: str
 
 class UserRequest(BaseModel):
     parameter: UserSchema = Field(...)
