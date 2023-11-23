@@ -11,13 +11,13 @@ class Response(BaseModel, Generic[T]):
 
 class UserSchema(BaseModel):
     id: Optional[int] = None
-    firstName: str
+    firstName: str = None
     secondName: Optional[str] = None
-    lastName: str
+    lastName: str = None
     secondLastName: Optional[str] = None
     email: str
     password: str
-    rut: str
+    rut: str = None
 
 class UserRequest(BaseModel):
     parameter: UserSchema = Field(...)

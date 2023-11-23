@@ -21,3 +21,11 @@ class Usuario(Base):
     @password.setter
     def password(self, plainTextPassword):
         self._password = bcrypt.hash(plainTextPassword)
+
+    @classmethod
+    def verify_password(self, password, passwordHash):
+        print(password)
+        return bcrypt.verify(password, passwordHash)
+
+    def __repr__(self):
+        return f"Usuario(nombre={self.email}, correo={self.firstName})"
