@@ -7,8 +7,8 @@ def get_company_all(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Company).offset(skip).limit(limit).all()
 
 def get_company_by_id(db: Session, company_id: int):
-    print(company_id)
-    print(db)
+    #print(company_id)
+    #print(db)
     try:
         result = db.query(Company).filter(Company.id == company_id).first()
         return result

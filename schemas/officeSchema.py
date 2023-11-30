@@ -13,6 +13,3 @@ class OfficeSchema(BaseModel):
     description: str
     floor: int
     sucursal_id: int
-
-class OfficeRequest(BaseModel):
-    parameter: OfficeSchema = Field(...)

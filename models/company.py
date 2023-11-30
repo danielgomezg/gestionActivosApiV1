@@ -9,7 +9,11 @@ class Company(Base):
     rut = Column(String, unique=True, nullable=False)
     country = Column(String, nullable=False)
 
+    #Relacion con sucursales
     sucursales = relationship('Sucursal', back_populates='company')
+
+    #Relacion con usuario
+    users = relationship('Usuario', back_populates='company')
 
 
 # from sqlalchemy import Table, Column

@@ -1,5 +1,5 @@
 from typing import Generic, TypeVar, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 T = TypeVar('T')
 
@@ -8,8 +8,6 @@ class Response(BaseModel, Generic[T]):
     message: str
     result: Optional[T]
 
-class CompanySchema(BaseModel):
+class ActionSchema(BaseModel):
     id: Optional[int] = None
     name: str
-    rut: str
-    country: str

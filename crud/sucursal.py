@@ -15,7 +15,7 @@ def create_sucursal(db: Session, sucursal: SucursalSchema):
             description=sucursal.description,
             number = sucursal.number,
             address = sucursal.address,
-            city = sucursal.city,
+            region = sucursal.region,
             commune=sucursal.commune,
             company_id=sucursal.company_id
         )

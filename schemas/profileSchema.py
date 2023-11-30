@@ -8,8 +8,12 @@ class Response(BaseModel, Generic[T]):
     message: str
     result: Optional[T]
 
-class CompanySchema(BaseModel):
+class ProfileSchema(BaseModel):
     id: Optional[int] = None
     name: str
-    rut: str
-    country: str
+    description: str
+
+class ProfileEditSchema(BaseModel):
+    name: str
+    description: str
+

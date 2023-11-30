@@ -13,9 +13,7 @@ class SucursalSchema(BaseModel):
     description: str
     number: str = None
     address: str
-    city: str = None
+    region: str = None
     commune: str = None
     company_id: int
 
-class SucursalRequest(BaseModel):
-    parameter: SucursalSchema = Field(...)
