@@ -1,10 +1,12 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from schemas.companySchema import CompanySchema
 from models.company import Company
 from fastapi import HTTPException, status
 
 def get_company_all(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Company).offset(skip).limit(limit).all()
+    #return db.query(Company).offset(skip).limit(limit).all()
+    #sucursales es la variable que se defie en el modelo company
+    return (db.query(Company).options(joinedload(Company.sucursales)).offset(skip).limit(limit).all())
 
 def get_company_by_id(db: Session, company_id: int):
     #print(company_id)

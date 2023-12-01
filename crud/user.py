@@ -75,6 +75,19 @@ def update_user(db: Session, user_id: int, user: UserEditSchema):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando acción: {e}")
 
+def delete_user(db: Session, user_id: int):
+    user_to_delete = db.query(Usuario).filter(Usuario.id == user_id).first()
+    try:
+        if user_to_delete:
+            db.delete(user_to_delete)
+            db.commit()
+            return user_id
+            #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Ususario con id {user_id} no encontrada")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando usuario: {e}")
+
 def authenticate_user(email: str, password: str, db: Session):
     print(email)
     print(password)

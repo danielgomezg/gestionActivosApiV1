@@ -42,3 +42,16 @@ def update_action(db: Session, action_id: int, name_edit: str):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Acción no encontrada")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando acción: {e}")
+
+def delete_action(db: Session, action_id: int):
+    action_to_delete = db.query(Action).filter(Action.id == action_id).first()
+    try:
+        if action_to_delete:
+            db.delete(action_to_delete)
+            db.commit()
+            return action_id
+            #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Acción con id {action_id} no encontrada")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando acción: {e}")

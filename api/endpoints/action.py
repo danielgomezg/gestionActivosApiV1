@@ -4,7 +4,7 @@ from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.action import create_action, get_action_by_id, get_action_all, update_action
+from crud.action import create_action, get_action_by_id, get_action_all, update_action, delete_action
 from schemas.actionSchema import Response, ActionSchema
 
 from crud.user import  get_user_disable_current
@@ -45,3 +45,9 @@ async def update(request: ActionSchema, id: int, db: Session = Depends(get_db), 
 
     _action = update_action(db, id, request.name)
     return Response(code = "201", message = "Accion editada", result = _action).dict(exclude_none=True)
+
+@router.delete('/action/{id}')
+async def delete(id: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):
+
+    _action = delete_action(db, id)
+    return Response(code = "201", message = f"Accion con id {id} eliminada", result = _action).dict(exclude_none=True)

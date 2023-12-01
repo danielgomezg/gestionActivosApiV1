@@ -43,3 +43,16 @@ def update_profile(db: Session, profile_id: int, name_edit: str, description_edi
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil no encontrado")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando perfil: {e}")
+
+def delete_profile(db: Session, profile_id: int):
+    profile_to_delete = db.query(Profile).filter(Profile.id == profile_id).first()
+    try:
+        if profile_to_delete:
+            db.delete(profile_to_delete)
+            db.commit()
+            return profile_id
+            #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Perfil con id {profile_id} no encontrado")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando perfil: {e}")

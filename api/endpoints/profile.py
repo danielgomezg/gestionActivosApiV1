@@ -4,7 +4,7 @@ from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.profile import create_profile, get_profile_by_id, get_profile_all, update_profile
+from crud.profile import create_profile, get_profile_by_id, get_profile_all, update_profile, delete_profile
 from schemas.profileSchema import Response, ProfileSchema, ProfileEditSchema
 
 #from api.endpoints.user import get_user_disable_current
@@ -46,3 +46,9 @@ async def update(request: ProfileEditSchema, id: int, db: Session = Depends(get_
 
     _profile = update_profile(db, id, request.name, request.description)
     return Response(code = "201", message = "Accion editada", result = _profile).dict(exclude_none=True)
+
+@router.delete('/profile/{id}')
+async def delete(id: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):
+
+    _profile = delete_profile(db, id)
+    return Response(code = "201", message = f"Perfil con id {id} eliminado", result = _profile).dict(exclude_none=True)

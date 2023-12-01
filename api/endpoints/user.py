@@ -4,7 +4,7 @@ from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends, status
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.user import create_user, get_user_all, get_user_email, authenticate_user, create_access_token, get_user_disable_current, get_user_by_id, update_user
+from crud.user import create_user, get_user_all, get_user_email, authenticate_user, create_access_token, get_user_disable_current, get_user_by_id, update_user, delete_user
 from schemas.userSchema import Response, UserSchema, UserEditSchema
 import re
 
@@ -92,12 +92,19 @@ async def update(request: UserEditSchema, id: int, db: Session = Depends(get_db)
         return Response(code="400", message="Email invalido", result=[])
 
     # valida si el mail ya esta registrado
-    #existeEmail = get_user_email(db, email)
-    #if (existeEmail):
-      #  return Response(code="400", message="Email registrado", result=[])
+    existeEmail = get_user_email(db, email)
+    print(existeEmail.id)
+    if (existeEmail and id != existeEmail.id):
+        return Response(code="400", message="Email registrado", result=[])
 
     _user = update_user(db, id, request)
     return Response(code = "201", message = "Usuario editado", result = _user).dict(exclude_none=True)
+
+@router.delete('/user/{id}')
+async def delete(id: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):
+
+    _user = delete_user(db, id)
+    return Response(code = "201", message = f"Usuario con id {id} eliminado", result = _user).dict(exclude_none=True)
 
 @router.post('/login')
 async def login_access(request: UserSchema, db: Session = Depends(get_db)):
