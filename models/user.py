@@ -4,6 +4,16 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from passlib.hash import bcrypt
 from sqlalchemy.orm import relationship
 
+#from api.endpoints import company
+#from api.endpoints import profile
+from models import company
+from models import profile
+from database import engine
+
+
+company.Base.metadata.create_all(bind=engine)
+profile.Base.metadata.create_all(bind=engine)
+
 class Usuario(Base):
     __tablename__ = 'usuario'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -17,11 +27,13 @@ class Usuario(Base):
 
     #Relacion con empresa
     company_id = Column(Integer, ForeignKey('compania.id'))
-    company = relationship('Company', back_populates='users')
-
-    #Relacion con perfil
+    # Relacion con perfil
     profile_id = Column(Integer, ForeignKey('perfil.id'))
+
+
+    company = relationship('Company', back_populates='users')
     profile = relationship('Profile', back_populates='users')
+
 
     @hybrid_property
     def password(self):

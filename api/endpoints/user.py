@@ -9,8 +9,10 @@ from schemas.userSchema import Response, UserSchema, UserEditSchema
 import re
 
 #importaciones para obtener ids
-from api.endpoints.profile import get_profile_by_id
-from api.endpoints.company import get_company_by_id
+#from api.endpoints.profile import get_profile_by_id
+#from api.endpoints.company import get_company_by_id
+from crud.profile import get_profile_by_id
+from crud.company import get_company_by_id
 
 #login
 from datetime import datetime, timedelta

@@ -12,7 +12,7 @@ from crud.user import get_user_disable_current
 from typing import Optional, Tuple
 
 router = APIRouter()
-profile.Base.metadata.create_all(bind=engine)
+#profile.Base.metadata.create_all(bind=engine)
 
 @router.get('/profiles')
 async def get_profiles(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):

@@ -3,6 +3,7 @@ from schemas.profileSchema import ProfileSchema
 from models.profile import Profile
 from fastapi import HTTPException, status
 
+
 def get_profile_all(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Profile).offset(skip).limit(limit).all()
 

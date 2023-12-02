@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from database import Base
 
 
+
 class Profile(Base):
     __tablename__ = 'perfil'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -11,6 +12,7 @@ class Profile(Base):
 
     # Relacion con usuario
     users = relationship('Usuario', back_populates='profile')
+    #users = relationship('Usuario', back_populates='profile')
 
     # Relacion con sucursales
     profileActions = relationship('ProfileAction', back_populates='profile')
