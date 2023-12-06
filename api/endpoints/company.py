@@ -14,14 +14,13 @@ from typing import Optional, Tuple
 router = APIRouter()
 #company.Base.metadata.create_all(bind=engine)
 
-
-#@router.get('/companies')
-#async def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
 @router.get('/companies')
-async def get_companies(db: Session = Depends(get_db)):
-    #id_user, expiration_time = current_user_info
-    #print("ID del usuario: ", id_user)
-    #print("Tiempo de expiración: ", expiration_time)
+async def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+#@router.get('/companies')
+#async def get_companies(db: Session = Depends(get_db)):
+    id_user, expiration_time = current_user_info
+    print("ID del usuario: ", id_user)
+    print("Tiempo de expiración: ", expiration_time)
     result = get_company_all(db)
     return result
 

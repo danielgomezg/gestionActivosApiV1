@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Path, Depends, status
 from sqlalchemy.orm import Session
 from database import get_db
 from crud.user import create_user, get_user_all, get_user_email, authenticate_user, create_access_token, get_user_disable_current, get_user_by_id, update_user, delete_user
-from schemas.userSchema import Response, UserSchema, UserEditSchema
+from schemas.userSchema import Response, UserSchema, UserEditSchema, UserSchemaTest
 import re
 
 #importaciones para obtener ids
@@ -109,7 +109,7 @@ async def delete(id: int, db: Session = Depends(get_db), current_user: str = Dep
     return Response(code = "201", message = f"Usuario con id {id} eliminado", result = _user).dict(exclude_none=True)
 
 @router.post('/login')
-async def login_access(request: UserSchema, db: Session = Depends(get_db)):
+async def login_access(request: UserSchemaTest, db: Session = Depends(get_db)):
     _user = authenticate_user(request.email, request.password, db)
     if(_user):
         access_token_expires = timedelta(minutes=60)
