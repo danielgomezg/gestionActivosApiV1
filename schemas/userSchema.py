@@ -31,6 +31,6 @@ class UserEditSchema(BaseModel):
     password: Optional[str]
 
 
-class UserSchemaTest(BaseModel):
-    username: str
+class UserSchemaLogin(BaseModel):
+    email: str
     password: str

@@ -104,13 +104,15 @@ def authenticate_user(email: str, password: str, db: Session):
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
+    
     if expires_delta:
         expire = (datetime.utcnow() + expires_delta).timestamp()
-
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
+
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, key=SECRET_KEY, algorithm=ALGORITHM)
+
     return encoded_jwt
 
 oauth2_scheme = OAuth2PasswordBearer("/token")
@@ -124,6 +126,11 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     try:
         payload = jwt.decode(token, key=SECRET_KEY, algorithms=[ALGORITHM])
+
+        payload = jwt.decode(token, key=SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        additional_info = payload.get("additional_info", {})
+
         #id_user:str = payload.get("sub")
         id_user = payload.get("sub")
 

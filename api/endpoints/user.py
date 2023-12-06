@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Path, Depends, status
 from sqlalchemy.orm import Session
 from database import get_db
 from crud.user import create_user, get_user_all, get_user_email, authenticate_user, create_access_token, get_user_disable_current, get_user_by_id, update_user, delete_user
-from schemas.userSchema import Response, UserSchema, UserEditSchema
+from schemas.userSchema import Response, UserSchema, UserEditSchema, UserSchemaLogin
 import re
 
 #importaciones para obtener ids
@@ -109,21 +109,34 @@ async def delete(id: int, db: Session = Depends(get_db), current_user: str = Dep
     return Response(code = "201", message = f"Usuario con id {id} eliminado", result = _user).dict(exclude_none=True)
 
 @router.post('/login')
-async def login_access(request: UserSchema, db: Session = Depends(get_db)):
+async def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
     _user = authenticate_user(request.email, request.password, db)
     if(_user):
         access_token_expires = timedelta(minutes=60)
         user_id = str(_user.id)
-        access_token = create_access_token(data={"sub": user_id}, expires_delta=access_token_expires)
-        #NEW
+
+        additional_info = {
+            "email": _user.email,
+            "name": _user.firstName,
+            "lastName": _user.lastName,
+            "secName": _user.secondName,
+            "secLastName": _user.secondLastName,
+            "rut": _user.rut,  # Ajusta esto según la estructura de tu modelo de usuario
+        }
+        access_token = create_access_token(data = {"sub": user_id, "profile": _user.profile_id }, expires_delta=access_token_expires)
+
         expire_seconds = access_token_expires.total_seconds()
-        #return {"access_token": access_token, "token_type": "bearer"}
-        #return Response(code="201", message="Usuario loggeado correctamente", result={"access_token": access_token, "token_type": "bearer", "expire_token":access_token_expires})
+        
         return JSONResponse(
             content=Response(
                 code="201",
                 message="Usuario loggeado correctamente",
-                result={"access_token": access_token, "token_type": "bearer", "expire_token": expire_seconds},
+                result = {
+                    "access_token": access_token, 
+                    "token_type": "bearer", 
+                    "expire_token": expire_seconds,
+                    "user": additional_info
+                },
             ).dict(),
             status_code=201,
         )

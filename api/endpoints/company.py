@@ -16,10 +16,10 @@ router = APIRouter()
 
 
 #@router.get('/companies')
-#async def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+# async def get_companies(db: Session = Depends(get_db)):
 @router.get('/companies')
-async def get_companies(db: Session = Depends(get_db)):
-    #id_user, expiration_time = current_user_info
+async def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    id_user, expiration_time = current_user_info
     #print("ID del usuario: ", id_user)
     #print("Tiempo de expiración: ", expiration_time)
     result = get_company_all(db)
@@ -32,6 +32,7 @@ async def get_company(id: int, db: Session = Depends(get_db), current_user: str 
     if result is None:
         raise HTTPException(status_code=404, detail="Compania no encontrada")
     return result
+
 @router.post('/company')
 async def create(request: CompanySchema, db: Session = Depends(get_db)):
 
