@@ -4,8 +4,9 @@ from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.office import create_office, get_office_by_id, get_offices_all
+from crud.office import create_office, get_office_by_id, get_offices_all, get_office_by_id_sucursal
 from schemas.officeSchema import Response, OfficeSchema
+from schemas.schemaGenerico import ResponseGet
 
 from crud.user import get_user_disable_current
 
@@ -19,6 +20,14 @@ office.Base.metadata.create_all(bind=engine)
 async def get_offices(db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):
     result = get_offices_all(db)
     return result
+
+@router.get("/officePorSucursal/{id_sucursal}")
+async def get_office_por_sucursal(id_sucursal: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    result = get_office_by_id_sucursal(db, id_sucursal,limit, offset)
+    print(result)
+    if not result:
+        return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).dict(exclude_none=True)
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).dict(exclude_none=True)
 
 @router.get("/office/{id}", response_model=OfficeSchema)
 async def get_office(id: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):

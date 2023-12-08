@@ -2,11 +2,25 @@ from sqlalchemy.orm import Session, joinedload
 from schemas.officeSchema import OfficeSchema
 from models.office import Office
 from fastapi import HTTPException, status
+from sqlalchemy import desc, func
 
 def get_offices_all(db: Session, skip: int = 0, limit: int = 100):
     #return db.query(Office).offset(skip).limit(limit).all()
     return (db.query(Office).options(joinedload(Office.sucursal)).offset(skip).limit(limit).all()) # Agrega la carga anidada de la relación 'sucursal'
 
+
+def get_office_by_id_sucursal(db: Session, sucursal_id: int, limit: int = 100, offset: int = 0):
+    offices = (
+        db.query(Office)
+        .filter(Office.sucursal_id == sucursal_id)  # Reemplaza "tu_valor_de_aid" con el valor real
+        .group_by(Office.id)
+        .order_by(desc(Office.id))
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    result = []
+    return offices
 
 
 def get_office_by_id(db: Session, office_id: int):

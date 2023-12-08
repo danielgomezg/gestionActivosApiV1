@@ -39,7 +39,7 @@ async def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db
     result = get_sucursal_by_id_company(db, id_company,limit, offset)
     print(result)
     if not result:
-        raise HTTPException(status_code=404, detail=f"Sucursal con id company {id_company} no encontrada")
+        return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).dict(exclude_none=True)
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).dict(exclude_none=True)
 
 @router.post('/sucursal')
