@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from database import Base
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 class Company(Base):
@@ -12,9 +13,14 @@ class Company(Base):
 
     #Relacion con sucursales
     sucursales = relationship('Sucursal', back_populates='company')
+    sucursales_count_var = None
 
     #Relacion con usuario
     users = relationship('Usuario', back_populates='company')
+
+    @hybrid_property
+    def sucursales_count(self):
+        return len(self.sucursales)
 
 
 # from sqlalchemy import Table, Column

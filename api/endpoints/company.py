@@ -4,8 +4,9 @@ from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.company import create_company, get_company_by_id, get_company_all
-from schemas.companySchema import Response, CompanySchema
+from crud.company import create_company, get_company_by_id, get_company_all, count_company, get_company_all_id_name
+from schemas.companySchema import Response, CompanySchema,CompanySchemaIdName
+from schemas.schemaGenerico import ResponseGet
 import re
 
 from crud.user import get_user_disable_current
@@ -15,20 +16,28 @@ router = APIRouter()
 #company.Base.metadata.create_all(bind=engine)
 
 
-#@router.get('/companies')
-# async def get_companies(db: Session = Depends(get_db)):
 @router.get('/companies')
-async def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+async def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    #id_user, expiration_time = current_user_info
     #print("ID del usuario: ", id_user)
     #print("Tiempo de expiración: ", expiration_time)
-    result = get_company_all(db)
-    return result
+    count = count_company(db)
+    if(count == 0):
+        return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=count).dict(exclude_none=True)
+    result = get_company_all(db, limit, offset)
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).dict(exclude_none=True)
+
+@router.get('/companiesIdName')
+async def get_companies_id_name(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    count = count_company(db)
+    if(count == 0):
+        return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=count).dict(exclude_none=True)
+    result = get_company_all_id_name(db, limit, offset)
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).dict(exclude_none=True)
 
 @router.get("/company/{id}", response_model=CompanySchema)
 async def get_company(id: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):
     result = get_company_by_id(db, id)
-    print("getcompany")
     if result is None:
         raise HTTPException(status_code=404, detail="Compania no encontrada")
     return result

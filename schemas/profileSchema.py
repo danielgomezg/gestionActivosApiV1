@@ -3,8 +3,6 @@ from pydantic import BaseModel, Field
 
 T = TypeVar('T')
 
-print("profile-schema")  # Añade esta líne
-
 class Response(BaseModel, Generic[T]):
     code: str
     message: str

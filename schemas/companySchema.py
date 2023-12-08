@@ -3,8 +3,6 @@ from pydantic import BaseModel, Field
 
 T = TypeVar('T')
 
-print("compania-schema")  # Añade esta líne
-
 class Response(BaseModel, Generic[T]):
     code: str
     message: str
@@ -15,3 +13,8 @@ class CompanySchema(BaseModel):
     name: str
     rut: str
     country: str
+
+class CompanySchemaIdName(BaseModel):
+    id: Optional[int] = None
+    name: str
+

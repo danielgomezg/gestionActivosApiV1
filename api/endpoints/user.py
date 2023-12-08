@@ -68,9 +68,11 @@ async def create(request: UserSchema, db: Session = Depends(get_db)):
     if not re.match(patron_rut, rut):
         return Response(code="400", message="Rut inválido", result=[])
 
-    id_compania = get_company_by_id(db, request.company_id)
-    if (not id_compania):
-        return Response(code="400", message="id compania no valido", result=[])
+    print(request.company_id)
+    if (request.company_id is not None):
+        id_compania = get_company_by_id(db, request.company_id)
+        if (not id_compania):
+            return Response(code="400", message="id compania no valido", result=[])
 
     id_perfil = get_profile_by_id(db, request.profile_id)
     if (not id_perfil):

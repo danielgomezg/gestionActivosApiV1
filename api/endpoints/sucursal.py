@@ -4,8 +4,9 @@ from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.sucursal import create_sucursal, get_sucursal_by_id, get_sucursal_all
+from crud.sucursal import create_sucursal, get_sucursal_by_id, get_sucursal_all, count_sucursal, get_sucursal_by_id_company
 from schemas.sucursalSchema import Response, SucursalSchema
+from schemas.schemaGenerico import ResponseGet
 
 from crud.user import get_user_disable_current
 
@@ -17,9 +18,14 @@ sucursal.Base.metadata.create_all(bind=engine)
 
 
 @router.get('/sucursales')
-async def get_sucursales(db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):
-    result = get_sucursal_all(db)
-    return result
+async def get_sucursales(db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    #result = get_sucursal_all(db)
+    #return result
+    count = count_sucursal(db)
+    if(count == 0):
+        return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=count).dict(exclude_none=True)
+    result = get_sucursal_all(db, limit, offset)
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).dict(exclude_none=True)
 
 @router.get("/sucursal/{id}", response_model=SucursalSchema)
 async def get_sucursal(id: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):
@@ -27,6 +33,15 @@ async def get_sucursal(id: int, db: Session = Depends(get_db), current_user: str
     if result is None:
         raise HTTPException(status_code=404, detail="Sucursal no encontrada")
     return result
+
+@router.get("/sucursalPorCompany/{id_company}")
+async def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    result = get_sucursal_by_id_company(db, id_company,limit, offset)
+    print(result)
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Sucursal con id company {id_company} no encontrada")
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).dict(exclude_none=True)
+
 @router.post('/sucursal')
 async def create(request: SucursalSchema, db: Session = Depends(get_db)):
 

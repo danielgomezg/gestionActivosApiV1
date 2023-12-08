@@ -26,7 +26,7 @@ class Usuario(Base):
     rut = Column(String, unique=True, nullable=False)
 
     #Relacion con empresa
-    company_id = Column(Integer, ForeignKey('compania.id'))
+    company_id = Column(Integer, ForeignKey('compania.id'), nullable=True)
     # Relacion con perfil
     profile_id = Column(Integer, ForeignKey('perfil.id'))
 

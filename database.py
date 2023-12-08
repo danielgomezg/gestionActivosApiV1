@@ -8,7 +8,6 @@ engine = create_engine("postgresql://postgres:admin@localhost:5432/gestion_activ
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()
 
-print("database")
 
 def get_db():
     db = SessionLocal()
