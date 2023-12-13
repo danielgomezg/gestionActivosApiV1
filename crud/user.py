@@ -31,9 +31,9 @@ def get_user_email(db: Session, email: str):
     return result
 
 
-def get_user_all(db: Session, skip: int = 0, limit: int = 100):
-    #return db.query(Usuario).offset(skip).limit(limit).all()
-    return (db.query(Usuario).options(joinedload(Usuario.profile)).offset(skip).limit(limit).all())
+def get_user_all(db: Session, limit: int = 100, offset: int = 0):
+    #return db.query(Usuario).offset(offset).limit(limit).all()
+    return (db.query(Usuario).options(joinedload(Usuario.profile)).offset(offset).limit(limit).all())
 
 def create_user(db: Session, user: UserSchema):
     try:
@@ -64,8 +64,8 @@ def update_user(db: Session, user_id: int, user: UserEditSchema):
             user_to_edit.secondName = user.secondName
             user_to_edit.lastName = user.lastName
             user_to_edit.secondLastName = user.secondLastName
-            user_to_edit.mail = user.email
-            user_to_edit.password = user.password
+            user_to_edit.email = user.email
+            #user_to_edit.password = user.password
 
             db.commit()
             action = get_user_by_id(db, user_id)
@@ -89,14 +89,14 @@ def delete_user(db: Session, user_id: int):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando usuario: {e}")
 
 def authenticate_user(email: str, password: str, db: Session):
-    print(email)
-    print(password)
+    #print(email)
+    #print(password)
     userExist = get_user_email(db, email)
     if(userExist):
         # print(userExist.password)
         passwordValid = Usuario.verify_password(password, userExist.password)
         if(passwordValid):
-            print("exito")
+            #print("exito")
             return userExist
         else:
             return False
@@ -148,6 +148,7 @@ def get_user_disable_current(current_user_info: Tuple[str, Optional[str]] = Depe
     # Obtener la fecha y hora actual
     current_time = datetime.utcnow().timestamp()
     id_user, expiration_time = current_user_info
+    print("Tiempo actual: ", current_time)
     # Validar si el token ha expirado
     if int(expiration_time) > int(current_time):
         print("El token no ha expirado aún.")

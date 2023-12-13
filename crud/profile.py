@@ -4,8 +4,8 @@ from models.profile import Profile
 from fastapi import HTTPException, status
 
 
-def get_profile_all(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Profile).offset(skip).limit(limit).all()
+def get_profile_all(db: Session, limit: int = 100, offset: int = 0):
+    return db.query(Profile).offset(offset).limit(limit).all()
 
 def get_profile_by_id(db: Session, perfil_id: int):
     try:

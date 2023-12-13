@@ -35,7 +35,7 @@ class UserEditSchema(BaseModel):
     lastName: Optional[str]
     secondLastName: Optional[str]
     email: Optional[str]
-    password: Optional[str]
+    #password: Optional[str]
 
 
 class UserSchemaLogin(BaseModel):

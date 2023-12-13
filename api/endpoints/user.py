@@ -7,7 +7,7 @@ from database import get_db
 from crud.user import create_user, get_user_all, get_user_email, authenticate_user, create_access_token, get_user_disable_current, get_user_by_id, update_user, delete_user
 from schemas.userSchema import Response, UserSchema, UserEditSchema, UserSchemaLogin
 import re
-
+from typing import Tuple
 #importaciones para obtener ids
 #from api.endpoints.profile import get_profile_by_id
 #from api.endpoints.company import get_company_by_id
@@ -30,21 +30,36 @@ SECRET_KEY = config('SECRET_KEY')
 ALGORITHM = config('ALGORITHM')
 
 @router.get("/user/{id}", response_model=UserSchema)
-async def get_user(id: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):
+async def get_user(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    id_user, expiration_time = current_user_info
+    print("Tiempo de expiración: ", expiration_time)
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="Su sesión ha expirado", result=[])
+
     result = get_user_by_id(db, id)
-    #print("getcompany")
     if result is None:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return result
 
 @router.get('/users')
-async def get_users(db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):
-    print(current_user)
-    result = get_user_all(db)
+async def get_users(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    id_user, expiration_time = current_user_info
+    print("Tiempo de expiración: ", expiration_time)
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="Su sesión ha expirado", result=[])
+
+    result = get_user_all(db, limit, offset)
     return result
 
 @router.post('/user')
-async def create(request: UserSchema, db: Session = Depends(get_db)):
+async def create(request: UserSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    id_user, expiration_time = current_user_info
+    print("Tiempo de expiración: ", expiration_time)
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="Su sesión ha expirado", result=[])
 
     if(len(request.firstName) == 0):
         return  Response(code = "400", message = "Nombre no valido", result = [])
@@ -82,7 +97,12 @@ async def create(request: UserSchema, db: Session = Depends(get_db)):
     return Response(code = "201", message = "Usuario creado", result = _user).dict(exclude_none=True)
 
 @router.put('/user/{id}')
-async def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):
+async def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    id_user, expiration_time = current_user_info
+    print("Tiempo de expiración: ", expiration_time)
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="Su sesión ha expirado", result=[])
 
     if (len(request.firstName) == 0):
         return Response(code="400", message="Nombre no valido", result=[])
@@ -97,7 +117,6 @@ async def update(request: UserEditSchema, id: int, db: Session = Depends(get_db)
 
     # valida si el mail ya esta registrado
     existeEmail = get_user_email(db, email)
-    print(existeEmail.id)
     if (existeEmail and id != existeEmail.id):
         return Response(code="400", message="Email registrado", result=[])
 
@@ -105,7 +124,12 @@ async def update(request: UserEditSchema, id: int, db: Session = Depends(get_db)
     return Response(code = "201", message = "Usuario editado", result = _user).dict(exclude_none=True)
 
 @router.delete('/user/{id}')
-async def delete(id: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):
+async def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    id_user, expiration_time = current_user_info
+    print("Tiempo de expiración: ", expiration_time)
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="Su sesión ha expirado", result=[])
 
     _user = delete_user(db, id)
     return Response(code = "201", message = f"Usuario con id {id} eliminado", result = _user).dict(exclude_none=True)
@@ -123,7 +147,9 @@ async def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
             "lastName": _user.lastName,
             "secName": _user.secondName,
             "secLastName": _user.secondLastName,
-            "rut": _user.rut,  # Ajusta esto según la estructura de tu modelo de usuario
+            "rut": _user.rut,
+            "profile": _user.profile_id,
+            "company": _user.company_id
         }
         access_token = create_access_token(data = {"sub": user_id, "profile": _user.profile_id }, expires_delta=access_token_expires)
 
