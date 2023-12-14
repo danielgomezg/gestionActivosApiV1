@@ -60,20 +60,30 @@ def update_user(db: Session, user_id: int, user: UserEditSchema):
     user_to_edit = db.query(Usuario).filter(Usuario.id == user_id).first()
     try:
         if user_to_edit:
-            user_to_edit.firstName = user.firstName
-            user_to_edit.secondName = user.secondName
-            user_to_edit.lastName = user.lastName
-            user_to_edit.secondLastName = user.secondLastName
-            user_to_edit.email = user.email
-            #user_to_edit.password = user.password
+            if user.password is None:
+                user_to_edit.firstName = user.firstName
+                user_to_edit.secondName = user.secondName
+                user_to_edit.lastName = user.lastName
+                user_to_edit.secondLastName = user.secondLastName
+                user_to_edit.email = user.email
+                user_to_edit.company_id = user.company_id
+                user_to_edit.profile_id = user.profile_id
+            else:
+                user_to_edit.firstName = user.firstName
+                user_to_edit.secondName = user.secondName
+                user_to_edit.lastName = user.lastName
+                user_to_edit.secondLastName = user.secondLastName
+                user_to_edit.email = user.email
+                user_to_edit.password = user.password
+                user_to_edit.company_id = user.company_id
+                user_to_edit.profile_id = user.profile_id
 
             db.commit()
-            action = get_user_by_id(db, user_id)
-            return action
+            return user_to_edit
         else:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Acción no encontrada")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando acción: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando usuario: {e}")
 
 def delete_user(db: Session, user_id: int):
     user_to_delete = db.query(Usuario).filter(Usuario.id == user_id).first()
