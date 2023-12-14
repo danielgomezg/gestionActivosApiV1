@@ -3,8 +3,8 @@ from database import Base
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.orm.exc import NoResultFound
 
-from crud.profile import get_profile_by_id
-from crud.action import get_action_by_id
+# from crud.profile import get_profile_by_id
+# from crud.action import get_action_by_id
 
 class ProfileAction(Base):
     __tablename__ = 'perfil_accion'

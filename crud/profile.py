@@ -1,11 +1,31 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from schemas.profileSchema import ProfileSchema
 from models.profile import Profile
+from models.action import Action
+from models.profile_action import ProfileAction
 from fastapi import HTTPException, status
 
 
 def get_profile_all(db: Session, limit: int = 100, offset: int = 0):
-    return db.query(Profile).offset(offset).limit(limit).all()
+
+    perfiles_con_acciones = (
+        db.query(Profile)
+        .outerjoin(ProfileAction, Profile.id == ProfileAction.profile_id)
+        .outerjoin(Action, ProfileAction.action_id == Action.id)
+        .options(joinedload(Profile.profileActions).joinedload(ProfileAction.action))
+        .all()
+    )
+    print(perfiles_con_acciones)
+    resultados_limpios = []
+    for perfil in perfiles_con_acciones:
+        perfil_dict = perfil.__dict__
+        acciones = [profile_action.action.__dict__ for profile_action in perfil.profileActions]
+        for accion_dict in acciones:
+            accion_dict.pop('_sa_instance_state', None)
+        perfil_dict['profileActions'] = acciones
+        resultados_limpios.append(perfil_dict)
+
+    return resultados_limpios
 
 def get_profile_by_id(db: Session, perfil_id: int):
     try:

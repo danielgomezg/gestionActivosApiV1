@@ -38,6 +38,7 @@ async def get_profile(id: int, db: Session = Depends(get_db), current_user_info:
     if result is None:
         raise HTTPException(status_code=404, detail="Perfil no encontrado")
     return result
+
 @router.post('/profile')
 async def create(request: ProfileSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
