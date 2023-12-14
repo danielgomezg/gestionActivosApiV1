@@ -83,7 +83,6 @@ async def create(request: UserSchema, db: Session = Depends(get_db), current_use
     if not re.match(patron_rut, rut):
         return Response(code="400", message="Rut inválido", result=[])
 
-    print(request.company_id)
     if (request.company_id is not None):
         id_compania = get_company_by_id(db, request.company_id)
         if (not id_compania):
@@ -120,7 +119,17 @@ async def update(request: UserEditSchema, id: int, db: Session = Depends(get_db)
     if (existeEmail and id != existeEmail.id):
         return Response(code="400", message="Email registrado", result=[])
 
+    if (request.company_id is not None):
+        id_compania = get_company_by_id(db, request.company_id)
+        if (not id_compania):
+            return Response(code="400", message="id compania no valido", result=[])
+
+    id_perfil = get_profile_by_id(db, request.profile_id)
+    if (not id_perfil):
+        return Response(code="400", message="id perfil no valido", result=[])
+
     _user = update_user(db, id, request)
+    print(_user)
     return Response(code = "201", message = "Usuario editado", result = _user).dict(exclude_none=True)
 
 @router.delete('/user/{id}')
@@ -143,13 +152,14 @@ async def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
 
         additional_info = {
             "email": _user.email,
-            "name": _user.firstName,
+            "firstName": _user.firstName,
             "lastName": _user.lastName,
-            "secName": _user.secondName,
-            "secLastName": _user.secondLastName,
+            "secondName": _user.secondName,
+            "secondLastName": _user.secondLastName,
             "rut": _user.rut,
-            "profile": _user.profile_id,
-            "company": _user.company_id
+            "profile_id": _user.profile_id,
+            "company_id": _user.company_id,
+            "id": _user.id
         }
         access_token = create_access_token(data = {"sub": user_id, "profile": _user.profile_id }, expires_delta=access_token_expires)
 

@@ -12,3 +12,17 @@ def get_profile_action_by_id(db: Session, profile_action_id: int):
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar perfilAccion {e}")
+
+def create_profile_action(db: Session, profile_action: ProfileActionSchema):
+    try:
+        _profile_action = ProfileAction(
+            profile_id=profile_action.profile_id,
+            action_id=profile_action.action_id
+        )
+
+        db.add(_profile_action)
+        db.commit()
+        db.refresh(_profile_action)
+        return _profile_action
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando perfilAccion {e}")
