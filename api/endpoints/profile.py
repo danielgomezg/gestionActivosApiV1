@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from crud.profile import create_profile, get_profile_by_id, get_profile_all, update_profile, delete_profile
 from schemas.profileSchema import Response, ProfileSchema, ProfileEditSchema
+from schemas.schemaGenerico import ResponseGet
 
 #from api.endpoints.user import get_user_disable_current
 from crud.user import get_user_disable_current
@@ -23,7 +24,7 @@ async def get_profiles(db: Session = Depends(get_db), current_user_info: Tuple[s
         return Response(code="401", message="Su sesión ha expirado", result=[])
 
     result = get_profile_all(db, limit, offset)
-    return result
+    return ResponseGet(code = "200", result=result, limit= limit, offset = offset, count = 3).model_dump()
 
 @router.get("/profile/{id}", response_model=ProfileSchema)
 async def get_profile(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
