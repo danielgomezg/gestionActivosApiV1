@@ -33,7 +33,7 @@ async def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[
 @router.get('/companiesIdName')
 async def get_companies_id_name(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     id_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
+    print("funcion companiesIdName")
     #Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])

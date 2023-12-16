@@ -14,7 +14,7 @@ router = APIRouter()
 action.Base.metadata.create_all(bind=engine)
 
 @router.get('/actions')
-async def get_sctions(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+async def get_actions(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token

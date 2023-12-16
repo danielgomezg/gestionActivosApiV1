@@ -34,6 +34,7 @@ async def get_profile_action(id: int, db: Session = Depends(get_db), current_use
         raise HTTPException(status_code=404, detail="Perfil Accion no encontrada")
     return result
 
+
 @router.post('/profileAction')
 async def create(request: ProfileActionSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info

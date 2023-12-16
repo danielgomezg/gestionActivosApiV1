@@ -14,6 +14,7 @@ from typing import Tuple
 from crud.profile import get_profile_by_id
 from crud.company import get_company_by_id
 
+import json
 #login
 from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
@@ -161,7 +162,12 @@ async def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
             "company_id": _user.company_id,
             "id": _user.id
         }
-        access_token = create_access_token(data = {"sub": user_id, "profile": _user.profile_id }, expires_delta=access_token_expires)
+        print("-----")
+
+        id_perfil = _user.profile_id
+        print(id_perfil)
+        # access_token = create_access_token(data={"sub": sub_data, "profile": _user.profile_id},expires_delta=access_token_expires)
+        access_token = create_access_token(data={"sub": user_id, "profile": _user.profile_id},expires_delta=access_token_expires)
 
         expire_seconds = access_token_expires.total_seconds()
         
@@ -179,8 +185,9 @@ async def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
             status_code=201,
         )
     else:
-        #return Response(code="401", message="Usuario incorrecto", result=[])
-        raise HTTPException(status_code=401, detail="Usuario incorrecto")
+        print("user incorrecto")
+        return Response(code="401", message="Usuario incorrecto", result=[])
+        #raise HTTPException(status_code=401, detail="Usuario incorrecto")
 
 @router.post('/token')
 async def login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -188,7 +195,7 @@ async def login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), d
     if(_user):
         access_token_expires = timedelta(minutes=60)
         user_id = str(_user.id)
-        access_token = create_access_token(data={"sub": user_id}, expires_delta=access_token_expires)
+        access_token = create_access_token(data={"sub": user_id, "profile": _user.profile_id},expires_delta=access_token_expires)
 
         #NEW
         expire_seconds = access_token_expires.total_seconds()

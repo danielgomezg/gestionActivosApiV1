@@ -26,7 +26,7 @@ async def get_profiles(db: Session = Depends(get_db), current_user_info: Tuple[s
     result = get_profile_all(db, limit, offset)
     return ResponseGet(code = "200", result=result, limit= limit, offset = offset, count = 3).model_dump()
 
-@router.get("/profile/{id}", response_model=ProfileSchema)
+@router.get("/profile/{id}")
 async def get_profile(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     print("Tiempo de expiración: ", expiration_time)
@@ -37,7 +37,8 @@ async def get_profile(id: int, db: Session = Depends(get_db), current_user_info:
     result = get_profile_by_id(db, id)
     if result is None:
         raise HTTPException(status_code=404, detail="Perfil no encontrado")
-    return result
+
+    return ResponseGet(code = "200", result=result, limit= 0, offset = 0, count = 0).model_dump()
 
 @router.post('/profile')
 async def create(request: ProfileSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
@@ -51,7 +52,7 @@ async def create(request: ProfileSchema, db: Session = Depends(get_db), current_
         return  Response(code = "400", message = "Nombre no valido", result = [])
 
     _profile = create_profile(db, request)
-    return Response(code = "201", message = "Perfil creado", result = _profile).dict(exclude_none=True)
+    return Response(code = "201", message = "Perfil creado", result = _profile).model_dump()
 
 @router.put('/profile/{id}')
 async def update(request: ProfileEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
@@ -65,7 +66,7 @@ async def update(request: ProfileEditSchema, id: int, db: Session = Depends(get_
         return  Response(code = "400", message = "Nombre de perfil no valido", result = [])
 
     _profile = update_profile(db, id, request.name, request.description)
-    return Response(code = "201", message = "Accion editada", result = _profile).dict(exclude_none=True)
+    return Response(code = "201", message = "Accion editada", result = _profile).model_dump()
 
 @router.delete('/profile/{id}')
 async def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
@@ -76,4 +77,4 @@ async def delete(id: int, db: Session = Depends(get_db), current_user_info: Tupl
         return Response(code="401", message="Su sesión ha expirado", result=[])
 
     _profile = delete_profile(db, id)
-    return Response(code = "201", message = f"Perfil con id {id} eliminado", result = _profile).dict(exclude_none=True)
+    return Response(code = "201", message = f"Perfil con id {id} eliminado", result = _profile).model_dump()

@@ -15,7 +15,7 @@ def get_profile_all(db: Session, limit: int = 100, offset: int = 0):
         .options(joinedload(Profile.profileActions).joinedload(ProfileAction.action))
         .all()
     )
-    print(perfiles_con_acciones)
+    #print(perfiles_con_acciones)
     resultados_limpios = []
     for perfil in perfiles_con_acciones:
         perfil_dict = perfil.__dict__
@@ -29,8 +29,25 @@ def get_profile_all(db: Session, limit: int = 100, offset: int = 0):
 
 def get_profile_by_id(db: Session, perfil_id: int):
     try:
-        result = db.query(Profile).filter(Profile.id == perfil_id).first()
-        return result
+        #result = db.query(Profile).filter(Profile.id == perfil_id).first()
+        perfil_con_acciones = (
+            db.query(Profile)
+            .outerjoin(ProfileAction, Profile.id == ProfileAction.profile_id)
+            .outerjoin(Action, ProfileAction.action_id == Action.id)
+            .options(joinedload(Profile.profileActions).joinedload(ProfileAction.action))
+            .filter(Profile.id == perfil_id)  # Filtrar por ID de perfil
+            .all()
+        )
+        # Limpiar los resultados
+        resultados_limpios = []
+        for perfil in perfil_con_acciones:
+            perfil_dict = perfil.__dict__
+            acciones = [profile_action.action.__dict__ for profile_action in perfil.profileActions]
+            for accion_dict in acciones:
+                accion_dict.pop('_sa_instance_state', None)
+            perfil_dict['profileActions'] = acciones
+            resultados_limpios.append(perfil_dict)
+        return resultados_limpios
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar perfil {e}")
 

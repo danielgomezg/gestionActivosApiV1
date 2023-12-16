@@ -13,6 +13,13 @@ def get_action_by_id(db: Session, action_id: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar accion {e}")
 
+def get_action_by_name(db: Session, action_name: str):
+    try:
+        result = db.query(Action).filter(Action.name == action_name).first()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar accion por name {e}")
+
 
 def create_action(db: Session, action: ActionSchema):
     try:

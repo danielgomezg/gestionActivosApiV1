@@ -136,13 +136,12 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     try:
         payload = jwt.decode(token, key=SECRET_KEY, algorithms=[ALGORITHM])
-
-        payload = jwt.decode(token, key=SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
         additional_info = payload.get("additional_info", {})
 
         #id_user:str = payload.get("sub")
         id_user = payload.get("sub")
+        id_perfil = payload.get("profile")
 
         # Obtener el tiempo de expiración (exp) del token
         expiration_time = payload['exp']
