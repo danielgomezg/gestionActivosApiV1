@@ -6,21 +6,27 @@ from sqlalchemy import desc, func
 
 def get_offices_all(db: Session, limit: int = 100, offset: int = 0):
     #return db.query(Office).offset(skip).limit(limit).all()
-    return (db.query(Office).options(joinedload(Office.sucursal)).offset(offset).limit(limit).all())
+    try:
+        return (db.query(Office).options(joinedload(Office.sucursal)).offset(offset).limit(limit).all())
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener oficinas {e}")
 
 
 def get_office_by_id_sucursal(db: Session, sucursal_id: int, limit: int = 100, offset: int = 0):
-    offices = (
-        db.query(Office)
-        .filter(Office.sucursal_id == sucursal_id)
-        .group_by(Office.id)
-        .order_by(desc(Office.id))
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
-    result = []
-    return offices
+    try:
+        offices = (
+            db.query(Office)
+            .filter(Office.sucursal_id == sucursal_id)
+            .group_by(Office.id)
+            .order_by(desc(Office.id))
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+        result = []
+        return offices
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al oficina por sucursal {e}")
 
 
 def get_office_by_id(db: Session, office_id: int):

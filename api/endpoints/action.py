@@ -14,7 +14,7 @@ router = APIRouter()
 action.Base.metadata.create_all(bind=engine)
 
 @router.get('/actions')
-async def get_actions(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def get_actions(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -25,7 +25,7 @@ async def get_actions(db: Session = Depends(get_db), current_user_info: Tuple[st
     return result
 
 @router.get("/action/{id}", response_model=ActionSchema)
-async def get_action(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def get_action(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -38,7 +38,7 @@ async def get_action(id: int, db: Session = Depends(get_db), current_user_info: 
         raise HTTPException(status_code=404, detail="Accion no encontrada")
     return result
 @router.post('/action')
-async def create(request: ActionSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def create(request: ActionSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -49,10 +49,10 @@ async def create(request: ActionSchema, db: Session = Depends(get_db), current_u
         return  Response(code = "400", message = "Nombre de accion no valido", result = [])
 
     _action = create_action(db, request)
-    return Response(code = "201", message = "Accion creada", result = _action).dict(exclude_none=True)
+    return Response(code = "201", message = "Accion creada", result = _action).model_dump()
 
 @router.put('/action/{id}')
-async def update(request: ActionSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def update(request: ActionSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -63,10 +63,10 @@ async def update(request: ActionSchema, id: int, db: Session = Depends(get_db), 
         return  Response(code = "400", message = "Nombre de accion no valido", result = [])
 
     _action = update_action(db, id, request.name)
-    return Response(code = "201", message = "Accion editada", result = _action).dict(exclude_none=True)
+    return Response(code = "201", message = "Accion editada", result = _action).model_dump()
 
 @router.delete('/action/{id}')
-async def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -74,4 +74,4 @@ async def delete(id: int, db: Session = Depends(get_db), current_user_info: Tupl
         return Response(code="401", message="Su sesión ha expirado", result=[])
 
     _action = delete_action(db, id)
-    return Response(code = "201", message = f"Accion con id {id} eliminada", result = _action).dict(exclude_none=True)
+    return Response(code = "201", message = f"Accion con id {id} eliminada", result = _action).model_dump()

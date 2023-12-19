@@ -19,7 +19,7 @@ router = APIRouter()
 profile_action.Base.metadata.create_all(bind=engine)
 
 @router.get('/profileActions')
-async def get_profile_sctions(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def get_profile_sctions(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     #print("ID del usuario: ", id_user)
     #print("Tiempo de expiración: ", expiration_time)
@@ -27,7 +27,7 @@ async def get_profile_sctions(db: Session = Depends(get_db), current_user_info: 
     return result
 
 @router.get("/profileAction/{id}", response_model=ProfileActionSchema)
-async def get_profile_action(id: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):
+def get_profile_action(id: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current)):
     result = get_profile_action_by_id(db, id)
     #print("getcompany")
     if result is None:
@@ -36,7 +36,7 @@ async def get_profile_action(id: int, db: Session = Depends(get_db), current_use
 
 
 @router.post('/profileAction')
-async def create(request: ProfileActionSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def create(request: ProfileActionSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -52,4 +52,4 @@ async def create(request: ProfileActionSchema, db: Session = Depends(get_db), cu
         return Response(code="400", message="id de la acción no valido", result=[])
 
     _profile_action = create_profile_action(db, request)
-    return Response(code = "201", message = "PerfilAccion creada", result = _profile_action).dict(exclude_none=True)
+    return Response(code = "201", message = "PerfilAccion creada", result = _profile_action).model_dump()

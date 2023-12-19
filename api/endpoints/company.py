@@ -17,7 +17,7 @@ router = APIRouter()
 
 
 @router.get('/companies')
-async def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     id_user, expiration_time = current_user_info
     print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -26,26 +26,26 @@ async def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[
 
     count = count_company(db)
     if(count == 0):
-        return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=count).dict(exclude_none=True)
+        return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=count).model_dump()
     result = get_company_all(db, limit, offset)
-    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).dict(exclude_none=True)
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get('/companiesIdName')
-async def get_companies_id_name(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_companies_id_name(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     id_user, expiration_time = current_user_info
-    print("funcion companiesIdName")
+    #print("funcion companiesIdName")
     #Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])
 
     count = count_company(db)
     if(count == 0):
-        return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=count).dict(exclude_none=True)
+        return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=count).model_dump()
     result = get_company_all_id_name(db, limit, offset)
-    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).dict(exclude_none=True)
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/company/{id}", response_model=CompanySchema)
-async def get_company(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def get_company(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -58,7 +58,7 @@ async def get_company(id: int, db: Session = Depends(get_db), current_user_info:
     return result
 
 @router.post('/company')
-async def create(request: CompanySchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def create(request: CompanySchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -79,7 +79,7 @@ async def create(request: CompanySchema, db: Session = Depends(get_db), current_
         return Response(code="400", message="Pais no valido", result=[])
 
     _company = create_company(db, request)
-    return Response(code = "201", message = "Empresa creada", result = _company).dict(exclude_none=True)
+    return Response(code = "201", message = "Empresa creada", result = _company).model_dump()
 
 
 

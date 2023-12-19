@@ -55,17 +55,17 @@ ALGORITHM = config('ALGORITHM')
 
 # Middleware para las rutas
 @app.middleware("http")
-async def middleware_validacion_permisos( request: Request, call_next):
+def middleware_validacion_permisos( request: Request, call_next):
 
     # Verifica si es una solicitud OPTIONS y omitir la lógica de validación
     if request.method == "OPTIONS":
-        return await call_next(request)
+        return call_next(request)
 
     # Path
     path_peticion = request.url.path.split("/")[1]
 
     if (path_peticion == "login" or path_peticion == "token" or path_peticion == "docs" or path_peticion == "openapi.json"):
-        return await call_next(request)
+        return call_next(request)
 
     #token
     authorization_header = request.headers.get("Authorization")
@@ -88,50 +88,52 @@ async def middleware_validacion_permisos( request: Request, call_next):
             user_id = credentials.get("sub")
             profile_id = credentials.get("profile")
             #print(f"ID del usuario: {user_id}")
+
+            diccionario = {
+                "GET": "get",
+                "POST": "create",
+                "PUT": "update",
+                "DELETE": "delete"
+            }
+
+            # Se contruye el nombre de la accion
+            if (re.search(r'user', path_peticion, flags=re.IGNORECASE)):
+                nombre_accion = diccionario.get(request.method) + "-" + "usuario"
+            elif (re.search(r'compan', path_peticion, flags=re.IGNORECASE)):
+                nombre_accion = diccionario.get(request.method) + "-" + "empresa"
+
+            elif (re.search(r'sucursal', path_peticion, flags=re.IGNORECASE)):
+                nombre_accion = diccionario.get(request.method) + "-" + "sucursal"
+
+            elif (re.search(r'office', path_peticion, flags=re.IGNORECASE)):
+                nombre_accion = diccionario.get(request.method) + "-" + "oficina"
+
+            elif (re.search(r'action', path_peticion, flags=re.IGNORECASE)):
+                nombre_accion = diccionario.get(request.method) + "-" + "accion"
+
+            elif (re.search(r'profile', path_peticion, flags=re.IGNORECASE)):
+                nombre_accion = diccionario.get(request.method) + "-" + "perfil"
+            else:
+                return JSONResponse(content={"detail": "La accion a realizar no existe"}, status_code=401)
+
+            print(nombre_accion)
+            accion = get_action_by_name(db, nombre_accion)
+            action_id = accion.id
+            profile_action = get_profile_action_by_id_profile_action(db, profile_id, action_id)
+            # print(profile_action)
+
+            if (profile_action is None):
+                return JSONResponse(content={"detail": "No tienes permisos para realizar esta acción"}, status_code=401)
+
         except JWTError:
             raise HTTPException(status_code=401, detail="Error al decodificar el token")
 
-    diccionario = {
-        "GET": "get",
-        "POST": "create",
-        "PUT": "update",
-        "DELETE": "delete"
-    }
 
-    #Se contruye el nombre de la accion
-    if(re.search(r'user', path_peticion, flags=re.IGNORECASE)):
-        nombre_accion = diccionario.get(request.method) + "-" + "usuario"
-    elif (re.search(r'compan', path_peticion, flags=re.IGNORECASE)):
-        nombre_accion = diccionario.get(request.method) + "-" + "empresa"
-
-    elif(re.search(r'sucursal', path_peticion, flags=re.IGNORECASE)):
-        nombre_accion = diccionario.get(request.method) + "-" + "sucursal"
-
-    elif (re.search(r'office', path_peticion, flags=re.IGNORECASE)):
-        nombre_accion = diccionario.get(request.method) + "-" + "oficina"
-
-    elif (re.search(r'action', path_peticion, flags=re.IGNORECASE)):
-        nombre_accion = diccionario.get(request.method) + "-" + "accion"
-
-    elif (re.search(r'profile', path_peticion, flags=re.IGNORECASE)):
-        nombre_accion = diccionario.get(request.method) + "-" + "perfil"
-    else:
-        return JSONResponse(content={"detail": "La accion a realizar no existe"}, status_code=401)
-
-
-    print(nombre_accion)
-    accion = get_action_by_name( db, nombre_accion)
-    action_id = accion.id
-    profile_action = get_profile_action_by_id_profile_action(db, profile_id, action_id)
-    #print(profile_action)
-
-    if(profile_action is None):
-        return JSONResponse(content={"detail": "No tienes permisos para realizar esta acción"}, status_code=401)
 
 
 
     # Llama a la siguiente función en la cadena de middlewares y rutas
-    response = await call_next(request)
+    response = call_next(request)
 
     # Lógica después de la ruta
     print("Peticion realizada con exito")

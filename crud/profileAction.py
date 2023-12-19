@@ -5,7 +5,10 @@ from fastapi import HTTPException, status
 from sqlalchemy import and_
 
 def get_profile_action_all(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(ProfileAction).offset(skip).limit(limit).all()
+    try:
+        return db.query(ProfileAction).offset(skip).limit(limit).all()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener prefilesAccion {e}")
 
 def get_profile_action_by_id(db: Session, profile_action_id: int):
     try:

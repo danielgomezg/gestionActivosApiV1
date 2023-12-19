@@ -26,14 +26,20 @@ def get_user_by_id(db: Session, user_id: int):
 
 #funciones
 def get_user_email(db: Session, email: str):
-    result = db.query(Usuario).filter(Usuario.email == email).first()
-    #print(result)
-    return result
+    try:
+        result = db.query(Usuario).filter(Usuario.email == email).first()
+        #print(result)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener user por email {e}")
 
 
 def get_user_all(db: Session, limit: int = 100, offset: int = 0):
     #return db.query(Usuario).offset(offset).limit(limit).all()
-    return (db.query(Usuario).options(joinedload(Usuario.profile)).offset(offset).limit(limit).all())
+    try:
+        return (db.query(Usuario).options(joinedload(Usuario.profile)).offset(offset).limit(limit).all())
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener usuarios {e}")
 
 def create_user(db: Session, user: UserSchema):
     try:
@@ -57,8 +63,9 @@ def create_user(db: Session, user: UserSchema):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando user {e}")
 
 def update_user(db: Session, user_id: int, user: UserEditSchema):
-    user_to_edit = db.query(Usuario).filter(Usuario.id == user_id).first()
+
     try:
+        user_to_edit = db.query(Usuario).filter(Usuario.id == user_id).first()
         if user_to_edit:
             if user.password is None:
                 user_to_edit.firstName = user.firstName
@@ -86,8 +93,9 @@ def update_user(db: Session, user_id: int, user: UserEditSchema):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando usuario: {e}")
 
 def delete_user(db: Session, user_id: int):
-    user_to_delete = db.query(Usuario).filter(Usuario.id == user_id).first()
+
     try:
+        user_to_delete = db.query(Usuario).filter(Usuario.id == user_id).first()
         if user_to_delete:
             db.delete(user_to_delete)
             db.commit()
@@ -101,16 +109,19 @@ def delete_user(db: Session, user_id: int):
 def authenticate_user(email: str, password: str, db: Session):
     #print(email)
     #print(password)
-    userExist = get_user_email(db, email)
-    if(userExist):
-        # print(userExist.password)
-        passwordValid = Usuario.verify_password(password, userExist.password)
-        if(passwordValid):
-            #print("exito")
-            return userExist
-        else:
-            return False
-    return False
+    try:
+        userExist = get_user_email(db, email)
+        if(userExist):
+            # print(userExist.password)
+            passwordValid = Usuario.verify_password(password, userExist.password)
+            if(passwordValid):
+                #print("exito")
+                return userExist
+            else:
+                return False
+        return False
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al autenticar usuario {e}")
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
@@ -157,7 +168,7 @@ def get_user_disable_current(current_user_info: Tuple[str, Optional[str]] = Depe
     # Obtener la fecha y hora actual
     current_time = datetime.utcnow().timestamp()
     id_user, expiration_time = current_user_info
-    print("Tiempo actual: ", current_time)
+    #print("Tiempo actual: ", current_time)
     # Validar si el token ha expirado
     if int(expiration_time) > int(current_time):
         print("El token no ha expirado aún.")

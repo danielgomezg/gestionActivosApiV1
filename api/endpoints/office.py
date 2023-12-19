@@ -18,9 +18,9 @@ router = APIRouter()
 office.Base.metadata.create_all(bind=engine)
 
 @router.get('/offices')
-async def get_offices(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_offices(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     id_user, expiration_time = current_user_info
-    print("Tiempo de expiración: ", expiration_time)
+    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])
@@ -29,22 +29,22 @@ async def get_offices(db: Session = Depends(get_db), current_user_info: Tuple[st
     return result
 
 @router.get("/officePorSucursal/{id_sucursal}")
-async def get_office_por_sucursal(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_office_por_sucursal(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     id_user, expiration_time = current_user_info
-    print("Tiempo de expiración: ", expiration_time)
+    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])
 
     result = get_office_by_id_sucursal(db, id_sucursal,limit, offset)
     if not result:
-        return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).dict(exclude_none=True)
-    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).dict(exclude_none=True)
+        return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
 
 @router.get("/office/{id}", response_model=OfficeSchema)
-async def get_office(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def get_office(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    print("Tiempo de expiración: ", expiration_time)
+    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])
@@ -55,9 +55,9 @@ async def get_office(id: int, db: Session = Depends(get_db), current_user_info: 
     return result
 
 @router.post('/office')
-async def create(request: OfficeSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def create(request: OfficeSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    print("Tiempo de expiración: ", expiration_time)
+    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])
@@ -73,4 +73,4 @@ async def create(request: OfficeSchema, db: Session = Depends(get_db), current_u
         return Response(code="400", message="id sucursal no valido", result=[])
 
     _office = create_office(db, request)
-    return Response(code = "201", message = "Oficina creada", result = _office).dict(exclude_none=True)
+    return Response(code = "201", message = "Oficina creada", result = _office).model_dump()

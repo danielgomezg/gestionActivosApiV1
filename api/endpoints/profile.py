@@ -16,9 +16,9 @@ router = APIRouter()
 #profile.Base.metadata.create_all(bind=engine)
 
 @router.get('/profiles')
-async def get_profiles(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_profiles(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     id_user, expiration_time = current_user_info
-    print("Tiempo de expiración: ", expiration_time)
+    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])
@@ -27,9 +27,9 @@ async def get_profiles(db: Session = Depends(get_db), current_user_info: Tuple[s
     return ResponseGet(code = "200", result=result, limit= limit, offset = offset, count = 3).model_dump()
 
 @router.get("/profile/{id}")
-async def get_profile(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def get_profile(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    print("Tiempo de expiración: ", expiration_time)
+    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])
@@ -41,9 +41,9 @@ async def get_profile(id: int, db: Session = Depends(get_db), current_user_info:
     return ResponseGet(code = "200", result=result, limit= 0, offset = 0, count = 0).model_dump()
 
 @router.post('/profile')
-async def create(request: ProfileSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def create(request: ProfileSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    print("Tiempo de expiración: ", expiration_time)
+    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])
@@ -55,9 +55,9 @@ async def create(request: ProfileSchema, db: Session = Depends(get_db), current_
     return Response(code = "201", message = "Perfil creado", result = _profile).model_dump()
 
 @router.put('/profile/{id}')
-async def update(request: ProfileEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def update(request: ProfileEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    print("Tiempo de expiración: ", expiration_time)
+    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])
@@ -69,9 +69,9 @@ async def update(request: ProfileEditSchema, id: int, db: Session = Depends(get_
     return Response(code = "201", message = "Accion editada", result = _profile).model_dump()
 
 @router.delete('/profile/{id}')
-async def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    print("Tiempo de expiración: ", expiration_time)
+    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])

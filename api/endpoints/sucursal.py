@@ -20,21 +20,21 @@ sucursal.Base.metadata.create_all(bind=engine)
 @router.get('/sucursales')
 async def get_sucursales(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     id_user, expiration_time = current_user_info
-    print("Tiempo de expiración: ", expiration_time)
+    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])
 
-    count = count_sucursal(db)
+    count = await count_sucursal(db)
     if(count == 0):
-        return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=count).dict(exclude_none=True)
-    result = get_sucursal_all(db, limit, offset)
-    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).dict(exclude_none=True)
+        return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=count).model_dump()
+    result = await get_sucursal_all(db, limit, offset)
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/sucursal/{id}", response_model=SucursalSchema)
-async def get_sucursal(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def get_sucursal(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    print("Tiempo de expiración: ", expiration_time)
+    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])
@@ -45,22 +45,22 @@ async def get_sucursal(id: int, db: Session = Depends(get_db), current_user_info
     return result
 
 @router.get("/sucursalPorCompany/{id_company}")
-async def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     id_user, expiration_time = current_user_info
-    print("Tiempo de expiración: ", expiration_time)
+    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])
 
     result = get_sucursal_by_id_company(db, id_company,limit, offset)
     if not result:
-        return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).dict(exclude_none=True)
-    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).dict(exclude_none=True)
+        return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
 
 @router.post('/sucursal')
-async def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    print("Tiempo de expiración: ", expiration_time)
+    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="Su sesión ha expirado", result=[])
@@ -91,4 +91,4 @@ async def create(request: SucursalSchema, db: Session = Depends(get_db), current
         return Response(code="400", message="id compania no valido", result=[])
 
     _sucursal = create_sucursal(db, request)
-    return Response(code = "201", message = "Sucursal creada", result = _sucursal).dict(exclude_none=True)
+    return Response(code = "201", message = "Sucursal creada", result = _sucursal).model_dump()
