@@ -62,6 +62,7 @@ def create_company(db: Session, company: CompanySchema):
         db.add(_company)
         db.commit()
         db.refresh(_company)
+        _company.count_sucursal = 0
         return _company
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando compania {e}")

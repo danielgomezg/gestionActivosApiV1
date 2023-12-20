@@ -23,7 +23,7 @@ async def get_sucursales(db: Session = Depends(get_db), current_user_info: Tuple
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     count = await count_sucursal(db)
     if(count == 0):
@@ -37,7 +37,7 @@ def get_sucursal(id: int, db: Session = Depends(get_db), current_user_info: Tupl
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     result = get_sucursal_by_id(db, id)
     if result is None:
@@ -50,7 +50,7 @@ def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), cur
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     result = get_sucursal_by_id_company(db, id_company,limit, offset)
     if not result:
@@ -63,7 +63,7 @@ def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     if(len(request.description) == 0):
         return  Response(code = "400", message = "Descripcion no valida", result = [])

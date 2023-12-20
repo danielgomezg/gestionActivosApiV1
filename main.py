@@ -6,6 +6,7 @@ import json
 #logging.basicConfig()
 #logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 
 from api.endpoints import user
 from api.endpoints import company
@@ -114,6 +115,9 @@ def middleware_validacion_permisos( request: Request, call_next):
             elif (re.search(r'profile', path_peticion, flags=re.IGNORECASE)):
                 nombre_accion = diccionario.get(request.method) + "-" + "perfil"
             else:
+                #detail = "La acción a realizar no existe"
+                #response_content = jsonable_encoder({"detail": detail})
+                #return JSONResponse(content=response_content, status_code=401)
                 return JSONResponse(content={"detail": "La accion a realizar no existe"}, status_code=401)
 
             print(nombre_accion)
@@ -123,6 +127,10 @@ def middleware_validacion_permisos( request: Request, call_next):
             # print(profile_action)
 
             if (profile_action is None):
+                #detail = "No tienes permisos para realizar esta acción"
+                #response_content = jsonable_encoder({"detail": detail})
+                #return JSONResponse(content=response_content, status_code=401)
+
                 return JSONResponse(content={"detail": "No tienes permisos para realizar esta acción"}, status_code=401)
 
         except JWTError:

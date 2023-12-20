@@ -19,7 +19,7 @@ def get_actions(db: Session = Depends(get_db), current_user_info: Tuple[str, str
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     result = get_action_all(db)
     return result
@@ -30,7 +30,7 @@ def get_action(id: int, db: Session = Depends(get_db), current_user_info: Tuple[
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     result = get_action_by_id(db, id)
     #print("getcompany")
@@ -43,7 +43,7 @@ def create(request: ActionSchema, db: Session = Depends(get_db), current_user_in
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre de accion no valido", result = [])
@@ -57,7 +57,7 @@ def update(request: ActionSchema, id: int, db: Session = Depends(get_db), curren
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre de accion no valido", result = [])
@@ -71,7 +71,7 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     _action = delete_action(db, id)
     return Response(code = "201", message = f"Accion con id {id} eliminada", result = _action).model_dump()

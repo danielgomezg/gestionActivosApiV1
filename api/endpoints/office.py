@@ -23,7 +23,7 @@ def get_offices(db: Session = Depends(get_db), current_user_info: Tuple[str, str
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     result = get_offices_all(db, limit, offset)
     return result
@@ -34,7 +34,7 @@ def get_office_por_sucursal(id_sucursal: int, db: Session = Depends(get_db), cur
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     result = get_office_by_id_sucursal(db, id_sucursal,limit, offset)
     if not result:
@@ -47,7 +47,7 @@ def get_office(id: int, db: Session = Depends(get_db), current_user_info: Tuple[
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     result = get_office_by_id(db, id)
     if result is None:
@@ -60,10 +60,10 @@ def create(request: OfficeSchema, db: Session = Depends(get_db), current_user_in
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
-    if(len(request.description) == 0):
-        return  Response(code = "400", message = "Descripcion no valida", result = [])
+    #if(len(request.description) == 0):
+       # return  Response(code = "400", message = "Descripcion no valida", result = [])
 
     if('floor' not in request and request.floor is None):
         return  Response(code = "400", message = "Piso no valido", result = [])

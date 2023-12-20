@@ -30,18 +30,18 @@ oauth2_scheme = OAuth2PasswordBearer("/token")
 SECRET_KEY = config('SECRET_KEY')
 ALGORITHM = config('ALGORITHM')
 
-@router.get("/user/{id}", response_model=UserSchema)
+@router.get("/user/{id}")
 def get_user(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     result = get_user_by_id(db, id)
     if result is None:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return result
+    return Response(code= "200", message="Usuario encontrado", result = result).model_dump()
 
 @router.get('/users')
 def get_users(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
@@ -49,7 +49,7 @@ def get_users(db: Session = Depends(get_db), current_user_info: Tuple[str, str] 
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     result = get_user_all(db, limit, offset)
     return result
@@ -60,7 +60,7 @@ def create(request: UserSchema, db: Session = Depends(get_db), current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     if(len(request.firstName) == 0):
         return  Response(code = "400", message = "Nombre no valido", result = [])
@@ -102,7 +102,7 @@ def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), curr
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     if (len(request.firstName) == 0):
         return Response(code="400", message="Nombre no valido", result=[])
@@ -129,6 +129,8 @@ def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), curr
     if (not id_perfil):
         return Response(code="400", message="id perfil no valido", result=[])
 
+    print(request)
+
     _user = update_user(db, id, request)
     #print(_user)
     return Response(code = "201", message = "Usuario editado", result = _user).model_dump()
@@ -139,7 +141,7 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     _user = delete_user(db, id)
     return Response(code = "201", message = f"Usuario con id {id} eliminado", result = _user).model_dump()
@@ -148,7 +150,7 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
 def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
     _user = authenticate_user(request.email, request.password, db)
     if(_user):
-        access_token_expires = timedelta(minutes=60)
+        access_token_expires = timedelta(minutes=180)
         user_id = str(_user.id)
 
         additional_info = {

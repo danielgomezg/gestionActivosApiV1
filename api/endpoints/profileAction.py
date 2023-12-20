@@ -41,7 +41,7 @@ def create(request: ProfileActionSchema, db: Session = Depends(get_db), current_
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     id_profile = get_profile_by_id(db, request.profile_id)
     if (not id_profile):

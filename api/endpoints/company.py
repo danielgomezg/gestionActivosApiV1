@@ -22,7 +22,7 @@ def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[str, s
     print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return  Response(code = "401", message = "Su sesión ha expirado", result = [])
+        return  Response(code = "401", message = "token-exp", result = [])
 
     count = count_company(db)
     if(count == 0):
@@ -36,7 +36,7 @@ def get_companies_id_name(db: Session = Depends(get_db), current_user_info: Tupl
     #print("funcion companiesIdName")
     #Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     count = count_company(db)
     if(count == 0):
@@ -50,7 +50,7 @@ def get_company(id: int, db: Session = Depends(get_db), current_user_info: Tuple
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     result = get_company_by_id(db, id)
     if result is None:
@@ -63,7 +63,7 @@ def create(request: CompanySchema, db: Session = Depends(get_db), current_user_i
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre no valido", result = [])

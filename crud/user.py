@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, load_only
 from schemas.userSchema import UserSchema, UserEditSchema
 from models.user import Usuario
 from fastapi import HTTPException, status, Depends
@@ -13,13 +13,15 @@ from fastapi.security import OAuth2PasswordBearer
 from typing import Optional, Tuple
 from jose import jwt, JWTError
 
+from passlib.hash import bcrypt
+
 #Variables
 SECRET_KEY = config('SECRET_KEY')
 ALGORITHM = config('ALGORITHM')
 
 def get_user_by_id(db: Session, user_id: int):
     try:
-        result = db.query(Usuario).filter(Usuario.id == user_id).first()
+        result = db.query(Usuario).filter(Usuario.id == user_id).options(load_only(Usuario.id, Usuario.email, Usuario.company_id, Usuario.firstName, Usuario.lastName, Usuario.profile_id, Usuario.rut, Usuario.secondLastName, Usuario.secondName)).first()
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar usuario {e}")
@@ -76,17 +78,21 @@ def update_user(db: Session, user_id: int, user: UserEditSchema):
                 user_to_edit.company_id = user.company_id
                 user_to_edit.profile_id = user.profile_id
             else:
+
                 user_to_edit.firstName = user.firstName
                 user_to_edit.secondName = user.secondName
                 user_to_edit.lastName = user.lastName
                 user_to_edit.secondLastName = user.secondLastName
                 user_to_edit.email = user.email
-                user_to_edit.password = user.password
+                user_to_edit._password = bcrypt.hash(user.password)
                 user_to_edit.company_id = user.company_id
                 user_to_edit.profile_id = user.profile_id
 
             db.commit()
-            return user_to_edit
+            print(user_to_edit)
+            result = { k: v for k,v in user_to_edit.__dict__.items() if(k != "_password") }
+            print(user)
+            return result
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
     except Exception as e:

@@ -21,7 +21,7 @@ def get_profiles(db: Session = Depends(get_db), current_user_info: Tuple[str, st
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     result = get_profile_all(db, limit, offset)
     return ResponseGet(code = "200", result=result, limit= limit, offset = offset, count = 3).model_dump()
@@ -32,7 +32,7 @@ def get_profile(id: int, db: Session = Depends(get_db), current_user_info: Tuple
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     result = get_profile_by_id(db, id)
     if result is None:
@@ -46,7 +46,7 @@ def create(request: ProfileSchema, db: Session = Depends(get_db), current_user_i
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre no valido", result = [])
@@ -60,7 +60,7 @@ def update(request: ProfileEditSchema, id: int, db: Session = Depends(get_db), c
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre de perfil no valido", result = [])
@@ -74,7 +74,7 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
-        return Response(code="401", message="Su sesión ha expirado", result=[])
+        return Response(code="401", message="token-exp", result=[])
 
     _profile = delete_profile(db, id)
     return Response(code = "201", message = f"Perfil con id {id} eliminado", result = _profile).model_dump()
