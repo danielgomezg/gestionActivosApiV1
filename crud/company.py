@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
-from schemas.companySchema import CompanySchema
+from schemas.companySchema import CompanySchema, CompanyEditSchema
 from sqlalchemy import desc, func
 from models.company import Company
 from models.sucursal import Sucursal
@@ -56,7 +56,10 @@ def create_company(db: Session, company: CompanySchema):
         _company = Company(
             name=company.name,
             rut=company.rut,
-            country=company.country
+            country=company.country,
+            contact_name=company.contact_name,
+            contact_phone=company.contact_phone,
+            contact_email=company.contact_email
         )
 
         db.add(_company)
@@ -67,22 +70,35 @@ def create_company(db: Session, company: CompanySchema):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando compania {e}")
 
+def update_company(db: Session, company_id: int, company: CompanyEditSchema):
+
+    try:
+        company_to_edit = db.query(Company).filter(Company.id == company_id).first()
+        if company_to_edit:
+            company_to_edit.name = company.name
+            company_to_edit.contact_name = company.contact_name
+            company_to_edit.contact_phone = company.contact_phone
+            company_to_edit.contact_email = company.contact_email
+
+            db.commit()
+            company_edited = get_company_by_id(db, company_id)
+            return company_edited
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Compañia no encontrada")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando compañia: {e}")
 
 
-# from sqlalchemy.orm import Session
-# from models.company import Company as DBCompany
-# from fastapi import HTTPException, status
-#
-# def create_company_DB(company, db:Session):
-#     company = company.dict()
-#     print(company)
-#     try:
-#         new_company = DBCompany(
-#             id = company["id"],
-#             name = company["name"]
-#         )
-#         db.add(new_company)
-#         db.commit()
-#         db.refresh(new_company)
-#     except Exception as e:
-#         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error creando compania {e}")
+def delete_company(db: Session, company_id: int):
+    company_to_delete = db.query(Company).filter(Company.id == company_id).first()
+    try:
+        if company_to_delete:
+            db.delete(company_to_delete)
+            db.commit()
+            return company_id
+            #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Compañia con id {company_id} no encontrada")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando compañia: {e}")
+

@@ -5,7 +5,8 @@ from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
 from crud.profileAction import get_profile_action_by_id, get_profile_action_all, create_profile_action
-from schemas.profile_actionSchema import Response, ProfileActionSchema
+from schemas.profile_actionSchema import ProfileActionSchema
+from schemas.schemaGenerico import Response
 
 from crud.user import get_user_disable_current
 from typing import Tuple

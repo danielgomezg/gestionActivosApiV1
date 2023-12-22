@@ -11,6 +11,7 @@ class Sucursal(Base):
     number = Column(String, nullable=False)
     address = Column(String, nullable=False)
     region = Column(String, nullable=False)
+    city = Column(String, nullable=False)
     commune = Column(String, nullable=False)
 
     company_id = Column(Integer, ForeignKey('compania.id'))

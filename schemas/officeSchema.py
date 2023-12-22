@@ -3,13 +3,16 @@ from pydantic import BaseModel, Field
 
 T = TypeVar('T')
 
-class Response(BaseModel, Generic[T]):
-    code: str
-    message: str
-    result: Optional[T]
 
 class OfficeSchema(BaseModel):
-    id: Optional[int] = None
     description: str
     floor: int
+    name_in_charge: str
     sucursal_id: int
+
+class OfficeEditSchema(BaseModel):
+    description: Optional[str]
+    floor: int
+    name_in_charge: str
+
+

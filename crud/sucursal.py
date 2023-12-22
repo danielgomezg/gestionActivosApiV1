@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from schemas.sucursalSchema import SucursalSchema
+from schemas.sucursalSchema import SucursalSchema, SucursalEditSchema
 from models.sucursal import Sucursal
 from fastapi import HTTPException, status
 from models.office import Office
@@ -67,6 +67,7 @@ def create_sucursal(db: Session, sucursal: SucursalSchema):
             number = sucursal.number,
             address = sucursal.address,
             region = sucursal.region,
+            city = sucursal.city,
             commune=sucursal.commune,
             company_id=sucursal.company_id
         )
@@ -77,3 +78,33 @@ def create_sucursal(db: Session, sucursal: SucursalSchema):
         return _sucursal
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando sucursal {e}")
+
+def update_sucursal(db: Session, sucursal_id: int, sucursal: SucursalEditSchema):
+
+    try:
+        sucursal_to_edit = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
+        if sucursal_to_edit:
+            sucursal_to_edit.description = sucursal.description
+            sucursal_to_edit.number = sucursal.number
+            sucursal_to_edit.address = sucursal.address
+
+            db.commit()
+            sucursal_edited = get_sucursal_by_id(db, sucursal_id)
+            return sucursal_edited
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sucursal no encontrada")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando sucursal: {e}")
+
+def delete_sucursal(db: Session, sucursal_id: int):
+    sucursal_to_delete = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
+    try:
+        if sucursal_to_delete:
+            db.delete(sucursal_to_delete)
+            db.commit()
+            return sucursal_id
+            #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Sucursal con id {sucursal_id} no encontrada")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando sucursal: {e}")

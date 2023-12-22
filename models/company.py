@@ -10,6 +10,9 @@ class Company(Base):
     name = Column(String, unique=True, nullable=False)
     rut = Column(String, unique=True, nullable=False)
     country = Column(String, nullable=False)
+    contact_name = Column(String, nullable=False)
+    contact_phone = Column(String, nullable=False)
+    contact_email = Column(String, nullable=False)
 
     #Relacion con sucursales
     sucursales = relationship('Sucursal', back_populates='company')

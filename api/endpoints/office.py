@@ -4,9 +4,9 @@ from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.office import create_office, get_office_by_id, get_offices_all, get_office_by_id_sucursal
-from schemas.officeSchema import Response, OfficeSchema
-from schemas.schemaGenerico import ResponseGet
+from crud.office import create_office, get_office_by_id, get_offices_all, get_office_by_id_sucursal, delete_office, update_office
+from schemas.officeSchema import OfficeSchema, OfficeEditSchema
+from schemas.schemaGenerico import ResponseGet, Response
 
 from crud.user import get_user_disable_current
 from typing import Tuple
@@ -68,9 +68,48 @@ def create(request: OfficeSchema, db: Session = Depends(get_db), current_user_in
     if('floor' not in request and request.floor is None):
         return  Response(code = "400", message = "Piso no valido", result = [])
 
+    if (len(request.name_in_charge) == 0):
+     return  Response(code = "400", message = "Falta el nombre de la persona a cargo", result = [])
+
     id_sucursal = get_sucursal_by_id(db, request.sucursal_id)
     if (not id_sucursal):
         return Response(code="400", message="id sucursal no valido", result=[])
 
     _office = create_office(db, request)
     return Response(code = "201", message = "Oficina creada", result = _office).model_dump()
+
+
+@router.put('/office/{id}')
+def update(request: OfficeEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    id_user, expiration_time = current_user_info
+    #print("Tiempo de expiración: ", expiration_time)
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="token-exp", result=[])
+
+    #if(len(request.description) == 0):
+       # return  Response(code = "400", message = "Descripcion no valida", result = [])
+
+    if('floor' not in request and request.floor is None):
+        return  Response(code = "400", message = "Piso no valido", result = [])
+
+    if (len(request.name_in_charge) == 0):
+     return  Response(code = "400", message = "Falta el nombre de la persona a cargo", result = [])
+
+    #id_sucursal = get_sucursal_by_id(db, request.sucursal_id)
+    #if (not id_sucursal):
+       # return Response(code="400", message="id sucursal no valido", result=[])
+
+    _office = update_office(db, id, request)
+    return Response(code = "201", message = "Oficina editada", result = _office).model_dump()
+
+@router.delete('/office/{id}')
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    id_user, expiration_time = current_user_info
+    # print("Tiempo de expiración: ", expiration_time)
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="token-exp", result=[])
+
+    _office = delete_office(db, id)
+    return Response(code = "201", message = f"Oficina con id {id} eliminada", result = _office).model_dump()

@@ -5,12 +5,10 @@ from fastapi import APIRouter, HTTPException, Path, Depends, status
 from sqlalchemy.orm import Session
 from database import get_db
 from crud.user import create_user, get_user_all, get_user_email, authenticate_user, create_access_token, get_user_disable_current, get_user_by_id, update_user, delete_user
-from schemas.userSchema import Response, UserSchema, UserEditSchema, UserSchemaLogin
+from schemas.userSchema import UserSchema, UserEditSchema, UserSchemaLogin
+from schemas.schemaGenerico import Response
 import re
 from typing import Tuple
-#importaciones para obtener ids
-#from api.endpoints.profile import get_profile_by_id
-#from api.endpoints.company import get_company_by_id
 from crud.profile import get_profile_by_id
 from crud.company import get_company_by_id
 

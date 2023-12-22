@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
-from schemas.officeSchema import OfficeSchema
+from schemas.officeSchema import OfficeSchema, OfficeEditSchema
 from models.office import Office
 from fastapi import HTTPException, status
 from sqlalchemy import desc, func
@@ -41,6 +41,7 @@ def create_office(db: Session, office: OfficeSchema):
         _office = Office(
             description=office.description,
             floor = office.floor,
+            name_in_charge = office.name_in_charge,
             sucursal_id=office.sucursal_id
         )
 
@@ -50,4 +51,34 @@ def create_office(db: Session, office: OfficeSchema):
         return _office
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando oficina {e}")
+
+def update_office(db: Session, office_id: int, office: OfficeEditSchema):
+
+    try:
+        office_to_edit = db.query(Office).filter(Office.id == office_id).first()
+        if office_to_edit:
+            office_to_edit.description = office.description
+            office_to_edit.floor = office.floor
+            office_to_edit.name_in_charge = office.name_in_charge
+
+            db.commit()
+            office_edited = get_office_by_id(db, office_id)
+            return office_edited
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Oficina no encontrada")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando oficina: {e}")
+
+def delete_office(db: Session, office_id: int):
+    office_to_delete = db.query(Office).filter(Office.id == office_id).first()
+    try:
+        if office_to_delete:
+            db.delete(office_to_delete)
+            db.commit()
+            return office_id
+            #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Oficina con id {office_id} no encontrada")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando Oficina: {e}")
 

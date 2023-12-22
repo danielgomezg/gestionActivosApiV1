@@ -5,7 +5,8 @@ from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
 from crud.action import create_action, get_action_by_id, get_action_all, update_action, delete_action
-from schemas.actionSchema import Response, ActionSchema
+from schemas.actionSchema import ActionSchema
+from schemas.schemaGenerico import Response
 
 from crud.user import  get_user_disable_current
 from typing import Optional, Tuple

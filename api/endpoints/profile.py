@@ -5,8 +5,8 @@ from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
 from crud.profile import create_profile, get_profile_by_id, get_profile_all, update_profile, delete_profile
-from schemas.profileSchema import Response, ProfileSchema, ProfileEditSchema
-from schemas.schemaGenerico import ResponseGet
+from schemas.profileSchema import ProfileSchema, ProfileEditSchema
+from schemas.schemaGenerico import ResponseGet, Response
 
 #from api.endpoints.user import get_user_disable_current
 from crud.user import get_user_disable_current
