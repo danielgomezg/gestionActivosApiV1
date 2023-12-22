@@ -8,7 +8,7 @@ class Sucursal(Base):
     __tablename__ = 'sucursal'
     id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(String, nullable=False)
-    number = Column(String, nullable=False, unique=True)
+    number = Column(String, nullable=False)
     address = Column(String, nullable=False)
     region = Column(String, nullable=False)
     commune = Column(String, nullable=False)

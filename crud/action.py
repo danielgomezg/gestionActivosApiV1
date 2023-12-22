@@ -4,7 +4,10 @@ from models.action import Action
 from fastapi import HTTPException, status
 
 def get_action_all(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Action).offset(skip).limit(limit).all()
+    try:
+        return db.query(Action).offset(skip).limit(limit).all()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener acciones {e}")
 
 def get_action_by_id(db: Session, action_id: int):
     try:
@@ -12,6 +15,13 @@ def get_action_by_id(db: Session, action_id: int):
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar accion {e}")
+
+def get_action_by_name(db: Session, action_name: str):
+    try:
+        result = db.query(Action).filter(Action.name == action_name).first()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar accion por name {e}")
 
 
 def create_action(db: Session, action: ActionSchema):

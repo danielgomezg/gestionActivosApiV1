@@ -1,13 +1,45 @@
 from sqlalchemy.orm import Session, joinedload
 from schemas.companySchema import CompanySchema
+from sqlalchemy import desc, func
 from models.company import Company
+from models.sucursal import Sucursal
 from fastapi import HTTPException, status
 
 
-def get_company_all(db: Session, skip: int = 0, limit: int = 100):
-    #return db.query(Company).offset(skip).limit(limit).all()
-    #sucursales es la variable que se defie en el modelo company
-    return (db.query(Company).options(joinedload(Company.sucursales)).offset(skip).limit(limit).all())
+def get_company_all(db: Session, limit: int = 100, offset: int = 0):
+    try:
+        companies = (
+            db.query(Company, func.count(Sucursal.id).label("count_sucursales"))
+            .outerjoin(Sucursal)  # Asegúrate de ajustar el nombre de la relación si es diferente
+            .group_by(Company.id)
+            .order_by(desc(Company.id))
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+        result = []
+        for company in companies:
+            company[0].count_sucursal = company[1]
+            result.append(company[0])
+
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania {e}")
+    #return (db.query(Company).options(joinedload(Company.sucursales)).order_by(desc(Company.id)).offset(offset).limit(limit).all())
+
+def get_company_all_id_name(db: Session, limit: int = 100, offset: int = 0):
+    try:
+        companies = (db.query(Company.id, Company.name).offset(offset).limit(limit).all())
+        result = [{'id': company[0], 'name': company[1]} for company in companies]
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania por nombre {e}")
+
+def count_company(db: Session):
+    try:
+        return db.query(Company).count()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al contar las companias {e}")
 
 def get_company_by_id(db: Session, company_id: int):
     #print(company_id)
@@ -30,6 +62,7 @@ def create_company(db: Session, company: CompanySchema):
         db.add(_company)
         db.commit()
         db.refresh(_company)
+        _company.count_sucursal = 0
         return _company
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando compania {e}")

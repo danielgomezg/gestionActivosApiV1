@@ -3,12 +3,19 @@ from pydantic import BaseModel, Field
 
 T = TypeVar('T')
 
-print("user-schema")  # Añade esta líne
 
 class Response(BaseModel, Generic[T]):
     code: str
     message: str
     result: Optional[T]
+
+class ResponseGet(BaseModel, Generic[T]):
+    code: str
+    result: Optional[T]
+    count: int
+    limit: int
+    offset: int
+
 
 class UserSchema(BaseModel):
     id: Optional[int] = None
@@ -19,7 +26,7 @@ class UserSchema(BaseModel):
     email: str
     password: str
     rut: str = None
-    company_id: int
+    company_id: Optional[int] = None
     profile_id: int
 
 class UserEditSchema(BaseModel):
@@ -28,9 +35,11 @@ class UserEditSchema(BaseModel):
     lastName: Optional[str]
     secondLastName: Optional[str]
     email: Optional[str]
-    password: Optional[str]
+    password: Optional[str] = None
+    company_id: Optional[int] = None
+    profile_id: Optional[int]
 
 
-class UserSchemaTest(BaseModel):
+class UserSchemaLogin(BaseModel):
     email: str
     password: str
