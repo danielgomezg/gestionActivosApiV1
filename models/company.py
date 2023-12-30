@@ -13,6 +13,7 @@ class Company(Base):
     contact_name = Column(String, nullable=False)
     contact_phone = Column(String, nullable=False)
     contact_email = Column(String, nullable=False)
+    removed = Column(Integer, default=0, nullable=False)
 
     #Relacion con sucursales
     sucursales = relationship('Sucursal', back_populates='company')
@@ -20,6 +21,9 @@ class Company(Base):
 
     #Relacion con usuario
     users = relationship('Usuario', back_populates='company')
+
+    #Relacion con article
+    articles = relationship('Article', back_populates='company')
 
     @hybrid_property
     def sucursales_count(self):

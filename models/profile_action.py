@@ -9,6 +9,7 @@ from sqlalchemy.orm.exc import NoResultFound
 class ProfileAction(Base):
     __tablename__ = 'perfil_accion'
     id = Column(Integer, primary_key=True, autoincrement=True)
+    removed = Column(Integer, default=0, nullable=False)
 
     #Relacion con perfil
     profile_id = Column(Integer, ForeignKey('perfil.id'))

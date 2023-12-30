@@ -39,7 +39,7 @@ def get_user_email(db: Session, email: str):
 def get_user_all(db: Session, limit: int = 100, offset: int = 0):
     #return db.query(Usuario).offset(offset).limit(limit).all()
     try:
-        return (db.query(Usuario).options(joinedload(Usuario.profile)).offset(offset).limit(limit).all())
+        return (db.query(Usuario).options(joinedload(Usuario.profile)).filter(Usuario.removed == 0).offset(offset).limit(limit).all())
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener usuarios {e}")
 
@@ -103,7 +103,7 @@ def delete_user(db: Session, user_id: int):
     try:
         user_to_delete = db.query(Usuario).filter(Usuario.id == user_id).first()
         if user_to_delete:
-            db.delete(user_to_delete)
+            user_to_delete.removed = 1
             db.commit()
             return user_id
             #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
@@ -113,15 +113,11 @@ def delete_user(db: Session, user_id: int):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando usuario: {e}")
 
 def authenticate_user(email: str, password: str, db: Session):
-    #print(email)
-    #print(password)
     try:
         userExist = get_user_email(db, email)
-        if(userExist):
-            # print(userExist.password)
+        if(userExist and userExist.removed == 0):
             passwordValid = Usuario.verify_password(password, userExist.password)
             if(passwordValid):
-                #print("exito")
                 return userExist
             else:
                 return False

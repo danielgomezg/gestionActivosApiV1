@@ -13,6 +13,7 @@ class Sucursal(Base):
     region = Column(String, nullable=False)
     city = Column(String, nullable=False)
     commune = Column(String, nullable=False)
+    removed = Column(Integer, default=0, nullable=False)
 
     company_id = Column(Integer, ForeignKey('compania.id'))
     company = relationship('Company', back_populates='sucursales')

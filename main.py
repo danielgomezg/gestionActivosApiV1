@@ -6,7 +6,6 @@ import json
 #logging.basicConfig()
 #logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
 
 from api.endpoints import user
 from api.endpoints import company
@@ -15,7 +14,8 @@ from api.endpoints import office
 from api.endpoints import sucursal
 from api.endpoints import action
 from api.endpoints import profileAction
-
+from api.endpoints import article
+from api.endpoints import active
 
 #cors
 from fastapi.middleware.cors import CORSMiddleware
@@ -114,6 +114,13 @@ def middleware_validacion_permisos( request: Request, call_next):
 
             elif (re.search(r'profile', path_peticion, flags=re.IGNORECASE)):
                 nombre_accion = diccionario.get(request.method) + "-" + "perfil"
+
+            elif (re.search(r'active', path_peticion, flags=re.IGNORECASE)):
+                nombre_accion = diccionario.get(request.method) + "-" + "activo"
+
+            elif (re.search(r'article', path_peticion, flags=re.IGNORECASE)):
+                nombre_accion = diccionario.get(request.method) + "-" + "articulo"
+
             else:
                 #detail = "La acción a realizar no existe"
                 #response_content = jsonable_encoder({"detail": detail})
@@ -156,4 +163,6 @@ app.include_router(sucursal.router)
 app.include_router(office.router)
 app.include_router(action.router)
 app.include_router(profileAction.router)
+app.include_router(article.router)
+app.include_router(active.router)
 

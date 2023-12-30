@@ -3,13 +3,14 @@ from schemas.sucursalSchema import SucursalSchema, SucursalEditSchema
 from models.sucursal import Sucursal
 from fastapi import HTTPException, status
 from models.office import Office
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, and_
 
 def get_sucursal_all(db: Session, limit: int = 100, offset: int = 0):
     try:
         sucursales = (
             db.query(Sucursal, func.count(Office.id).label("count_offices"))
-            .outerjoin(Office)  # Asegúrate de ajustar el nombre de la relación si es diferente
+            .outerjoin(Office, and_(Office.sucursal_id == Sucursal.id, Office.removed == 0))
+            .filter(Sucursal.removed == 0)
             .group_by(Sucursal.id)
             .order_by(desc(Sucursal.id))
             .offset(offset)
@@ -28,7 +29,7 @@ def get_sucursal_all(db: Session, limit: int = 100, offset: int = 0):
 
 def count_sucursal(db: Session):
     try:
-        return db.query(Sucursal).count()
+        return db.query(Sucursal).filter(Sucursal.removed == 0).count()
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al contar sucursales {e}")
 
@@ -42,8 +43,8 @@ def get_sucursal_by_id_company(db: Session, company_id: int, limit: int = 100, o
     try:
         sucursales = (
             db.query(Sucursal, func.count(Office.id).label("count_offices"))
-            .outerjoin(Office)
-            .filter(Sucursal.company_id == company_id)  # Reemplaza "tu_valor_de_aid" con el valor real
+            .outerjoin(Office, and_(Office.sucursal_id == Sucursal.id, Office.removed == 0))
+            .filter(Sucursal.company_id == company_id, Sucursal.removed == 0)
             .group_by(Sucursal.id)
             .order_by(desc(Sucursal.id))
             .offset(offset)
@@ -97,13 +98,12 @@ def update_sucursal(db: Session, sucursal_id: int, sucursal: SucursalEditSchema)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando sucursal: {e}")
 
 def delete_sucursal(db: Session, sucursal_id: int):
-    sucursal_to_delete = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
     try:
+        sucursal_to_delete = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
         if sucursal_to_delete:
-            db.delete(sucursal_to_delete)
+            sucursal_to_delete.removed = 1
             db.commit()
             return sucursal_id
-            #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Sucursal con id {sucursal_id} no encontrada")
     except Exception as e:

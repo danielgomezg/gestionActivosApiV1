@@ -7,7 +7,7 @@ from sqlalchemy import desc, func
 def get_offices_all(db: Session, limit: int = 100, offset: int = 0):
     #return db.query(Office).offset(skip).limit(limit).all()
     try:
-        return (db.query(Office).options(joinedload(Office.sucursal)).offset(offset).limit(limit).all())
+        return (db.query(Office).options(joinedload(Office.sucursal)).filter(Office.removed == 0).offset(offset).limit(limit).all())
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener oficinas {e}")
 
@@ -16,7 +16,7 @@ def get_office_by_id_sucursal(db: Session, sucursal_id: int, limit: int = 100, o
     try:
         offices = (
             db.query(Office)
-            .filter(Office.sucursal_id == sucursal_id)
+            .filter(Office.sucursal_id == sucursal_id, Office.removed == 0)
             .group_by(Office.id)
             .order_by(desc(Office.id))
             .offset(offset)
@@ -70,10 +70,10 @@ def update_office(db: Session, office_id: int, office: OfficeEditSchema):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando oficina: {e}")
 
 def delete_office(db: Session, office_id: int):
-    office_to_delete = db.query(Office).filter(Office.id == office_id).first()
     try:
+        office_to_delete = db.query(Office).filter(Office.id == office_id).first()
         if office_to_delete:
-            db.delete(office_to_delete)
+            office_to_delete.removed = 1
             db.commit()
             return office_id
             #return {"message": "Acción actualizada correctamente", "action": action_to_edit}

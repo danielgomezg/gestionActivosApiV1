@@ -9,6 +9,7 @@ class Profile(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
     description = Column(String, nullable=False)
+    removed = Column(Integer, default=0, nullable=False)
 
     # Relacion con usuario
     users = relationship('Usuario', back_populates='profile')

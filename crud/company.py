@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from schemas.companySchema import CompanySchema, CompanyEditSchema
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, and_
 from models.company import Company
 from models.sucursal import Sucursal
 from fastapi import HTTPException, status
@@ -10,7 +10,8 @@ def get_company_all(db: Session, limit: int = 100, offset: int = 0):
     try:
         companies = (
             db.query(Company, func.count(Sucursal.id).label("count_sucursales"))
-            .outerjoin(Sucursal)  # Asegúrate de ajustar el nombre de la relación si es diferente
+            .outerjoin(Sucursal, and_(Sucursal.company_id == Company.id, Sucursal.removed == 0))
+            .filter(Company.removed == 0)
             .group_by(Company.id)
             .order_by(desc(Company.id))
             .offset(offset)
@@ -29,7 +30,7 @@ def get_company_all(db: Session, limit: int = 100, offset: int = 0):
 
 def get_company_all_id_name(db: Session, limit: int = 100, offset: int = 0):
     try:
-        companies = (db.query(Company.id, Company.name).offset(offset).limit(limit).all())
+        companies = (db.query(Company.id, Company.name).filter(Company.removed == 0).offset(offset).limit(limit).all())
         result = [{'id': company[0], 'name': company[1]} for company in companies]
         return result
     except Exception as e:
@@ -37,7 +38,7 @@ def get_company_all_id_name(db: Session, limit: int = 100, offset: int = 0):
 
 def count_company(db: Session):
     try:
-        return db.query(Company).count()
+        return db.query(Company).filter(Company.removed == 0).count()
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al contar las companias {e}")
 
@@ -90,13 +91,12 @@ def update_company(db: Session, company_id: int, company: CompanyEditSchema):
 
 
 def delete_company(db: Session, company_id: int):
-    company_to_delete = db.query(Company).filter(Company.id == company_id).first()
     try:
+        company_to_delete = db.query(Company).filter(Company.id == company_id).first()
         if company_to_delete:
-            db.delete(company_to_delete)
+            company_to_delete.removed = 1
             db.commit()
             return company_id
-            #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Compañia con id {company_id} no encontrada")
     except Exception as e:
