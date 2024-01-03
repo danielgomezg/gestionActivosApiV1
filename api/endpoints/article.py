@@ -1,10 +1,11 @@
 from models import article
 from models.article import Article
 from database import engine
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from pathlib import Path
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.article import get_article_all, get_article_by_id, create_article, update_article, delete_article, get_article_by_id_company
+from crud.article import get_article_all, get_article_by_id, create_article, update_article, delete_article, get_article_by_id_company, get_image_url
 from schemas.articleSchema import ArticleSchema, ArticleEditSchema
 from schemas.schemaGenerico import Response, ResponseGet
 from crud.company import get_company_by_id
@@ -53,6 +54,23 @@ def get_articles_por_company(id_company: int, db: Session = Depends(get_db), cur
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
     #return result
 
+
+@router.post("/image_article")
+def upload_image(file: UploadFile = File(...), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    try:
+        id_user, expiration_time = current_user_info
+        # print("Tiempo de expiración: ", expiration_time)
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+
+        upload_folder = Path("files") / "images_article"
+        upload_folder.mkdir(parents=True, exist_ok=True)  # Crea el directorio si no existe
+        photo_url = get_image_url(file, upload_folder)
+        return Response(code="201", message="Foto guardada con éxito", result=photo_url).model_dump()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al procesar la imagen: {e}")
+
 @router.post('/article')
 def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
@@ -64,8 +82,8 @@ def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_i
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre no valido", result = [])
 
-    if(len(request.photo) == 0):
-        return  Response(code = "400", message = "Foto no valida", result = [])
+    #if(len(request.photo) == 0):
+        #return  Response(code = "400", message = "Foto no valida", result = [])
 
     id_company = get_company_by_id(db, request.company_id)
     if(not id_company):
@@ -85,8 +103,8 @@ def update(request: ArticleEditSchema, id: int, db: Session = Depends(get_db), c
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre no valido", result = [])
 
-    if(len(request.photo) == 0):
-        return  Response(code = "400", message = "Foto no valida", result = [])
+    #if(len(request.photo) == 0):
+        #return  Response(code = "400", message = "Foto no valida", result = [])
 
     _article = update_article(db, id,  request)
     return Response(code = "201", message = "Articulo editado", result = _article).model_dump()

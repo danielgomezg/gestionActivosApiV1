@@ -1,14 +1,14 @@
 from models import active
 from database import engine
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.active import get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article
+from crud.active import get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from schemas.schemaGenerico import Response, ResponseGet
 from crud.office import get_office_by_id
 from crud.article import get_article_by_id
-
+from pathlib import Path
 import re
 from dateutil import parser as date_parser
 
@@ -55,6 +55,22 @@ def get_active_por_article(id_article: int, db: Session = Depends(get_db), curre
         return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
 
+@router.post("/file_active")
+def upload_file(file: UploadFile = File(...), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    try:
+        id_user, expiration_time = current_user_info
+        # print("Tiempo de expiración: ", expiration_time)
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+
+        upload_folder = Path("files") / "files_active"
+        upload_folder.mkdir(parents=True, exist_ok=True)  # Crea el directorio si no existe
+        file_url = get_file_url(file, upload_folder)
+        return Response(code="201", message="Archivo guardado con éxito", result=file_url).model_dump()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {e}")
+
 @router.post('/active')
 def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
@@ -77,8 +93,8 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
     except ValueError as e:
         return Response(code="400", message=str(e), result=[])
 
-    if(len(request.accounting_document) == 0):
-        return  Response(code = "400", message = "Documento de adquisición no valido", result = [])
+    #if(len(request.accounting_document) == 0):
+        #return  Response(code = "400", message = "Documento de adquisición no valido", result = [])
 
     if (len(request.accounting_record_number) == 0):
         return Response(code="400", message="Numero registro contable no valido", result=[])
@@ -98,7 +114,7 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
         return Response(code="400", message="Modelo no valido", result=[])
 
     if (len(request.state) == 0):
-        return Response(code="400", message="Esatdo no valido", result=[])
+        return Response(code="400", message="Estado no valido", result=[])
 
     id_office = get_office_by_id(db, request.office_id)
     if(not id_office):
@@ -133,8 +149,8 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     except ValueError as e:
         return Response(code="400", message=str(e), result=[])
 
-    if (len(request.accounting_document) == 0):
-        return Response(code="400", message="Documento de adquisición no valido", result=[])
+    #if (len(request.accounting_document) == 0):
+        #return Response(code="400", message="Documento de adquisición no valido", result=[])
 
     if (len(request.accounting_record_number) == 0):
         return Response(code="400", message="Numero registro contable no valido", result=[])

@@ -1,9 +1,13 @@
+import shutil
 from sqlalchemy.orm import Session
 from schemas.articleSchema import ArticleSchema, ArticleEditSchema
 from models.article import Article
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile
 from sqlalchemy import func, and_, desc
 from models.active import Active
+import uuid
+from urllib.parse import urlparse
+from pathlib import Path
 
 def get_article_all(db: Session, limit: int = 100, offset: int = 0):
     try:
@@ -53,13 +57,28 @@ def get_article_by_id_company(db: Session, company_id: int, limit: int = 100, of
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener Articulo {e}")
 
+def get_image_url(file: UploadFile, upload_folder: Path) -> str:
+    try:
+        unique_id = uuid.uuid4().hex
+        # Concatena el UUID al nombre del archivo original
+        filename_with_uuid = f"{unique_id}_{file.filename}"
+        file_path = upload_folder / filename_with_uuid
+        with open(file_path, "wb") as image_file:
+            shutil.copyfileobj(file.file, image_file)
+
+        photo_url = f"http://127.0.0.1:9000/files/images_article/{filename_with_uuid}"
+        return photo_url
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar la imagen: {e}")
+
+
+
 def create_article(db: Session, article: ArticleSchema):
     try:
         _article = Article(
             name=article.name,
             description=article.description,
             photo=article.photo,
-            #creation_date=article.creation_date,
             company_id=article.company_id
         )
 
@@ -71,14 +90,31 @@ def create_article(db: Session, article: ArticleSchema):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando articulo {e}")
 
 
+
 def update_article(db: Session, article_id: int, article: ArticleEditSchema):
     try:
         article_to_edit = db.query(Article).filter(Article.id == article_id).first()
         if article_to_edit:
             article_to_edit.name = article.name
             article_to_edit.description = article.description
+
+            # Se elimina la foto reemplazada del servidor
+            if(
+                (article_to_edit.photo is None and article.photo is not None) or
+                (article_to_edit.photo is not None and article.photo is None) or
+                (article_to_edit.photo != article.photo)
+            ):
+                # Extraer el nombre del archivo de la URL
+                parsed_url = urlparse(article_to_edit.photo)
+                filename = Path(parsed_url.path).name
+                # Construir la ruta al archivo existente
+                existing_file_path = Path("files") / "images_article" / filename
+
+                # Verificar si el archivo existe y eliminarlo
+                if existing_file_path.exists():
+                    existing_file_path.unlink()
+
             article_to_edit.photo = article.photo
-            #article_to_edit.creation_date = article.creation_date
 
             db.commit()
             article = get_article_by_id(db, article_id)

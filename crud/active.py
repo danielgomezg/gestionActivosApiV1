@@ -1,8 +1,12 @@
 from sqlalchemy.orm import Session
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from models.active import Active
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile
 from sqlalchemy import desc
+import uuid
+import shutil
+from urllib.parse import urlparse
+from pathlib import Path
 
 def get_active_by_id(db: Session, active_id: int):
     try:
@@ -24,6 +28,20 @@ def get_active_by_id_article(db: Session, article_id: int, limit: int = 100, off
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
+def get_file_url(file: UploadFile, upload_folder: Path) -> str:
+    try:
+        unique_id = uuid.uuid4().hex
+        # Concatena el UUID al nombre del archivo original
+        filename_with_uuid = f"{unique_id}_{file.filename}"
+        file_path = upload_folder / filename_with_uuid
+        with open(file_path, "wb") as active_file:
+            shutil.copyfileobj(file.file, active_file)
+
+        file_url = f"http://127.0.0.1:9000/files/files_active/{filename_with_uuid}"
+        return file_url
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar el documento de activo: {e}")
 
 def create_active(db: Session, active: ActiveSchema):
     try:
@@ -58,7 +76,6 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema):
             active_to_edit.bar_code = active.bar_code
             active_to_edit.comment = active.comment
             active_to_edit.acquisition_date = active.acquisition_date
-            active_to_edit.accounting_document = active.accounting_document
             active_to_edit.accounting_record_number = active.accounting_record_number
             active_to_edit.name_in_charge_active = active.name_in_charge_active
             active_to_edit.rut_in_charge_active = active.rut_in_charge_active
@@ -66,7 +83,24 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema):
             active_to_edit.model = active.model
             active_to_edit.state = active.state
             active_to_edit.office_id = active.office_id
-            #article_to_edit.creation_date = article.creation_date
+
+            #Se elimina el archivo reemplazado del servidor
+            if (
+                    (active_to_edit.accounting_document is None and active.accounting_document is not None) or
+                    (active_to_edit.accounting_document is not None and active.accounting_document is None) or
+                    (active_to_edit.accounting_document != active.accounting_document)
+            ):
+                # Extraer el nombre del archivo de la URL
+                parsed_url = urlparse(active_to_edit.accounting_document)
+                filename = Path(parsed_url.path).name
+                # Construir la ruta al archivo existente
+                existing_file_path = Path("files") / "files_active" / filename
+
+                # Verificar si el archivo existe y eliminarlo
+                if existing_file_path.exists():
+                    existing_file_path.unlink()
+
+            active_to_edit.accounting_document = active.accounting_document
 
             db.commit()
             active = get_active_by_id(db, active_id)
