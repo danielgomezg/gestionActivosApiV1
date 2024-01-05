@@ -52,7 +52,7 @@ def get_active_por_article(id_article: int, db: Session = Depends(get_db), curre
 
     result = get_active_by_id_article(db, id_article,limit, offset)
     if not result:
-        return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
+        return ResponseGet(code= "200", result = [], limit= limit, offset = offset, count = 0).model_dump()
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
 
 @router.post("/file_active")
