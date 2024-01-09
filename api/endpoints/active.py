@@ -10,6 +10,7 @@ from crud.office import get_office_by_id
 from crud.article import get_article_by_id
 from pathlib import Path
 import re
+from fastapi.responses import FileResponse
 from dateutil import parser as date_parser
 
 from crud.user import  get_user_disable_current, get_user_by_id
@@ -189,3 +190,10 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
 
     _active = delete_active(db, id)
     return Response(code = "201", message = f"Activo con id {id} eliminado", result = _active).model_dump()
+
+@router.get("/file_active/{file_path}")
+async def get_image(file_path: str):
+    image = Path("files") / "files_active" / file_path
+    if not image.exists():
+        raise HTTPException(status_code=404, detail="Image not found")
+    return FileResponse(image)

@@ -38,8 +38,8 @@ def get_file_url(file: UploadFile, upload_folder: Path) -> str:
         with open(file_path, "wb") as active_file:
             shutil.copyfileobj(file.file, active_file)
 
-        file_url = f"http://127.0.0.1:9000/files/files_active/{filename_with_uuid}"
-        return file_url
+        # file_url = f"http://127.0.0.1:9000/files/files_active/{filename_with_uuid}"
+        return filename_with_uuid
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar el documento de activo: {e}")
 

@@ -100,15 +100,14 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema):
 
             # Se elimina la foto reemplazada del servidor
             if(
-                (article_to_edit.photo is None and article.photo is not None) or
                 (article_to_edit.photo is not None and article.photo is None) or
                 (article_to_edit.photo != article.photo)
             ):
                 # Extraer el nombre del archivo de la URL
-                parsed_url = urlparse(article_to_edit.photo)
-                filename = Path(parsed_url.path).name
+                # parsed_url = urlparse(article_to_edit.photo)
+                # filename = Path(parsed_url.path).name
                 # Construir la ruta al archivo existente
-                existing_file_path = Path("files") / "images_article" / filename
+                existing_file_path = Path("files") / "images_article" / article_to_edit.photo
 
                 # Verificar si el archivo existe y eliminarlo
                 if existing_file_path.exists():
