@@ -9,7 +9,7 @@ from crud.article import get_article_all, get_article_by_id, create_article, upd
 from schemas.articleSchema import ArticleSchema, ArticleEditSchema
 from schemas.schemaGenerico import Response, ResponseGet
 from crud.company import get_company_by_id
-
+from fastapi.responses import FileResponse
 from crud.user import  get_user_disable_current
 from typing import Tuple
 
@@ -119,3 +119,11 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
 
     _article = delete_article(db, id)
     return Response(code = "201", message = f"Articulo con id {id} eliminado", result = _article).model_dump()
+
+
+@router.get("/image_article/{image_path}")
+async def get_image(image_path: str):
+    image = Path("files") / "images_article" / image_path
+    if not image.exists():
+        raise HTTPException(status_code=404, detail="Image not found")
+    return FileResponse(image)

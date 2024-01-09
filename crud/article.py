@@ -66,8 +66,8 @@ def get_image_url(file: UploadFile, upload_folder: Path) -> str:
         with open(file_path, "wb") as image_file:
             shutil.copyfileobj(file.file, image_file)
 
-        photo_url = f"http://127.0.0.1:9000/files/images_article/{filename_with_uuid}"
-        return photo_url
+        # photo_url = f"http://127.0.0.1:9000/files/images_article/{filename_with_uuid}"
+        return filename_with_uuid
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar la imagen: {e}")
 
