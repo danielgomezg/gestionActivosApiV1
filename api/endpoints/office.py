@@ -41,7 +41,7 @@ def get_office_por_sucursal(id_sucursal: int, db: Session = Depends(get_db), cur
         return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
 
-@router.get("/office/{id}", response_model=OfficeSchema)
+@router.get("/office/{id}")
 def get_office(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
@@ -52,7 +52,7 @@ def get_office(id: int, db: Session = Depends(get_db), current_user_info: Tuple[
     result = get_office_by_id(db, id)
     if result is None:
         raise HTTPException(status_code=404, detail="Oficina no encontrada")
-    return result
+    return Response(code= "200", message="Oficina encontrada" , result = result).model_dump()
 
 @router.post('/office')
 def create(request: OfficeSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):

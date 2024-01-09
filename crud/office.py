@@ -31,7 +31,7 @@ def get_office_by_id_sucursal(db: Session, sucursal_id: int, limit: int = 100, o
 
 def get_office_by_id(db: Session, office_id: int):
     try:
-        result = db.query(Office).filter(Office.id == office_id).first()
+        result = db.query(Office).filter(Office.id == office_id, Office.removed == 0).first()
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar oficina {e}")
