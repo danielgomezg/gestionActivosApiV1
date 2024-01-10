@@ -99,7 +99,8 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema):
             article_to_edit.description = article.description
 
             # Se elimina la foto reemplazada del servidor
-            if article_to_edit.accounting_document is not None and (article.accounting_document is None or article.accounting_document is not None):
+            # Si la foto es nula, no se hace nada
+            if len(article_to_edit.photo) > 0:
                 # Extraer el nombre del archivo de la URL
                 # parsed_url = urlparse(article_to_edit.photo)
                 # filename = Path(parsed_url.path).name
@@ -108,7 +109,7 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema):
 
                 # Verificar si el archivo existe y eliminarlo
                 if existing_file_path.exists():
-                    existing_file_path.unlink()
+                   existing_file_path.unlink()
 
             article_to_edit.photo = article.photo
 
@@ -118,6 +119,7 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema):
             #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Articulo no encontrado")
+        
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando articulo: {e}")
 
