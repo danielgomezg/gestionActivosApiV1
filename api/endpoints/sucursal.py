@@ -74,8 +74,8 @@ def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_
     if (len(request.region) == 0):
         return Response(code="400", message="Region no valida", result=[])
 
-    if (len(request.city) == 0):
-        return Response(code="400", message="Ciudad no valida", result=[])
+    #if (len(request.city) == 0):
+        #return Response(code="400", message="Ciudad no valida", result=[])
 
     if (len(request.commune) == 0):
         return Response(code="400", message="Comuna no valida", result=[])

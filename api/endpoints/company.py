@@ -68,12 +68,20 @@ def create(request: CompanySchema, db: Session = Depends(get_db), current_user_i
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre de la empresa vacio", result = [])
 
-    patron_rut = r'^\d{1,8}-[\dkK]$'
-    rut = str(request.rut.replace(".", ""))
+    #Valida RUT
+    if(request.country == "Chile"):
+        patron_rut = r'^\d{1,8}-[\dkK]$'
+        rut = str(request.rut.replace(".", ""))
 
-    if not re.match(patron_rut, rut):
-        return Response(code="400", message="Rut inválido", result=[])
+        if not re.match(patron_rut, rut):
+            return Response(code="400", message="Rut inválido", result=[])
 
+    # Valida DNI
+    if (request.country == "Perú"):
+        patron_dni = r'^\d{8}[a-zA-Z]?$'
+        dni = str(request.rut.replace(".", ""))
+        if not re.match(patron_dni, dni):
+            return Response(code="400", message="DNI inválido", result=[])
 
     if (len(request.country) == 0):
         return Response(code="400", message="Pais no valido", result=[])

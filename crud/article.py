@@ -99,7 +99,7 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema):
             article_to_edit.description = article.description
 
             # Se elimina la foto reemplazada del servidor
-            if (article_to_edit.photo is not None and article.photo is None):
+            if article_to_edit.accounting_document is not None and (article.accounting_document is None or article.accounting_document is not None):
                 # Extraer el nombre del archivo de la URL
                 # parsed_url = urlparse(article_to_edit.photo)
                 # filename = Path(parsed_url.path).name

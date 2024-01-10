@@ -11,7 +11,7 @@ class Sucursal(Base):
     number = Column(String, nullable=False)
     address = Column(String, nullable=False)
     region = Column(String, nullable=False)
-    city = Column(String, nullable=False)
+    city = Column(String, nullable=True)
     commune = Column(String, nullable=False)
     removed = Column(Integer, default=0, nullable=False)
 

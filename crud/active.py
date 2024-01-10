@@ -85,7 +85,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema):
             active_to_edit.office_id = active.office_id
 
             #Se elimina el archivo reemplazado del servidor
-            if (active_to_edit.accounting_document is not None and active.accounting_document is None):
+            if active_to_edit.accounting_document is not None and (active.accounting_document is None or active.accounting_document is not None):
                 # Extraer el nombre del archivo de la URL
                 # parsed_url = urlparse(active_to_edit.accounting_document)
                 # filename = Path(parsed_url.path).name
