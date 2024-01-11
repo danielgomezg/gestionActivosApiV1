@@ -14,7 +14,7 @@ from crud.user import  get_user_disable_current
 from typing import Tuple
 
 router = APIRouter()
-article.Base.metadata.create_all(bind=engine)
+#article.Base.metadata.create_all(bind=engine)
 
 @router.get("/article/{id}", response_model=ArticleSchema)
 def get_article(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
