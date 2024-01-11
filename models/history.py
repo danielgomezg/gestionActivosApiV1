@@ -2,6 +2,18 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from database import Base
 from sqlalchemy.orm import relationship
 
+
+from models import  active
+from models import article
+from models import office
+from models import sucursal
+from database import engine
+
+active.Base.metadata.create_all(bind=engine)
+article.Base.metadata.create_all(bind=engine)
+sucursal.Base.metadata.create_all(bind=engine)
+office.Base.metadata.create_all(bind=engine)
+
 class History(Base):
     __tablename__ = 'historial'
     id = Column(Integer, primary_key=True, autoincrement=True)
