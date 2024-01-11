@@ -16,6 +16,7 @@ from api.endpoints import action
 from api.endpoints import profileAction
 from api.endpoints import article
 from api.endpoints import active
+from api.endpoints import history
 
 #cors
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,7 +32,7 @@ from crud.action import get_action_by_name
 
 import re
 
-
+from schemas.schemaGenerico import Response
 
 
 
@@ -74,12 +75,6 @@ def middleware_validacion_permisos( request: Request, call_next):
     # Base de datos
     db = SessionLocal()
 
-    # variables
-    #perfil_id del usuario
-    profile_id = 0
-    # nombre de la acciona realizar
-    #nombre_accion = ""
-
     if authorization_header and authorization_header.startswith("Bearer "):
         token_value = authorization_header.split(" ")[1]
         #print(f"Valor del token: {token_value}")
@@ -121,10 +116,10 @@ def middleware_validacion_permisos( request: Request, call_next):
             elif (re.search(r'article', path_peticion, flags=re.IGNORECASE)):
                 nombre_accion = diccionario.get(request.method) + "-" + "articulo"
 
+            elif (re.search(r'histor', path_peticion, flags=re.IGNORECASE)):
+                nombre_accion = diccionario.get(request.method) + "-" + "historial"
+
             else:
-                #detail = "La acción a realizar no existe"
-                #response_content = jsonable_encoder({"detail": detail})
-                #return JSONResponse(content=response_content, status_code=401)
                 return JSONResponse(content={"detail": "La accion a realizar no existe"}, status_code=401)
 
             print(nombre_accion)
@@ -134,9 +129,6 @@ def middleware_validacion_permisos( request: Request, call_next):
             # print(profile_action)
 
             if (profile_action is None):
-                #detail = "No tienes permisos para realizar esta acción"
-                #response_content = jsonable_encoder({"detail": detail})
-                #return JSONResponse(content=response_content, status_code=401)
 
                 return JSONResponse(content={"detail": "No tienes permisos para realizar esta acción"}, status_code=401)
 
@@ -165,4 +157,5 @@ app.include_router(action.router)
 app.include_router(profileAction.router)
 app.include_router(article.router)
 app.include_router(active.router)
+app.include_router(history.router)
 

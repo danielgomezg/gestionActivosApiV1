@@ -21,4 +21,7 @@ class Sucursal(Base):
     #Relacion con la tabla office
     office = relationship('Office', back_populates='sucursal')
 
+    # Relacion con historial
+    historial = relationship('History', back_populates='sucursal')
+
 

@@ -17,3 +17,6 @@ class Article(Base):
 
     actives = relationship('Active', back_populates='article')
 
+    # Relacion con historial
+    historial = relationship('History', back_populates='article')
+

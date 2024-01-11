@@ -34,6 +34,9 @@ class Usuario(Base):
 
     profile = relationship('Profile', back_populates='users')
 
+    # Relacion con historial
+    historial = relationship('History', back_populates='user')
+
     #actives = relationship('Active', back_populates='user')
 
 
