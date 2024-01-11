@@ -16,4 +16,7 @@ class Office(Base):
 
     actives = relationship('Active', back_populates='office')
 
+    # Relacion con historial
+    historial = relationship('History', back_populates='office')
+
 

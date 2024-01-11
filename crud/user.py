@@ -30,7 +30,6 @@ def get_user_by_id(db: Session, user_id: int):
 def get_user_email(db: Session, email: str):
     try:
         result = db.query(Usuario).filter(Usuario.email == email).first()
-        #print(result)
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener user por email {e}")
@@ -149,12 +148,12 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     try:
         payload = jwt.decode(token, key=SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-        additional_info = payload.get("additional_info", {})
+        #user_id = payload.get("sub")
+        additional_info = payload.get("user", {})
+        #print(additional_info)
 
-        #id_user:str = payload.get("sub")
         id_user = payload.get("sub")
-        id_perfil = payload.get("profile")
+        #id_perfil = payload.get("profile")
 
         # Obtener el tiempo de expiración (exp) del token
         expiration_time = payload['exp']
@@ -164,17 +163,17 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
     #Recoradr que es str
-    return id_user, expiration_time
+    return id_user, expiration_time, additional_info
 
-def get_user_disable_current(current_user_info: Tuple[str, Optional[str]] = Depends(get_current_user)):
+def get_user_disable_current(current_user_info: Tuple[str, Optional[str], Optional[dict]] = Depends(get_current_user)):
     # Obtener la fecha y hora actual
     current_time = datetime.utcnow().timestamp()
-    id_user, expiration_time = current_user_info
+    id_user, expiration_time, additional_info = current_user_info
     #print("Tiempo actual: ", current_time)
     # Validar si el token ha expirado
     if int(expiration_time) > int(current_time):
         print("El token no ha expirado aún.")
-        return id_user, expiration_time
+        return id_user, expiration_time, additional_info
     else:
         print("El token ha expirado.")
-        return (None, None)
+        return (None, None, None)

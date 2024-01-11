@@ -163,10 +163,10 @@ def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
             "id": _user.id
         }
 
-        id_perfil = _user.profile_id
+        #id_perfil = _user.profile_id
         #print(id_perfil)
         # access_token = create_access_token(data={"sub": sub_data, "profile": _user.profile_id},expires_delta=access_token_expires)
-        access_token = create_access_token(data={"sub": user_id, "profile": _user.profile_id},expires_delta=access_token_expires)
+        access_token = create_access_token(data={"sub": user_id, "profile": _user.profile_id, "user": additional_info},expires_delta=access_token_expires)
 
         expire_seconds = access_token_expires.total_seconds()
         
@@ -194,7 +194,20 @@ def login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Ses
     if(_user):
         access_token_expires = timedelta(minutes=60)
         user_id = str(_user.id)
-        access_token = create_access_token(data={"sub": user_id, "profile": _user.profile_id},expires_delta=access_token_expires)
+
+        additional_info = {
+            "email": _user.email,
+            "firstName": _user.firstName,
+            "lastName": _user.lastName,
+            "secondName": _user.secondName,
+            "secondLastName": _user.secondLastName,
+            "rut": _user.rut,
+            "profile_id": _user.profile_id,
+            "company_id": _user.company_id,
+            "id": _user.id
+        }
+
+        access_token = create_access_token(data={"sub": user_id, "profile": _user.profile_id, "user": additional_info},expires_delta=access_token_expires)
 
         #NEW
         expire_seconds = access_token_expires.total_seconds()

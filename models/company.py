@@ -25,6 +25,9 @@ class Company(Base):
     #Relacion con article
     articles = relationship('Article', back_populates='company')
 
+    # Relacion con historial
+    historial = relationship('History', back_populates='company')
+
     @hybrid_property
     def sucursales_count(self):
         return len(self.sucursales)

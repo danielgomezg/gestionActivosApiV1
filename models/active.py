@@ -27,3 +27,6 @@ class Active(Base):
 
     article_id = Column(Integer, ForeignKey('articulo.id'))
     article = relationship('Article', back_populates='actives')
+
+    # Relacion con historial
+    historial = relationship('History', back_populates='active')
