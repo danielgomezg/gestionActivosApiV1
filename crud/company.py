@@ -102,3 +102,9 @@ def delete_company(db: Session, company_id: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando compañia: {e}")
 
+def search_company(db: Session, search: str):
+    try:
+        companies = (db.query(Company).filter(func.lower(Company.name).like(f"%{search}%")).all())
+        return companies
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania por nombre {e}")

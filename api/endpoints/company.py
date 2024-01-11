@@ -4,7 +4,7 @@ from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.company import create_company, get_company_by_id, get_company_all, count_company, get_company_all_id_name, delete_company, update_company
+from crud.company import create_company, get_company_by_id, get_company_all, count_company, get_company_all_id_name, delete_company, update_company, search_company
 from schemas.companySchema import CompanySchema,CompanySchemaIdName, CompanyEditSchema
 from schemas.schemaGenerico import ResponseGet, Response
 import re
@@ -43,6 +43,23 @@ def get_companies_id_name(db: Session = Depends(get_db), current_user_info: Tupl
         return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=count).model_dump()
     result = get_company_all_id_name(db, limit, offset)
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
+
+@router.get('/company/search')
+def search(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    id_user, expiration_time = current_user_info
+    # print("Tiempo de expiración: ", expiration_time)
+    print("funcion search")
+    print(search)
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="token-exp", result=[])
+
+    # count = count_company(db)
+    # if(count == 0):
+    #     return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=count).model_dump()
+    
+    result = search_company(db, search)
+    return Response(code= "200", message = "Empresas encontradas", result = result).model_dump()
 
 @router.get("/company/{id}", response_model=CompanySchema)
 def get_company(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
