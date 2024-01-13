@@ -6,6 +6,7 @@ T = TypeVar('T')
 class HistorySchema(BaseModel):
     id: Optional[int] = None
     description: Optional[str] = None
+    current_session_user_id: int
     company_id: Optional[int] = None
     sucursal_id: Optional[int] = None
     office_id: Optional[int] = None

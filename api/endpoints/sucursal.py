@@ -58,7 +58,7 @@ def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), cur
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
 
 @router.post('/sucursal')
-def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -93,11 +93,11 @@ def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_
     if(not id_company):
         return Response(code="400", message="id compania no valido", result=[])
 
-    _sucursal = create_sucursal(db, request)
-    return Response(code = "201", message = "Sucursal creada", result = _sucursal).model_dump()
+    _sucursal = create_sucursal(db, request, id_user)
+    return Response(code = "201", message = f"Sucursal {_sucursal.number} creada", result = _sucursal).model_dump()
 
 @router.put('/sucursal/{id}')
-def update(request: SucursalEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def update(request: SucursalEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -124,16 +124,16 @@ def update(request: SucursalEditSchema, id: int, db: Session = Depends(get_db), 
     #if(not id_company):
         #return Response(code="400", message="id compania no valido", result=[])
 
-    _sucursal = update_sucursal(db, id,  request)
-    return Response(code = "201", message = "Sucursal editada", result = _sucursal).model_dump()
+    _sucursal = update_sucursal(db, id,  request, id_user)
+    return Response(code = "201", message = f"Sucursal {_sucursal.number} editada", result = _sucursal).model_dump()
 
 @router.delete('/sucursal/{id}')
-def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    _sucursal = delete_sucursal(db, id)
+    _sucursal = delete_sucursal(db, id, id_user)
     return Response(code = "201", message = f"Sucursal con id {id} eliminada", result = _sucursal).model_dump()

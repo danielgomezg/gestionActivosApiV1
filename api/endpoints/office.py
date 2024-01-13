@@ -55,7 +55,7 @@ def get_office(id: int, db: Session = Depends(get_db), current_user_info: Tuple[
     return Response(code= "200", message="Oficina encontrada" , result = result).model_dump()
 
 @router.post('/office')
-def create(request: OfficeSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def create(request: OfficeSchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -75,12 +75,12 @@ def create(request: OfficeSchema, db: Session = Depends(get_db), current_user_in
     if (not id_sucursal):
         return Response(code="400", message="id sucursal no valido", result=[])
 
-    _office = create_office(db, request)
-    return Response(code = "201", message = "Oficina creada", result = _office).model_dump()
+    _office = create_office(db, request, id_user)
+    return Response(code = "201", message = f"Oficina piso {_office.floor} creada", result = _office).model_dump()
 
 
 @router.put('/office/{id}')
-def update(request: OfficeEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def update(request: OfficeEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -100,16 +100,16 @@ def update(request: OfficeEditSchema, id: int, db: Session = Depends(get_db), cu
     #if (not id_sucursal):
        # return Response(code="400", message="id sucursal no valido", result=[])
 
-    _office = update_office(db, id, request)
-    return Response(code = "201", message = "Oficina editada", result = _office).model_dump()
+    _office = update_office(db, id, request, id_user)
+    return Response(code = "201", message = f"Oficina piso {_office.floor} editada", result = _office).model_dump()
 
 @router.delete('/office/{id}')
-def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    _office = delete_office(db, id)
+    _office = delete_office(db, id, id_user)
     return Response(code = "201", message = f"Oficina con id {id} eliminada", result = _office).model_dump()

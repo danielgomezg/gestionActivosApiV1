@@ -55,7 +55,7 @@ def get_company_by_id(db: Session, company_id: int):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania {e}")
 
 
-def create_company(db: Session, company: CompanySchema, additional_info: dict):
+def create_company(db: Session, company: CompanySchema, id_user: int):
     try:
         _company = Company(
             name=company.name,
@@ -71,13 +71,11 @@ def create_company(db: Session, company: CompanySchema, additional_info: dict):
         db.refresh(_company)
         _company.count_sucursal = 0
 
-
-        company_created = db.query(Company).filter(Company.rut == _company.rut).first()
         # creacion del historial
         history_params = {
-            "description": f"El usuario {additional_info['firstName']} {additional_info['lastName']} {additional_info['secondLastName']} ha creado la compañía {_company.name} con ID {company_created.id}",
-            "company_id": company_created.id,  # O el valor correcto según tu lógica de negocio
-            "user_id": additional_info['id']
+            "description": "create-company",
+            "company_id": _company.id,
+            "current_session_user_id": id_user
         }
         create_history(db, HistorySchema(**history_params))
 
@@ -85,7 +83,7 @@ def create_company(db: Session, company: CompanySchema, additional_info: dict):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando compania {e}")
 
-def update_company(db: Session, company_id: int, company: CompanyEditSchema, additional_info: dict):
+def update_company(db: Session, company_id: int, company: CompanyEditSchema, id_user: int):
 
     try:
         company_to_edit = db.query(Company).filter(Company.id == company_id).first()
@@ -96,23 +94,24 @@ def update_company(db: Session, company_id: int, company: CompanyEditSchema, add
             company_to_edit.contact_email = company.contact_email
 
             db.commit()
-            company_edited = get_company_by_id(db, company_id)
+            db.refresh(company_to_edit)
+            #company_edited = get_company_by_id(db, company_id)
             # creacion del historial
             history_params = {
-                "description": f"El usuario {additional_info['firstName']} {additional_info['lastName']} {additional_info['secondLastName']} ha editado la compañía {company_to_edit.name} con ID {company_id}",
-                "company_id": company_id,  # O el valor correcto según tu lógica de negocio
-                "user_id": additional_info['id']
+                "description": "update-company",
+                "company_id": company_to_edit.id,
+                "current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 
-            return company_edited
+            return company_to_edit
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Compañia no encontrada")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando compañia: {e}")
 
 
-def delete_company(db: Session, company_id: int, additional_info: dict):
+def delete_company(db: Session, company_id: int, id_user: int):
     try:
         company_to_delete = db.query(Company).filter(Company.id == company_id).first()
         if company_to_delete:
@@ -121,9 +120,9 @@ def delete_company(db: Session, company_id: int, additional_info: dict):
 
             # creacion del historial
             history_params = {
-                "description": f"El usuario {additional_info['firstName']} {additional_info['lastName']} {additional_info['secondLastName']} ha eliminado la compañía {company_to_delete.name} con ID {company_id}",
-                "company_id": company_id,  # O el valor correcto según tu lógica de negocio
-                "user_id": additional_info['id']
+                "description": "delete-company",
+                "company_id": company_id,
+                "current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 

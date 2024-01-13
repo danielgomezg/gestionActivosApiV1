@@ -72,7 +72,7 @@ def upload_image(file: UploadFile = File(...), current_user_info: Tuple[str, str
         raise HTTPException(status_code=500, detail=f"Error al procesar la imagen: {e}")
 
 @router.post('/article')
-def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -89,11 +89,11 @@ def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_i
     if(not id_company):
         return Response(code="400", message="id compania no valido", result=[])
 
-    _article = create_article(db, request)
-    return Response(code = "201", message = "Articulo creado", result = _article).model_dump()
+    _article = create_article(db, request, id_user)
+    return Response(code = "201", message = f"Articulo {_article.name} creado", result = _article).model_dump()
 
 @router.put('/article/{id}')
-def update(request: ArticleEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def update(request: ArticleEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -106,18 +106,18 @@ def update(request: ArticleEditSchema, id: int, db: Session = Depends(get_db), c
     #if(len(request.photo) == 0):
         #return  Response(code = "400", message = "Foto no valida", result = [])
 
-    _article = update_article(db, id,  request)
-    return Response(code = "201", message = "Articulo editado", result = _article).model_dump()
+    _article = update_article(db, id,  request, id_user)
+    return Response(code = "201", message = f"Articulo {_article.name} editado", result = _article).model_dump()
 
 @router.delete('/article/{id}')
-def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    _article = delete_article(db, id)
+    _article = delete_article(db, id, id_user)
     return Response(code = "201", message = f"Articulo con id {id} eliminado", result = _article).model_dump()
 
 

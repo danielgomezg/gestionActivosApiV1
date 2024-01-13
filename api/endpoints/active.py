@@ -73,7 +73,7 @@ def upload_file(file: UploadFile = File(...), current_user_info: Tuple[str, str]
         raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {e}")
 
 @router.post('/active')
-def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -82,6 +82,12 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
 
     if(len(request.bar_code) == 0):
         return  Response(code = "400", message = "codigo de barra no valido", result = [])
+
+    # valida si existe un codigo de barra con el mismo numero dentro de los articulos
+    activos_por_id_sucursales = get_active_by_id_article(db, request.article_id)
+    for active_por_article in activos_por_id_sucursales:
+        if (active_por_article.bar_code == request.bar_code):
+            return Response(code="400", message="Codigo de barra ya ingresado", result=[])
 
     try:
         # Intenta convertir la fecha a un objeto date
@@ -125,11 +131,11 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
     if (not id_article):
         return Response(code="400", message="id articulo no valido", result=[])
 
-    _active = create_active(db, request)
-    return Response(code = "201", message = "Activo creado", result = _active).model_dump()
+    _active = create_active(db, request, id_user)
+    return Response(code = "201", message = f"Activo {_active.bar_code} creado", result = _active).model_dump()
 
 @router.put('/active/{id}')
-def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -177,18 +183,18 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     if (not id_office):
         return Response(code="400", message="id oficina no valido", result=[])
 
-    _active = update_active(db, id,  request)
-    return Response(code = "201", message = "Activo editado", result = _active).model_dump()
+    _active = update_active(db, id,  request, id_user)
+    return Response(code = "201", message = f"Activo {_active.bar_code} editado", result = _active).model_dump()
 
 @router.delete('/active/{id}')
-def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    _active = delete_active(db, id)
+    _active = delete_active(db, id, id_user)
     return Response(code = "201", message = f"Activo con id {id} eliminado", result = _active).model_dump()
 
 @router.get("/file_active/{file_path}")

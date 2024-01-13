@@ -8,6 +8,10 @@ import shutil
 from urllib.parse import urlparse
 from pathlib import Path
 
+#historial
+from schemas.historySchema import HistorySchema
+from crud.history import create_history
+
 def get_active_by_id(db: Session, active_id: int):
     try:
         result = db.query(Active).filter(Active.id == active_id).first()
@@ -43,7 +47,7 @@ def get_file_url(file: UploadFile, upload_folder: Path) -> str:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar el documento de activo: {e}")
 
-def create_active(db: Session, active: ActiveSchema):
+def create_active(db: Session, active: ActiveSchema, id_user: int):
     try:
         _active = Active(
             bar_code=active.bar_code,
@@ -64,12 +68,23 @@ def create_active(db: Session, active: ActiveSchema):
         db.add(_active)
         db.commit()
         db.refresh(_active)
+
+        # creacion del historial
+        history_params = {
+            "description": "create-active",
+            "active_id": _active.id,
+            "article_id": _active.article_id,
+            "office_id": _active.office_id,
+            "current_session_user_id": id_user
+        }
+        create_history(db, HistorySchema(**history_params))
+
         return _active
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando activo {e}")
 
 
-def update_active(db: Session, active_id: int, active: ActiveEditSchema):
+def update_active(db: Session, active_id: int, active: ActiveEditSchema, id_user: int):
     try:
         active_to_edit = db.query(Active).filter(Active.id == active_id).first()
         if active_to_edit:
@@ -99,20 +114,40 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema):
             active_to_edit.accounting_document = active.accounting_document
 
             db.commit()
-            active = get_active_by_id(db, active_id)
-            return active
-            #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
+
+            # creacion del historial
+            history_params = {
+                "description": "update-active",
+                "active_id": active_to_edit.id,
+                "article_id": active_to_edit.article_id,
+                "office_id": active_to_edit.office_id,
+                "current_session_user_id": id_user
+            }
+            create_history(db, HistorySchema(**history_params))
+
+            return active_to_edit
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activo no encontrado")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando activo: {e}")
 
-def delete_active(db: Session, active_id: int):
+def delete_active(db: Session, active_id: int, id_user: int):
     try:
         active_to_delete = db.query(Active).filter(Active.id == active_id).first()
         if active_to_delete:
             active_to_delete.removed = 1
             db.commit()
+
+            # creacion del historial
+            history_params = {
+                "description": "delete-active",
+                "active_id": active_to_delete.id,
+                "article_id": active_to_delete.article_id,
+                "office_id": active_to_delete.office_id,
+                "current_session_user_id": id_user
+            }
+            create_history(db, HistorySchema(**history_params))
+
             return active_id
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Activo con id {active_id} no encontrado")

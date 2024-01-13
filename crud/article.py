@@ -9,6 +9,10 @@ import uuid
 from urllib.parse import urlparse
 from pathlib import Path
 
+#historial
+from schemas.historySchema import HistorySchema
+from crud.history import create_history
+
 def get_article_all(db: Session, limit: int = 100, offset: int = 0):
     try:
         articles = (
@@ -72,8 +76,7 @@ def get_image_url(file: UploadFile, upload_folder: Path) -> str:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar la imagen: {e}")
 
 
-
-def create_article(db: Session, article: ArticleSchema):
+def create_article(db: Session, article: ArticleSchema, id_user: int):
     try:
         _article = Article(
             name=article.name,
@@ -85,13 +88,23 @@ def create_article(db: Session, article: ArticleSchema):
         db.add(_article)
         db.commit()
         db.refresh(_article)
+
+        # creacion del historial
+        history_params = {
+            "description": "create-article",
+            "article_id": _article.id,
+            "company_id": _article.company_id,
+            "current_session_user_id": id_user
+        }
+        create_history(db, HistorySchema(**history_params))
+
         return _article
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando articulo {e}")
 
 
 
-def update_article(db: Session, article_id: int, article: ArticleEditSchema):
+def update_article(db: Session, article_id: int, article: ArticleEditSchema, id_user: int):
     try:
         article_to_edit = db.query(Article).filter(Article.id == article_id).first()
         if article_to_edit:
@@ -114,8 +127,17 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema):
             article_to_edit.photo = article.photo
 
             db.commit()
-            article = get_article_by_id(db, article_id)
-            return article
+
+            # creacion del historial
+            history_params = {
+                "description": "update-article",
+                "article_id": article_to_edit.id,
+                "company_id": article_to_edit.company_id,
+                "current_session_user_id": id_user
+            }
+            create_history(db, HistorySchema(**history_params))
+
+            return article_to_edit
             #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Articulo no encontrado")
@@ -123,13 +145,23 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando articulo: {e}")
 
-def delete_article(db: Session, article_id: int):
+def delete_article(db: Session, article_id: int, id_user: int):
     try:
         article_to_delete = db.query(Article).filter(Article.id == article_id).first()
         if article_to_delete:
             article_to_delete.removed = 1
             #db.delete(article_to_delete)
             db.commit()
+
+            # creacion del historial
+            history_params = {
+                "description": "delete-article",
+                "article_id": article_to_delete.id,
+                "company_id": article_to_delete.company_id,
+                "current_session_user_id": id_user
+            }
+            create_history(db, HistorySchema(**history_params))
+
             return article_id
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Articulo con id {article_id} no encontrado")

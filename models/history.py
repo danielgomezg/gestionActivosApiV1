@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Date
 from database import Base
 from sqlalchemy.orm import relationship
+from datetime import date
 
 
 from models import  active
@@ -18,6 +19,8 @@ class History(Base):
     __tablename__ = 'historial'
     id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(String, nullable=True)
+    creation_date = Column(Date, default=date.today, nullable=False)
+    current_session_user_id = Column(Integer, nullable=False)
     #removed = Column(Integer, default=0, nullable=False)
 
     #Relacion con empresa

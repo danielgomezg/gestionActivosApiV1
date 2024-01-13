@@ -4,6 +4,10 @@ from models.office import Office
 from fastapi import HTTPException, status
 from sqlalchemy import desc, func
 
+#historial
+from schemas.historySchema import HistorySchema
+from crud.history import create_history
+
 def get_offices_all(db: Session, limit: int = 100, offset: int = 0):
     #return db.query(Office).offset(skip).limit(limit).all()
     try:
@@ -36,7 +40,7 @@ def get_office_by_id(db: Session, office_id: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar oficina {e}")
 
-def create_office(db: Session, office: OfficeSchema):
+def create_office(db: Session, office: OfficeSchema, id_user: int):
     try:
         _office = Office(
             description=office.description,
@@ -48,11 +52,21 @@ def create_office(db: Session, office: OfficeSchema):
         db.add(_office)
         db.commit()
         db.refresh(_office)
+
+        # creacion del historial
+        history_params = {
+            "description": "create-office",
+            "office_id": _office.id,
+            "sucursal_id": _office.sucursal_id,
+            "current_session_user_id": id_user
+        }
+        create_history(db, HistorySchema(**history_params))
+
         return _office
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando oficina {e}")
 
-def update_office(db: Session, office_id: int, office: OfficeEditSchema):
+def update_office(db: Session, office_id: int, office: OfficeEditSchema, id_user: int):
 
     try:
         office_to_edit = db.query(Office).filter(Office.id == office_id).first()
@@ -62,21 +76,39 @@ def update_office(db: Session, office_id: int, office: OfficeEditSchema):
             office_to_edit.name_in_charge = office.name_in_charge
 
             db.commit()
-            office_edited = get_office_by_id(db, office_id)
-            return office_edited
+
+            # creacion del historial
+            history_params = {
+                "description": "update-office",
+                "office_id": office_to_edit.id,
+                "sucursal_id": office_to_edit.sucursal_id,
+                "current_session_user_id": id_user
+            }
+            create_history(db, HistorySchema(**history_params))
+
+            return office_to_edit
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Oficina no encontrada")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando oficina: {e}")
 
-def delete_office(db: Session, office_id: int):
+def delete_office(db: Session, office_id: int, id_user: int):
     try:
         office_to_delete = db.query(Office).filter(Office.id == office_id).first()
         if office_to_delete:
             office_to_delete.removed = 1
             db.commit()
+
+            # creacion del historial
+            history_params = {
+                "description": "delete-office",
+                "office_id": office_to_delete.id,
+                "sucursal_id": office_to_delete.sucursal_id,
+                "current_session_user_id": id_user
+            }
+            create_history(db, HistorySchema(**history_params))
+
             return office_id
-            #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Oficina con id {office_id} no encontrada")
     except Exception as e:
