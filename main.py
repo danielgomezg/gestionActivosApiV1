@@ -57,17 +57,17 @@ ALGORITHM = config('ALGORITHM')
 
 # Middleware para las rutas
 @app.middleware("http")
-def middleware_validacion_permisos( request: Request, call_next):
+async def middleware_validacion_permisos( request: Request, call_next):
 
     # Verifica si es una solicitud OPTIONS y omitir la lógica de validación
     if request.method == "OPTIONS":
-        return call_next(request)
+        return await call_next(request)
 
     # Path
     path_peticion = request.url.path.split("/")[1]
 
     if (path_peticion == "login" or path_peticion == "token" or path_peticion == "docs" or path_peticion == "openapi.json"):
-        return call_next(request)
+        return await call_next(request)
 
     #token
     authorization_header = request.headers.get("Authorization")
@@ -129,10 +129,11 @@ def middleware_validacion_permisos( request: Request, call_next):
             # print(profile_action)
 
             if (profile_action is None):
-
+                print("No tienes permisos para realizar esta acción 1")
                 return JSONResponse(content={"detail": "No tienes permisos para realizar esta acción"}, status_code=401)
 
         except JWTError:
+            print ("Error al decodificar el token 2")
             raise HTTPException(status_code=401, detail="Error al decodificar el token")
 
 
@@ -140,7 +141,7 @@ def middleware_validacion_permisos( request: Request, call_next):
 
 
     # Llama a la siguiente función en la cadena de middlewares y rutas
-    response = call_next(request)
+    response = await call_next(request)
 
     # Lógica después de la ruta
     print("Peticion realizada con exito")
