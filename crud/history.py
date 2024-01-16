@@ -33,26 +33,27 @@ def get_history_by_company(db: Session, company_id: int, limit: int = 100, offse
             #history['sucursal'] = history['sucursal'].__dict__
             #history['sucursal'].pop('_sa_instance_state', None)
             if history['sucursal'] is not None:
-                history['sucursal_id'] = history['sucursal'].__dict__
-                history['sucursal_id'].pop('_sa_instance_state', None)
+                history['sucursal'] = history['sucursal'].__dict__
+                history['sucursal'].pop('_sa_instance_state', None)
 
             if history['company'] is not None:
-                history['company_id'] = history['company'].__dict__
-                history['company_id'].pop('_sa_instance_state', None)
+                history['company'] = history['company'].__dict__
+                history['company'].pop('_sa_instance_state', None)
 
             if history['article'] is not None:
-                history['article_id'] = history['article'].__dict__
-                history['article_id'].pop('_sa_instance_state', None)
+                history['article'] = history['article'].__dict__
+                history['article'].pop('_sa_instance_state', None)
 
             # Aquí haces el get del usuario y lo asignas a la clave 'current_user'
             current_session_user = history.get('current_session_user_id')
             if current_session_user:
                 current_session_user_result = db.query(Usuario).filter(Usuario.id == current_session_user).options(load_only(Usuario.email, Usuario.company_id, Usuario.firstName, Usuario.lastName, Usuario.profile_id, Usuario.rut, Usuario.secondLastName, Usuario.secondName)).first()
-                history['current_session_user_id'] = current_session_user_result.__dict__ if current_session_user_result else None
+                history['current_session_user'] = current_session_user_result.__dict__ if current_session_user_result else None
 
-            history.pop('sucursal', None)
-            history.pop('company', None)
-            history.pop('article', None)
+            history.pop('sucursal_id', None)
+            history.pop('company_id', None)
+            history.pop('article_id', None)
+            history.pop('current_session_user_id', None)
 
         return result
     except Exception as e:
@@ -74,26 +75,27 @@ def get_history_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, off
         result = [history.__dict__ for history in result]
         for history in result:
             if history['sucursal'] is not None:
-                history['sucursal_id'] = history['sucursal'].__dict__
-                history['sucursal_id'].pop('_sa_instance_state', None)
+                history['sucursal'] = history['sucursal'].__dict__
+                history['sucursal'].pop('_sa_instance_state', None)
 
             if history['company'] is not None:
-                history['company_id'] = history['company'].__dict__
-                history['company_id'].pop('_sa_instance_state', None)
+                history['company'] = history['company'].__dict__
+                history['company'].pop('_sa_instance_state', None)
 
             if history['office'] is not None:
-                history['office_id'] = history['office'].__dict__
-                history['office_id'].pop('_sa_instance_state', None)
+                history['office'] = history['office'].__dict__
+                history['office'].pop('_sa_instance_state', None)
 
             # Get del usuario actual
             current_session_user = history.get('current_session_user_id')
             if current_session_user:
                 current_session_user_result = db.query(Usuario).filter(Usuario.id == current_session_user).options(load_only(Usuario.email, Usuario.company_id, Usuario.firstName, Usuario.lastName, Usuario.profile_id, Usuario.rut, Usuario.secondLastName, Usuario.secondName)).first()
-                history['current_session_user_id'] = current_session_user_result.__dict__ if current_session_user_result else None
+                history['current_session_user'] = current_session_user_result.__dict__ if current_session_user_result else None
 
-            history.pop('sucursal', None)
-            history.pop('company', None)
-            history.pop('office', None)
+            history.pop('sucursal_id', None)
+            history.pop('company_id', None)
+            history.pop('office_id', None)
+            history.pop('current_session_user_id', None)
 
         return result
     except Exception as e:
@@ -116,31 +118,32 @@ def get_history_by_office(db: Session, office_id: int, limit: int = 100, offset:
         result = [history.__dict__ for history in result]
         for history in result:
             if history['office'] is not None:
-                history['office_id'] = history['office'].__dict__
-                history['office_id'].pop('_sa_instance_state', None)
+                history['office'] = history['office'].__dict__
+                history['office'].pop('_sa_instance_state', None)
 
             if history['sucursal'] is not None:
-                history['sucursal_id'] = history['sucursal'].__dict__
-                history['sucursal_id'].pop('_sa_instance_state', None)
+                history['sucursal'] = history['sucursal'].__dict__
+                history['sucursal'].pop('_sa_instance_state', None)
 
             if history['active'] is not None:
-                history['active_id'] = history['active'].__dict__
-                history['active_id'].pop('_sa_instance_state', None)
+                history['active'] = history['active'].__dict__
+                history['active'].pop('_sa_instance_state', None)
 
             if history['article'] is not None:
-                history['article_id'] = history['article'].__dict__
-                history['article_id'].pop('_sa_instance_state', None)
+                history['article'] = history['article'].__dict__
+                history['article'].pop('_sa_instance_state', None)
 
             # Get del usuario actual
             current_session_user = history.get('current_session_user_id')
             if current_session_user:
                 current_session_user_result = db.query(Usuario).filter(Usuario.id == current_session_user).options(load_only(Usuario.email, Usuario.company_id, Usuario.firstName, Usuario.lastName, Usuario.profile_id, Usuario.rut, Usuario.secondLastName, Usuario.secondName)).first()
-                history['current_session_user_id'] = current_session_user_result.__dict__ if current_session_user_result else None
+                history['current_session_user'] = current_session_user_result.__dict__ if current_session_user_result else None
 
-            history.pop('sucursal', None)
-            history.pop('active', None)
-            history.pop('office', None)
-            history.pop('article', None)
+            history.pop('sucursal_id', None)
+            history.pop('active_id', None)
+            history.pop('office_id', None)
+            history.pop('article_id', None)
+            history.pop('current_session_user_id', None)
 
         return result
     except Exception as e:
@@ -163,20 +166,20 @@ def get_history_by_article(db: Session, article_id: int, limit: int = 100, offse
         result = [history.__dict__ for history in result]
         for history in result:
             if history['article'] is not None:
-                history['article_id'] = history['article'].__dict__
-                history['article_id'].pop('_sa_instance_state', None)
+                history['article'] = history['article'].__dict__
+                history['article'].pop('_sa_instance_state', None)
 
             if history['company'] is not None:
-                history['company_id'] = history['company'].__dict__
-                history['company_id'].pop('_sa_instance_state', None)
+                history['company'] = history['company'].__dict__
+                history['company'].pop('_sa_instance_state', None)
 
             if history['active'] is not None:
-                history['active_id'] = history['active'].__dict__
-                history['active_id'].pop('_sa_instance_state', None)
+                history['active'] = history['active'].__dict__
+                history['active'].pop('_sa_instance_state', None)
 
             if history['office'] is not None:
-                history['office_id'] = history['office'].__dict__
-                history['office_id'].pop('_sa_instance_state', None)
+                history['office'] = history['office'].__dict__
+                history['office'].pop('_sa_instance_state', None)
 
             # Get del usuario actual
             current_session_user = history.get('current_session_user_id')
@@ -184,12 +187,13 @@ def get_history_by_article(db: Session, article_id: int, limit: int = 100, offse
                 current_session_user_result = db.query(Usuario).filter(Usuario.id == current_session_user).options(
                     load_only(Usuario.email, Usuario.company_id, Usuario.firstName, Usuario.lastName,
                               Usuario.profile_id, Usuario.rut, Usuario.secondLastName, Usuario.secondName)).first()
-                history['current_session_user_id'] = current_session_user_result.__dict__ if current_session_user_result else None
+                history['current_session_user'] = current_session_user_result.__dict__ if current_session_user_result else None
 
-            history.pop('company', None)
-            history.pop('active', None)
-            history.pop('article', None)
-            history.pop('office', None)
+            history.pop('company_id', None)
+            history.pop('active_id', None)
+            history.pop('article_id', None)
+            history.pop('office_id', None)
+            history.pop('current_session_user_id', None)
 
         return result
     except Exception as e:
@@ -211,16 +215,16 @@ def get_history_by_active(db: Session, active_id: int, limit: int = 100, offset:
         result = [history.__dict__ for history in result]
         for history in result:
             if history['office'] is not None:
-                history['office_id'] = history['office'].__dict__
-                history['office_id'].pop('_sa_instance_state', None)
+                history['office'] = history['office'].__dict__
+                history['office'].pop('_sa_instance_state', None)
 
             if history['article'] is not None:
-                history['article_id'] = history['article'].__dict__
-                history['article_id'].pop('_sa_instance_state', None)
+                history['article'] = history['article'].__dict__
+                history['article'].pop('_sa_instance_state', None)
 
             if history['active'] is not None:
-                history['active_id'] = history['active'].__dict__
-                history['active_id'].pop('_sa_instance_state', None)
+                history['active'] = history['active'].__dict__
+                history['active'].pop('_sa_instance_state', None)
 
             # Get del usuario actual
             current_session_user = history.get('current_session_user_id')
@@ -228,11 +232,12 @@ def get_history_by_active(db: Session, active_id: int, limit: int = 100, offset:
                 current_session_user_result = db.query(Usuario).filter(Usuario.id == current_session_user).options(
                     load_only(Usuario.email, Usuario.company_id, Usuario.firstName, Usuario.lastName,
                               Usuario.profile_id, Usuario.rut, Usuario.secondLastName, Usuario.secondName)).first()
-                history['current_session_user_id'] = current_session_user_result.__dict__ if current_session_user_result else None
+                history['current_session_user'] = current_session_user_result.__dict__ if current_session_user_result else None
 
-            history.pop('article', None)
-            history.pop('active', None)
-            history.pop('office', None)
+            history.pop('article_id', None)
+            history.pop('active_id', None)
+            history.pop('office_id', None)
+            history.pop('current_session_user_id', None)
 
         return result
     except Exception as e:
@@ -253,12 +258,12 @@ def get_history_by_user(db: Session, user_id: int, limit: int = 100, offset: int
         result = [history.__dict__ for history in result]
         for history in result:
             if history['user'] is not None:
-                history['user_id'] = history['user'].__dict__
-                history['user_id'].pop('_sa_instance_state', None)
+                history['user'] = history['user'].__dict__
+                history['user'].pop('_sa_instance_state', None)
 
             if history['company'] is not None:
-                history['company_id'] = history['company'].__dict__
-                history['company_id'].pop('_sa_instance_state', None)
+                history['company'] = history['company'].__dict__
+                history['company'].pop('_sa_instance_state', None)
 
             # Get del usuario actual
             current_session_user = history.get('current_session_user_id')
@@ -266,10 +271,11 @@ def get_history_by_user(db: Session, user_id: int, limit: int = 100, offset: int
                 current_session_user_result = db.query(Usuario).filter(Usuario.id == current_session_user).options(
                     load_only(Usuario.email, Usuario.company_id, Usuario.firstName, Usuario.lastName,
                               Usuario.profile_id, Usuario.rut, Usuario.secondLastName, Usuario.secondName)).first()
-                history['current_session_user_id'] = current_session_user_result.__dict__ if current_session_user_result else None
+                history['current_session_user'] = current_session_user_result.__dict__ if current_session_user_result else None
 
-            history.pop('company', None)
-            history.pop('user', None)
+            history.pop('company_id', None)
+            history.pop('user_id', None)
+            history.pop('current_session_user_id', None)
 
         return result
     except Exception as e:

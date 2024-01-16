@@ -145,6 +145,12 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     if (len(request.bar_code) == 0):
         return Response(code="400", message="codigo de barra no valido", result=[])
 
+    # valida si existe un codigo de barra con el mismo numero dentro de los articulos
+    activos_por_id_sucursales = get_active_by_id_article(db, request.article_id)
+    for active_por_article in activos_por_id_sucursales:
+        if (active_por_article.bar_code == request.bar_code):
+            return Response(code="400", message="Codigo de barra ya ingresado", result=[])
+
     try:
         # Intenta convertir la fecha a un objeto date
         acquisition_date = date_parser.parse(str(request.acquisition_date)).date()
