@@ -122,7 +122,7 @@ async def middleware_validacion_permisos( request: Request, call_next):
 
             elif (re.search(r'generation', path_peticion, flags=re.IGNORECASE)):
                 #nombre_accion = diccionario.get(request.method) + "-" + "historial"
-                return call_next(request)
+                return await call_next(request)
 
             else:
                 return JSONResponse(content={"detail": "La accion a realizar no existe"}, status_code=401)
