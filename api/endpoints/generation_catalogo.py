@@ -11,15 +11,15 @@ from sqlalchemy.orm import Session
 from database import get_db
 from crud.user import get_user_disable_current
 import os
-import textwrap
+from datetime import datetime
 
-from crud.generation_catalogo import draw_multiline_text
+from crud.generation_catalogo import draw_multiline_text, portada_catalogo, generate_barcode
 from crud.article import get_article_by_id_company
 from crud.company import get_company_by_id
 
 router = APIRouter()
 
-@router.get("/generation_catalogo/{id_company}")
+@router.get("/report/article/{id_company}")
 def generation_catalogo(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     try:
         id_user, expiration_time = current_user_info
@@ -31,16 +31,26 @@ def generation_catalogo(id_company: int, db: Session = Depends(get_db), current_
         articles = get_article_by_id_company(db, id_company)
         company = get_company_by_id(db, id_company)
 
+        #Fecha y hora
+        now = datetime.now()
+        date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
 
         # Lógica para generar el catálogo PDF con ReportLab
         ruta_temporal = os.path.abspath("Generations_files/catalogo_reportlab.pdf")
         os.makedirs(os.path.dirname(ruta_temporal), exist_ok=True)
 
-        # Creamos un archivo PDF con ReportLab
+        ruta_barcodes = os.path.abspath("bar_codes")
+        os.makedirs(ruta_barcodes, exist_ok=True)
+
         with open(ruta_temporal, 'wb') as f:
             pdf = canvas.Canvas(f, pagesize=letter)
 
+            #Portada
+            portada_catalogo(pdf,company)
+
             pdf.setTitle(f"Catálogo de Artículos de {company.name}")
+            pdf.showPage()
 
             # Agregamos el título al PDF
             pdf.setFont("Helvetica", 16)
@@ -50,34 +60,29 @@ def generation_catalogo(id_company: int, db: Session = Depends(get_db), current_
             page_number = 1
 
             # Iteramos sobre los artículos y los agregamos al PDF
-            #for article in articles:
             y_line = 90
             for i, article in enumerate(articles, start=1):
                 y_position -= y_line
                 y_line = 0
 
                 pdf.setFont("Helvetica", 12)
-                #pdf.drawString(50, y_position, f"Nombre: {article.name}")
-                # Verificar longitud del texto de la descripción
-                #if len(article.name) > 40:
-                 #   pdf.drawString(50, y_position, f"Nombre: ")
-                  #  lines = textwrap.wrap(article.name, width=50)
-                   # for line in lines:
-                    #    pdf.drawString(60, y_position, line)
-                     #   y_position -= 20
-                #else:
-                 #   pdf.drawString(50, y_position, f"Nombre: {article.name}")
 
                 draw_lines = draw_multiline_text(pdf, 50, y_position, f"Nombre: {article.name}")
                 y_line += (20 * draw_lines)
-                pdf.drawString(50, y_position - y_line, f"Fecha de Creación: {article.creation_date}")
-                y_line += 20
-                pdf.drawString(50, y_position - y_line, f"Activos: {article.count_actives}")
-                y_line += 20
-                #pdf.drawString(50, y_position - 60, f"Descripción: {article.description}")
-                draw_lines = draw_multiline_text(pdf, 50, y_position - y_line, f"Descripción: {article.description}")
+
+                draw_lines = draw_multiline_text(pdf, 50, (y_position - y_line), f"Código: {article.id}")
+                # Generar y agregar el código de barras
+                ruta_imagen = os.path.join(ruta_barcodes, f"barcode_{article.id}")
+                ruta_imagen_png = ruta_imagen + ".png"
+                generate_barcode(str(article.id), ruta_imagen)
+                pdf.drawImage(ruta_imagen_png, x=120, y=(y_position - (y_line + 15)), width=40, height=40, preserveAspectRatio=True)
+                y_line += (20 * draw_lines)
+
+                draw_lines = draw_multiline_text(pdf, 50, (y_position - y_line), f"Descripción: {article.description}")
+                y_line += (20 * draw_lines)
+
+                draw_lines = draw_multiline_text(pdf, 50, y_position - y_line, f"Fecha de Creación: {article.creation_date}")
                 y_line += (15 * draw_lines)
-                # Agregar más información según sea necesario
 
                 # Intentamos cargar la imagen desde una ruta específica
                 image_path = f"files/images_article/{article.photo}"
@@ -91,18 +96,27 @@ def generation_catalogo(id_company: int, db: Session = Depends(get_db), current_
                 pdf.line(50, y_position - y_line, 550, y_position - y_line)
                 y_line += 15
 
-                print(y_position - y_line)
+                #elimina el codigo de barra generado
+                os.remove(ruta_imagen_png)
+
                 # Verificamos si hay espacio suficiente en la página actual
                 if y_position - y_line <= 100 and i < len(articles):
                     pdf.setFont("Helvetica", 8)
+                    #numero pagina
                     pdf.drawRightString(550, 30, f"Página {page_number}")
-                    pdf.showPage()  # siguiente página
-                    y_position = 800  # Reiniciamos la posición vertical
+
+                    #Fexha y hora
+                    pdf.drawString(50, 30, f"{date_time}")
+
+                    pdf.showPage()
+                    # siguiente página
+                    y_position = 800
                     page_number += 1
 
 
             pdf.setFont("Helvetica", 8)
             pdf.drawRightString(550, 30, f"Página {page_number}")
+            pdf.drawString(50, 30, f"{date_time}")
 
             pdf.save()
 
