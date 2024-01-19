@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from models.active import Active
 from fastapi import HTTPException, status, UploadFile
@@ -7,6 +7,8 @@ import uuid
 import shutil
 from urllib.parse import urlparse
 from pathlib import Path
+from models.office import Office
+from models.sucursal import Sucursal
 
 #historial
 from schemas.historySchema import HistorySchema
@@ -32,6 +34,24 @@ def get_active_by_id_article(db: Session, article_id: int, limit: int = 100, off
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
+def get_active_by_office(db: Session, office_id: int, limit: int = 100, offset: int = 0):
+    try:
+        result = db.query(Active).filter(Active.office_id == office_id, Active.removed == 0).options(joinedload(Active.office).joinedload((Office.sucursal))).offset(offset).limit(limit).all()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
+def get_active_by_sucursal(db: Session, sucursal_id: int):
+    try:
+        result = db.query(Active).\
+            join(Office).join(Sucursal).\
+            filter(Sucursal.id == sucursal_id, Active.removed == 0).\
+            options(joinedload(Active.office).joinedload(Office.sucursal)).all()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
 
 def get_file_url(file: UploadFile, upload_folder: Path) -> str:
     try:

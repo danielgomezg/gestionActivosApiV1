@@ -4,7 +4,7 @@ from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.company import create_company, get_company_by_id, get_company_all, count_company, get_company_all_id_name, delete_company, update_company, search_company
+from crud.company import create_company, get_company_by_id, get_company_all, count_company, get_company_all_id_name, delete_company, update_company, search_company, get_company_by_office
 from schemas.companySchema import CompanySchema,CompanySchemaIdName, CompanyEditSchema
 from schemas.schemaGenerico import ResponseGet, Response
 import re
@@ -73,6 +73,18 @@ def get_company(id: int, db: Session = Depends(get_db), current_user_info: Tuple
     if result is None:
         raise HTTPException(status_code=404, detail="Compania no encontrada")
     return result
+
+@router.get("/company/sucursal/office/{office_id}")
+def get_company_offices(office_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    id_user, expiration_time = current_user_info
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="token-exp", result=[])
+
+    result = get_company_by_office(db, office_id)
+    if not result:
+        return ResponseGet(code= "200", result = [], limit= limit, offset = offset, count = 0).model_dump()
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
 
 @router.post('/company')
 def create(request: CompanySchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):

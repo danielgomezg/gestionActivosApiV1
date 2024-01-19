@@ -3,7 +3,7 @@ from database import engine
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.active import get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url
+from crud.active import get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal, get_active_by_office
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from schemas.schemaGenerico import Response, ResponseGet
 from crud.office import get_office_by_id
@@ -54,6 +54,28 @@ def get_active_por_article(id_article: int, db: Session = Depends(get_db), curre
     result = get_active_by_id_article(db, id_article,limit, offset)
     if not result:
         return ResponseGet(code= "200", result = [], limit= limit, offset = offset, count = 0).model_dump()
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
+
+@router.get("/active/office/{id_office}")
+def get_active_por_office(id_office: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    id_user, expiration_time = current_user_info
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="token-exp", result=[])
+
+    result = get_active_by_office(db, id_office,limit, offset)
+    if not result:
+        return ResponseGet(code= "200", result = [], limit= limit, offset = offset, count = 0).model_dump()
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
+
+@router.get("/active/sucursal/{sucursal_id}")
+def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    id_user, expiration_time = current_user_info
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="token-exp", result=[])
+
+    result = get_active_by_sucursal(db, sucursal_id)
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
 
 @router.post("/file_active")

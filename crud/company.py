@@ -1,8 +1,9 @@
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, join
 from schemas.companySchema import CompanySchema, CompanyEditSchema
 from sqlalchemy import desc, func, and_
 from models.company import Company
 from models.sucursal import Sucursal
+from models.office import Office
 from fastapi import HTTPException, status
 #historial
 from schemas.historySchema import HistorySchema
@@ -54,6 +55,27 @@ def get_company_by_id(db: Session, company_id: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania {e}")
 
+
+def get_company_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offset: int = 0):
+    try:
+        result = (db.query(Company).
+                  join(Sucursal, Company.id == Sucursal.company_id).
+                  filter(Sucursal.id == sucursal_id, Company.removed == 0).
+                  offset(offset).limit(limit).all())
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
+def get_company_by_office(db: Session, office_id: int, limit: int = 100, offset: int = 0):
+    try:
+        result = (db.query(Company).
+                  join(Sucursal, Company.id == Sucursal.company_id).
+                  join(Office, Sucursal.id == Office.sucursal_id).
+                  filter(Office.id == office_id, Company.removed == 0).
+                  offset(offset).limit(limit).all())
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
 def create_company(db: Session, company: CompanySchema, id_user: int):
     try:
