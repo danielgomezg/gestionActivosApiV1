@@ -2,9 +2,11 @@ from fastapi import Depends, File, HTTPException
 from fastapi.responses import FileResponse
 from fastapi import APIRouter
 from typing import Tuple
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, landscape
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
+from reportlab.platypus import Table, TableStyle
+from reportlab.lib import colors
 #from jinja2 import Template
 from schemas.schemaGenerico import Response
 from sqlalchemy.orm import Session
@@ -155,11 +157,12 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
         #os.makedirs(ruta_barcodes, exist_ok=True)
 
         with open(ruta_temporal, 'wb') as f:
-            pdf = canvas.Canvas(f, pagesize=letter)
+            pdf = canvas.Canvas(f, pagesize=landscape(letter))
 
             pdf.setTitle(f"Catálogo de Activos de {company.name}")
 
             # Dibujar un rectángulo
+            pdf.setLineWidth(1.5)
             pdf.rect(50, 675, 500, 100)
 
             # Agregamos el título al PDF
@@ -180,36 +183,33 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
             except Exception as e:
                 print(f"No se pudo cargar la imagen para la portada: {e}")
 
-            y_position = 720
+            # Crear y configurar la tabla
+            table_data = [["Código de barra","Modelo", "Serie", "Fecha de adquisición", "Num. de registro","Estado", "Encargado", "Código del articulo", "Oficina"]]
+
+            y_position = 700
             page_number = 1
 
             # Iteramos sobre los artículos y los agregamos al PDF
             y_line = 90
             for i, active in enumerate(actives, start=1):
-                y_position -= y_line
-                y_line = 0
-
-                pdf.setFont("Helvetica", 12)
-
-                #draw_lines = draw_multiline_text(pdf, 50, y_position, f"Nombre: {article.name}")
-                #y_line += (20 * draw_lines)
+                pass
 
 
+            table_style = TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+            ])
 
-                # Verificamos si hay espacio suficiente en la página actual
-                if y_position - y_line <= 100 and i < len(actives):
-                    pdf.setFont("Helvetica", 8)
-                    #numero pagina
-                    pdf.drawRightString(550, 30, f"Página {page_number}")
+            table = Table(table_data)
+            table.setStyle(table_style)
 
-                    #Fexha y hora
-                    pdf.drawString(50, 30, f"{date_time}")
-
-                    pdf.showPage()
-                    # siguiente página
-                    y_position = 800
-                    page_number += 1
-
+            # Posicionar la tabla en el PDF
+            table.wrapOn(pdf, 0, 0)
+            table.drawOn(pdf, 50, 325)
 
             pdf.setFont("Helvetica", 8)
             pdf.drawRightString(550, 30, f"Página {page_number}")

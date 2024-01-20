@@ -10,6 +10,8 @@ from pathlib import Path
 from models.office import Office
 from models.sucursal import Sucursal
 
+from typing import List
+
 #historial
 from schemas.historySchema import HistorySchema
 from crud.history import create_history
@@ -34,6 +36,23 @@ def get_active_by_id_article(db: Session, article_id: int, limit: int = 100, off
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
+def get_active_by_offices(db: Session, office_ids: List[int], limit: int = 100, offset: int = 0):
+    try:
+        result = (
+            db.query(Active)
+            .filter(Active.office_id.in_(office_ids), Active.removed == 0)
+            .options(joinedload(Active.office).joinedload((Office.sucursal)))
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Error al obtener activos {e}",
+        )
 
 def get_active_by_office(db: Session, office_id: int, limit: int = 100, offset: int = 0):
     try:

@@ -1,9 +1,9 @@
 from models import active
 from database import engine
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.active import get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal, get_active_by_office
+from crud.active import get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal, get_active_by_office, get_active_by_offices
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from schemas.schemaGenerico import Response, ResponseGet
 from crud.office import get_office_by_id
@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from dateutil import parser as date_parser
 
 from crud.user import  get_user_disable_current, get_user_by_id
-from typing import Tuple
+from typing import Tuple, List
 
 router = APIRouter()
 active.Base.metadata.create_all(bind=engine)
@@ -67,6 +67,21 @@ def get_active_por_office(id_office: int, db: Session = Depends(get_db), current
     if not result:
         return ResponseGet(code= "200", result = [], limit= limit, offset = offset, count = 0).model_dump()
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
+
+
+@router.get("/active/offices/{id_offices}")
+def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    id_user, expiration_time = current_user_info
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="token-exp", result=[])
+
+    id_offices_list = id_offices.split(",")
+    id_offices_int = [int(id_office) for id_office in id_offices_list]
+    result = get_active_by_offices(db, id_offices_int, limit, offset)
+    if not result:
+        return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
+    return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=len(result)).model_dump()
 
 @router.get("/active/sucursal/{sucursal_id}")
 def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
