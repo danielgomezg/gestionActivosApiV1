@@ -15,10 +15,12 @@ from crud.user import get_user_disable_current
 import os
 from datetime import datetime
 
-from crud.generation_catalogo import draw_multiline_text, portada_catalogo, generate_barcode
+from crud.generation_catalogo import draw_multiline_text, portada_catalogo, generate_barcode, draw_table
 from crud.article import get_article_by_id_company
 from crud.company import get_company_by_id, get_company_by_office, get_company_by_sucursal
 from crud.active import get_active_by_office, get_active_by_sucursal
+
+import copy
 
 router = APIRouter()
 
@@ -143,6 +145,9 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
         result = get_company_by_sucursal(db, id_sucursal)
         company = result[0]
 
+        while len(actives) < 40:
+            actives.extend(copy.deepcopy(actives))
+
         #print(actives[0].office.sucursal.description)
         #Fecha y hora
         now = datetime.now()
@@ -153,67 +158,118 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
         ruta_temporal = os.path.abspath("Generations_files/catalogo_reportlab.pdf")
         os.makedirs(os.path.dirname(ruta_temporal), exist_ok=True)
 
-        #ruta_barcodes = os.path.abspath("bar_codes")
-        #os.makedirs(ruta_barcodes, exist_ok=True)
+        custom_page_size = (816, 1056)
 
-        with open(ruta_temporal, 'wb') as f:
-            pdf = canvas.Canvas(f, pagesize=landscape(letter))
+        with (open(ruta_temporal, 'wb') as f):
+            pdf = canvas.Canvas(f, pagesize=custom_page_size)
+
+            width, height = pdf._pagesize
+            print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
 
             pdf.setTitle(f"Catálogo de Activos de {company.name}")
 
             # Dibujar un rectángulo
+            ancho_rect = width - 100
+            alto_rect = 100
+            eje_y = height - (alto_rect + 16)
             pdf.setLineWidth(1.5)
-            pdf.rect(50, 675, 500, 100)
+            #pdf.rect(50, 500, 692, 100)
+            pdf.rect(50, eje_y, ancho_rect, alto_rect)
 
             # Agregamos el título al PDF
             pdf.setFont("Helvetica-Bold", 16)
-            pdf.drawString(70, 750, f"Catálogo de activos")
+            #pdf.drawString(70, 575, f"Catálogo de activos")
+            pdf.drawString(70, eje_y + 75, f"Catálogo de activos")
 
             pdf.setFont("Helvetica", 12)
-            pdf.drawString(70, 730, f"Cliente")
-            pdf.drawString(145, 730, f"{company.name}")
+            #pdf.drawString(70, 555, f"Cliente")
+            #pdf.drawString(145, 555, f"{company.name}")
+            pdf.drawString(70, eje_y + 55, f"Cliente")
+            pdf.drawString(145, eje_y + 55, f"{company.name}")
 
-            pdf.drawString(70, 710, f"Sucursal")
-            pdf.drawString(145, 710, f"{sucursal.number}    {sucursal.description}")
+            pdf.drawString(70, eje_y + 35, f"Sucursal")
+            pdf.drawString(145, eje_y + 35, f"{sucursal.number}    {sucursal.description}")
+            #pdf.drawString(70, 710, f"Sucursal")
+            #pdf.drawString(145, 710, f"{sucursal.number}    {sucursal.description}")
 
             image_path = "images-sca/sca-2.jpeg"
             try:
                 image = ImageReader(image_path)
-                pdf.drawImage(image, x=440, y=710, width=80, height=80, preserveAspectRatio=True)
+                #pdf.drawImage(image, x=582, y=490, width=140, height=140, preserveAspectRatio=True)
+                pdf.drawImage(image, x=606, y=eje_y - 10, width=140, height=140, preserveAspectRatio=True)
             except Exception as e:
                 print(f"No se pudo cargar la imagen para la portada: {e}")
 
             # Crear y configurar la tabla
-            table_data = [["Código de barra","Modelo", "Serie", "Fecha de adquisición", "Num. de registro","Estado", "Encargado", "Código del articulo", "Oficina"]]
+            table_data = [["Cod. de barra","Modelo", "Serie", "Fecha adquisición", "Num. de registro","Estado", "Nombre encargado", "Rut encargado", "Cod. articulo", "Oficina"]]
 
-            y_position = 700
+            #y_position = 700
             page_number = 1
-
+            cant_items = 0
             # Iteramos sobre los artículos y los agregamos al PDF
-            y_line = 90
+            #y_line = 90
+            eje_y_table = eje_y + 20
             for i, active in enumerate(actives, start=1):
-                pass
+                if (active.state == "new"):
+                    state_active = "nuevo"
+                elif(active.state == "damage"):
+                    state_active = "dañado"
+                else:
+                    state_active = active.state
+
+                if ((eje_y_table - (20 * len(table_data))) < 120 and i < len(actives)):
+                    if (page_number == 1):
+                        draw_table(pdf, table_data, eje_y_table, i)
+                    else:
+                        draw_table(pdf, table_data, eje_y, i - cant_items)
+                    cant_items = i
+                    pdf.setFont("Helvetica", 8)
+                    pdf.drawRightString(755, 30, f"Página {page_number}")
+                    pdf.drawString(25, 30, f"{date_time}")
+                    pdf.showPage()
+                    table_data = [table_data[0]]
+                    page_number += 1
+                    eje_y_table = height - 100
+
+                table_data.append([
+                    active.bar_code,
+                    active.model,
+                    active.serie,
+                    str(active.acquisition_date),
+                    active.accounting_record_number,
+                    state_active,
+                    active.name_in_charge_active,
+                    active.rut_in_charge_active,
+                    active.article_id,
+                    str(active.office.floor) + " - " + active.office.description
+                ])
 
 
-            table_style = TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
-            ])
-
-            table = Table(table_data)
-            table.setStyle(table_style)
+            print(i)
+            draw_table(pdf, table_data, eje_y_table, i - cant_items)
+            #table_style = TableStyle([
+                #('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                #('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+             #   ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+              #  ('FONTNAME', (0, 0), (-1, 0), 'Helvetica'),
+              #  ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+             #   ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                #('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+             #   ('FONTSIZE', (0, 0), (-1, 0), 11),
+             #   ('FONTSIZE', (0, 1), (-1, -1), 9),
+             #   ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.black),
+           #
+            #table = Table(table_data)
+            #table.setStyle(table_style)
 
             # Posicionar la tabla en el PDF
-            table.wrapOn(pdf, 0, 0)
-            table.drawOn(pdf, 50, 325)
+            #eje_y_table = eje_y - 60
+            #table.wrapOn(pdf, 0, 0)
+            #table.drawOn(pdf, 30, eje_y_table - (i*20))
 
             pdf.setFont("Helvetica", 8)
-            pdf.drawRightString(550, 30, f"Página {page_number}")
-            pdf.drawString(50, 30, f"{date_time}")
+            pdf.drawRightString(755, 30, f"Página {page_number}")
+            pdf.drawString(25, 30, f"{date_time}")
 
             pdf.save()
 

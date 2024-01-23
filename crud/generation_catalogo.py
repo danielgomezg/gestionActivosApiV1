@@ -2,6 +2,8 @@ import textwrap
 from reportlab.lib.utils import ImageReader
 from barcode import Code128
 from barcode.writer import ImageWriter
+from reportlab.platypus import Table, TableStyle
+from reportlab.lib import colors
 
 def draw_multiline_text(pdf, x, y_position, text):
     pdf.setFont("Helvetica", 12)
@@ -36,5 +38,29 @@ def portada_catalogo(pdf, company):
 def generate_barcode(value, filename):
     code = Code128(value, writer=ImageWriter())
     code.save(filename, options={'write_text': False, 'module_height': 8.0, 'module_width': 0.5})
+
+def draw_table(pdf, table_data, eje_y_table, i):
+    table_style = TableStyle([
+        # ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        # ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        # ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.black),
+    ])
+
+    table = Table(table_data)
+    table.setStyle(table_style)
+
+    #y = start_y - (len(data) * 20)  # Ajusta según el número de filas
+    table.wrapOn(pdf, 0, 0)
+    table.drawOn(pdf, 30, eje_y_table - (i * 20))
+    #print(table_data[0])
+
+    #return i
 
 
