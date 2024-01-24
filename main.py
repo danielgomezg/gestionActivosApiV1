@@ -58,17 +58,17 @@ ALGORITHM = config('ALGORITHM')
 
 # Middleware para las rutas
 @app.middleware("http")
-async def middleware_validacion_permisos( request: Request, call_next):
+def middleware_validacion_permisos( request: Request, call_next):
 
     # Verifica si es una solicitud OPTIONS y omitir la lógica de validación
     if request.method == "OPTIONS":
-        return await call_next(request)
+        return call_next(request)
 
     # Path
     path_peticion = request.url.path.split("/")[1]
 
     if (path_peticion == "login" or path_peticion == "token" or path_peticion == "docs" or path_peticion == "openapi.json"):
-        return await call_next(request)
+        return call_next(request)
 
     #token
     authorization_header = request.headers.get("Authorization")
@@ -122,7 +122,7 @@ async def middleware_validacion_permisos( request: Request, call_next):
 
             elif (re.search(r'report', path_peticion, flags=re.IGNORECASE)):
                 #nombre_accion = diccionario.get(request.method) + "-" + "historial"
-                return await call_next(request)
+                return call_next(request)
 
             else:
                 return JSONResponse(content={"detail": "La accion a realizar no existe"}, status_code=401)
@@ -146,7 +146,7 @@ async def middleware_validacion_permisos( request: Request, call_next):
 
 
     # Llama a la siguiente función en la cadena de middlewares y rutas
-    response = await call_next(request)
+    response = call_next(request)
 
     # Lógica después de la ruta
     print("Peticion realizada con exito")

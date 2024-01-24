@@ -33,4 +33,4 @@ class ActiveEditSchema(BaseModel):
     state: str
     #creation_date: datetime
     office_id: int
-    #article_id: int
+    article_id: int

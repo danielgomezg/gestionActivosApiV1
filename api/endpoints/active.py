@@ -185,7 +185,7 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     # valida si existe un codigo de barra con el mismo numero dentro de los articulos
     activos_por_id_sucursales = get_active_by_id_article(db, request.article_id)
     for active_por_article in activos_por_id_sucursales:
-        if (active_por_article.bar_code == request.bar_code):
+        if (active_por_article.bar_code == request.bar_code and id is not active_por_article.id):
             return Response(code="400", message="Codigo de barra ya ingresado", result=[])
 
     try:
