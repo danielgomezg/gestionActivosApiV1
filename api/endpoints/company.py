@@ -61,7 +61,7 @@ def search(search: str, db: Session = Depends(get_db), current_user_info: Tuple[
     result = search_company(db, search)
     return Response(code= "200", message = "Empresas encontradas", result = result).model_dump()
 
-@router.get("/company/{id}", response_model=CompanySchema)
+@router.get("/company/{id}")
 def get_company(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
