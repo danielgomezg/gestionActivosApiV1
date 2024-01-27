@@ -31,7 +31,7 @@ def get_active_all(db: Session, limit: int = 100, offset: int = 0):
 
 def get_active_by_id_article(db: Session, article_id: int, limit: int = 100, offset: int = 0):
     try:
-        result = db.query(Active).filter(Active.article_id == article_id, Active.removed == 0).group_by(Active.id).order_by(desc(Active.id)).offset(offset).limit(limit).all()
+        result = db.query(Active).filter(Active.article_id == article_id, Active.removed == 0).options(joinedload(Active.article)).offset(offset).limit(limit).all()
         #print(result)
         return result
     except Exception as e:
