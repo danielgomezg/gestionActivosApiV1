@@ -84,14 +84,15 @@ def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), curr
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=len(result)).model_dump()
 
 @router.get("/active/sucursal/{sucursal_id}")
-def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_actives_por_sucursal(sucursal_id: int, limit: int = 25, offset: int = 0, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
+    count = get_active_by_sucursal(db, sucursal_id, limit, offset, count = 1)
 
-    result = get_active_by_sucursal(db, sucursal_id)
-    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
+    result = get_active_by_sucursal(db, sucursal_id, limit, offset)
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.post("/file_active")
 def upload_file(file: UploadFile = File(...), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):

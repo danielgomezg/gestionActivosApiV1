@@ -61,12 +61,20 @@ def get_active_by_office(db: Session, office_id: int, limit: int = 100, offset: 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
-def get_active_by_sucursal(db: Session, sucursal_id: int):
+def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int, offset: int, count: int = 0):
     try:
-        result = db.query(Active).\
-            join(Office).join(Sucursal).\
-            filter(Sucursal.id == sucursal_id, Active.removed == 0).\
-            options(joinedload(Active.office).joinedload(Office.sucursal)).all()
+
+        if count == 1:
+            result = db.query(Active).join(Office).join(Sucursal).filter(Sucursal.id == sucursal_id, Active.removed == 0).count()
+            return result
+        
+        result = (db.query(Active)
+                    .join(Office).join(Sucursal)
+                    .filter(Sucursal.id == sucursal_id, Active.removed == 0)
+                    .options(joinedload(Active.office).joinedload(Office.sucursal))
+                    .offset(offset)
+                    .limit(limit)
+                    .all())
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
