@@ -113,7 +113,7 @@ def update_user(db: Session, user_id: int, user: UserEditSchema, id_user: int):
             }
             create_history(db, HistorySchema(**history_params))
 
-            return result
+            return user_to_edit
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
     except Exception as e:
