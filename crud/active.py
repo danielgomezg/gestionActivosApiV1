@@ -78,7 +78,7 @@ def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offs
             filter(Sucursal.id == sucursal_id, Active.removed == 0).\
             options(joinedload(Active.office).joinedload(Office.sucursal)).offset(offset).limit(limit).all())
 
-        count = db.query(Active).filter(Sucursal.id == sucursal_id, Active.removed == 0).count()
+        count = db.query(Active).join(Office).join(Sucursal).filter(Sucursal.id == sucursal_id, Active.removed == 0).count()
         return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
