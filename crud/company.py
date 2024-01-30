@@ -73,7 +73,8 @@ def get_company_by_office(db: Session, office_id: int, limit: int = 100, offset:
                   join(Office, Sucursal.id == Office.sucursal_id).
                   filter(Office.id == office_id, Company.removed == 0).
                   offset(offset).limit(limit).all())
-        return result
+        count = db.query(Company).join(Sucursal, Company.id == Sucursal.company_id).join(Office, Sucursal.id == Office.sucursal_id).filter(Office.id == office_id, Company.removed == 0).count()
+        return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
@@ -154,9 +155,10 @@ def delete_company(db: Session, company_id: int, id_user: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando compañia: {e}")
 
-def search_company(db: Session, search: str):
+def search_company(db: Session, search: str,  limit: int = 100, offset: int = 0):
     try:
-        companies = (db.query(Company).filter(func.lower(Company.name).like(f"%{search}%")).all())
-        return companies
+        companies = (db.query(Company).filter(func.lower(Company.name).like(f"%{search}%")).offset(offset).limit(limit).all())
+        count = db.query(Company).filter(func.lower(Company.name).like(f"%{search}%")).count()
+        return companies, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania por nombre {e}")

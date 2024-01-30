@@ -42,7 +42,10 @@ def get_user_email(db: Session, email: str):
 def get_user_all(db: Session, limit: int = 100, offset: int = 0):
     #return db.query(Usuario).offset(offset).limit(limit).all()
     try:
-        return (db.query(Usuario).options(joinedload(Usuario.profile)).filter(Usuario.removed == 0).offset(offset).limit(limit).all())
+        result = (db.query(Usuario).options(joinedload(Usuario.profile)).filter(Usuario.removed == 0).offset(offset).limit(limit).all())
+
+        count = db.query(Usuario).filter(Usuario.removed == 0).count()
+        return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener usuarios {e}")
 

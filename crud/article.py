@@ -30,7 +30,9 @@ def get_article_all(db: Session, limit: int = 100, offset: int = 0):
             article[0].count_actives = article[1]
             result.append(article[0])
 
-        return result
+        count = db.query(Article).filter(Article.removed == 0).count()
+
+        return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener articulo {e}")
 
@@ -57,7 +59,9 @@ def get_article_by_id_company(db: Session, company_id: int, limit: int = 100, of
         for article in articles:
             article[0].count_actives = article[1]
             result.append(article[0])
-        return result
+
+        count = db.query(Article).filter(Article.company_id == company_id, Article.removed == 0).count()
+        return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener Articulo {e}")
 

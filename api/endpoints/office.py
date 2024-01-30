@@ -25,8 +25,11 @@ def get_offices(db: Session = Depends(get_db), current_user_info: Tuple[str, str
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    result = get_offices_all(db, limit, offset)
-    return result
+    result, count = get_offices_all(db, limit, offset)
+    #return result
+    if not result:
+        return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/officePorSucursal/{id_sucursal}")
 def get_office_por_sucursal(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
@@ -36,10 +39,10 @@ def get_office_por_sucursal(id_sucursal: int, db: Session = Depends(get_db), cur
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    result = get_office_by_id_sucursal(db, id_sucursal,limit, offset)
+    result, count = get_office_by_id_sucursal(db, id_sucursal,limit, offset)
     if not result:
         return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
-    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/office/{id}")
 def get_office(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):

@@ -52,10 +52,10 @@ def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), cur
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    result = get_sucursal_by_id_company(db, id_company,limit, offset)
+    result, count = get_sucursal_by_id_company(db, id_company,limit, offset)
     if not result:
         return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
-    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.post('/sucursal')
 def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):

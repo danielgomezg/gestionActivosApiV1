@@ -23,6 +23,12 @@ def get_active_by_id(db: Session, active_id: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar activo {e}")
 
+def count_active(db: Session):
+    try:
+        return db.query(Active).filter(Active.removed == 0).count()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al contar los activos {e}")
+
 def get_active_all(db: Session, limit: int = 100, offset: int = 0):
     try:
         return db.query(Active).filter(Active.removed == 0).offset(offset).limit(limit).all()
@@ -32,8 +38,9 @@ def get_active_all(db: Session, limit: int = 100, offset: int = 0):
 def get_active_by_id_article(db: Session, article_id: int, limit: int = 100, offset: int = 0):
     try:
         result = db.query(Active).filter(Active.article_id == article_id, Active.removed == 0).options(joinedload(Active.article)).offset(offset).limit(limit).all()
+        count = db.query(Active).filter(Active.article_id == article_id, Active.removed == 0).count()
         #print(result)
-        return result
+        return result , count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
@@ -47,7 +54,9 @@ def get_active_by_offices(db: Session, office_ids: List[int], limit: int = 100, 
             .limit(limit)
             .all()
         )
-        return result
+
+        count = db.query(Active).filter(Active.office_id.in_(office_ids), Active.removed == 0).count()
+        return result, count
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -57,17 +66,20 @@ def get_active_by_offices(db: Session, office_ids: List[int], limit: int = 100, 
 def get_active_by_office(db: Session, office_id: int, limit: int = 100, offset: int = 0):
     try:
         result = db.query(Active).filter(Active.office_id == office_id, Active.removed == 0).options(joinedload(Active.office).joinedload((Office.sucursal))).offset(offset).limit(limit).all()
-        return result
+        count = db.query(Active).filter(Active.office_id == office_id, Active.removed == 0).count()
+        return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
-def get_active_by_sucursal(db: Session, sucursal_id: int):
+def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offset: int = 0):
     try:
-        result = db.query(Active).\
+        result = (db.query(Active).\
             join(Office).join(Sucursal).\
             filter(Sucursal.id == sucursal_id, Active.removed == 0).\
-            options(joinedload(Active.office).joinedload(Office.sucursal)).all()
-        return result
+            options(joinedload(Active.office).joinedload(Office.sucursal)).offset(offset).limit(limit).all())
+
+        count = db.query(Active).filter(Sucursal.id == sucursal_id, Active.removed == 0).count()
+        return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 

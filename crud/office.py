@@ -11,7 +11,9 @@ from crud.history import create_history
 def get_offices_all(db: Session, limit: int = 100, offset: int = 0):
     #return db.query(Office).offset(skip).limit(limit).all()
     try:
-        return (db.query(Office).options(joinedload(Office.sucursal)).filter(Office.removed == 0).offset(offset).limit(limit).all())
+        result = (db.query(Office).options(joinedload(Office.sucursal)).filter(Office.removed == 0).offset(offset).limit(limit).all())
+        count = db.query(Office).filter(Office.removed == 0).count()
+        return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener oficinas {e}")
 
@@ -27,8 +29,9 @@ def get_office_by_id_sucursal(db: Session, sucursal_id: int, limit: int = 100, o
             .limit(limit)
             .all()
         )
-        result = []
-        return offices
+        #result = []
+        count = db.query(Office).filter(Office.sucursal_id == sucursal_id, Office.removed == 0).count()
+        return offices, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al oficina por sucursal {e}")
 

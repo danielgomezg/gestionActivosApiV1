@@ -37,8 +37,11 @@ def get_articles(db: Session = Depends(get_db), current_user_info: Tuple[str, st
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    result = get_article_all(db, limit, offset)
-    return result
+    result, count = get_article_all(db, limit, offset)
+    #return result
+    if not result:
+        return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get('/articlesPorCompany/{id_company}')
 def get_articles_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
@@ -48,11 +51,10 @@ def get_articles_por_company(id_company: int, db: Session = Depends(get_db), cur
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    result = get_article_by_id_company(db, id_company, limit, offset)
+    result, count = get_article_by_id_company(db, id_company, limit, offset)
     if not result:
         return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
-    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = len(result)).model_dump()
-    #return result
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 
 @router.post("/image_article")

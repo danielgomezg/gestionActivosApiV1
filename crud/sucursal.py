@@ -59,8 +59,9 @@ def get_sucursal_by_id_company(db: Session, company_id: int, limit: int = 100, o
         for sucursal in sucursales:
             sucursal[0].count_offices = sucursal[1]
             result.append(sucursal[0])
-        print(result)
-        return result
+
+        count = db.query(Sucursal).filter(Sucursal.company_id == company_id, Sucursal.removed == 0).count()
+        return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener sucursal sucursal {e}")
     #return db.query(Sucursal).filter(Sucursal.company_id == company_id).all()
