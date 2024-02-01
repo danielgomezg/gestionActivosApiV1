@@ -52,15 +52,11 @@ def draw_table(pdf, table_data, eje_y_table, i):
         ('FONTSIZE', (0, 1), (-1, -1), 9),
         ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.black),
     ])
-
     table = Table(table_data)
     table.setStyle(table_style)
 
-    #y = start_y - (len(data) * 20)  # Ajusta según el número de filas
     table.wrapOn(pdf, 0, 0)
-    table.drawOn(pdf, 30, eje_y_table - (i * 20))
-    #print(table_data[0])
+    table.drawOn(pdf, 30, eje_y_table - table._height)
 
-    #return i
 
 

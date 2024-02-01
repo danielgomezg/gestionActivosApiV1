@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
+from sqlalchemy import func
 from models.active import Active
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy import desc
@@ -35,6 +36,15 @@ def get_active_all(db: Session, limit: int = 100, offset: int = 0):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activo {e}")
 
+def get_active_by_article_and_barcode(db: Session, article_id: int, bar_code: str, limit: int = 100, offset: int = 0):
+    try:
+        result = db.query(Active).filter(Active.article_id == article_id, Active.bar_code == bar_code, Active.removed == 0).options(joinedload(Active.article)).offset(offset).limit(limit).all()
+        #count = db.query(Active).filter(Active.article_id == article_id, Active.removed == 0).count()
+        #print(result)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
 def get_active_by_id_article(db: Session, article_id: int, limit: int = 100, offset: int = 0):
     try:
         result = db.query(Active).filter(Active.article_id == article_id, Active.removed == 0).options(joinedload(Active.article)).offset(offset).limit(limit).all()
@@ -49,7 +59,8 @@ def get_active_by_offices(db: Session, office_ids: List[int], limit: int = 100, 
         result = (
             db.query(Active)
             .filter(Active.office_id.in_(office_ids), Active.removed == 0)
-            .options(joinedload(Active.office).joinedload((Office.sucursal)))
+            .options(joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company))
+            .order_by(Active.office_id)
             .offset(offset)
             .limit(limit)
             .all()
@@ -76,12 +87,57 @@ def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offs
         result = (db.query(Active).\
             join(Office).join(Sucursal).\
             filter(Sucursal.id == sucursal_id, Active.removed == 0).\
-            options(joinedload(Active.office).joinedload(Office.sucursal)).offset(offset).limit(limit).all())
+            options(joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)).order_by(Active.office_id).offset(offset).limit(limit).all())
 
         count = db.query(Active).join(Office).join(Sucursal).filter(Sucursal.id == sucursal_id, Active.removed == 0).count()
         return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
+def search_active_sucursal(db: Session, search: str, sucursal_id: int, limit: int = 100, offset: int = 0):
+    try:
+        query = db.query(Active). \
+            join(Office).join(Sucursal). \
+            filter(
+            Sucursal.id == sucursal_id,
+            Active.removed == 0,
+            (
+                    func.lower(Active.bar_code).like(f"%{search}%") |
+                    func.lower(Active.model).like(f"%{search}%") |
+                    func.lower(Active.serie).like(f"%{search}%") |
+                    func.lower(Active.accounting_record_number).like(f"%{search}%")
+            )
+            ).options(joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)
+            ).order_by(Active.office_id).offset(offset).limit(limit)
+
+        actives = query.all()
+        count = query.count()
+
+        return actives, count
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania por nombre {e}")
+
+def search_active_offices(db: Session, search: str, office_ids: List[int], limit: int = 100, offset: int = 0):
+    try:
+        query = db.query(Active). \
+            filter(
+            Active.office_id.in_(office_ids),
+            Active.removed == 0,
+            (
+                    func.lower(Active.bar_code).like(f"%{search}%") |
+                    func.lower(Active.model).like(f"%{search}%") |
+                    func.lower(Active.serie).like(f"%{search}%") |
+                    func.lower(Active.accounting_record_number).like(f"%{search}%")
+            )
+            ).options(joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)
+            ).order_by(Active.office_id).offset(offset).limit(limit)
+
+        actives = query.all()
+        count = query.count()
+
+        return actives, count
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania por nombre {e}")
 
 
 def get_file_url(file: UploadFile, upload_folder: Path) -> str:
