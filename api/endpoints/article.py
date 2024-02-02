@@ -43,7 +43,7 @@ def get_articles(db: Session = Depends(get_db), current_user_info: Tuple[str, st
         return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
-@router.get('/articlesPorCompany/{id_company}')
+@router.get('/articles/company/{id_company}')
 def get_articles_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
