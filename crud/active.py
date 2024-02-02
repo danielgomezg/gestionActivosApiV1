@@ -115,7 +115,7 @@ def search_active_sucursal(db: Session, search: str, sucursal_id: int, limit: in
 
         return actives, count
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania por nombre {e}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar activos por sucursal por nombre {e}")
 
 def search_active_offices(db: Session, search: str, office_ids: List[int], limit: int = 100, offset: int = 0):
     try:
@@ -137,7 +137,7 @@ def search_active_offices(db: Session, search: str, office_ids: List[int], limit
 
         return actives, count
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania por nombre {e}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar activos por oficinas por nombre {e}")
 
 
 def get_file_url(file: UploadFile, upload_folder: Path) -> str:

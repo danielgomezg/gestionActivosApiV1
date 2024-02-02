@@ -4,7 +4,7 @@ from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.sucursal import create_sucursal, get_sucursal_by_id, get_sucursal_all, count_sucursal, get_sucursal_by_id_company, delete_sucursal, update_sucursal
+from crud.sucursal import create_sucursal, get_sucursal_by_id, get_sucursal_all, count_sucursal, get_sucursal_by_id_company, delete_sucursal, update_sucursal, search_sucursal_by_company
 from schemas.sucursalSchema import SucursalSchema, SucursalEditSchema
 from schemas.schemaGenerico import ResponseGet, Response
 from typing import Tuple
@@ -56,6 +56,17 @@ def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), cur
     if not result:
         return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
+
+@router.get('/sucursal/search/{company_id}')
+def search_sucursal(company_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    id_user, expiration_time = current_user_info
+    if expiration_time is None:
+        return Response(code="401", message="token-exp", result=[])
+
+    result, count = search_sucursal_by_company(db, search, company_id, limit, offset)
+    if not result:
+        return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
+    return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.post('/sucursal')
 def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):

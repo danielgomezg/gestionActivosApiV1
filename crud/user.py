@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session, joinedload, load_only
 from schemas.userSchema import UserSchema, UserEditSchema
 from models.user import Usuario
 from fastapi import HTTPException, status, Depends
+from sqlalchemy import func
 
 #login
 from datetime import datetime, timedelta
@@ -48,6 +49,20 @@ def get_user_all(db: Session, limit: int = 100, offset: int = 0):
         return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener usuarios {e}")
+
+def search_users_by_mail_rut(db: Session, search: str, limit: int = 100, offset: int = 0):
+    try:
+        query =  (db.query(Usuario).
+                 filter(Usuario.removed == 0, (func.lower(Usuario.rut).like(f"%{search}%") |
+                        func.lower(Usuario.email).like(f"%{search}%") )).
+                  offset(offset).limit(limit))
+
+        users = query.all()
+        count = query.count()
+
+        return users, count
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar Usuarios {e}")
 
 def create_user(db: Session, user: UserSchema, id_user: int):
     try:
