@@ -20,8 +20,7 @@ class History(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(String, nullable=True)
     creation_date = Column(Date, default=date.today, nullable=False)
-    current_session_user_id = Column(Integer, nullable=False)
-    #removed = Column(Integer, default=0, nullable=False)
+    #current_session_user_id = Column(Integer, nullable=False)
 
     #Relacion con empresa
     company_id = Column(Integer, ForeignKey('compania.id'), nullable=True)
@@ -47,8 +46,3 @@ class History(Base):
     user_id = Column(Integer, ForeignKey('usuario.id'), nullable=True)
     user = relationship('Usuario', back_populates='historial')
 
-
-
-
-    #def __repr__(self):
-       # return f"Usuario(nombre={self.email}, correo={self.firstName})"

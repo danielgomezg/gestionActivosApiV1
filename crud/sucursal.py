@@ -114,7 +114,8 @@ def create_sucursal(db: Session, sucursal: SucursalSchema, id_user: int):
             "description": "create-sucursal",
             "sucursal_id": _sucursal.id,
             "company_id": _sucursal.company_id,
-            "current_session_user_id": id_user
+            "user_id": id_user
+            #"current_session_user_id": id_user
         }
         create_history(db, HistorySchema(**history_params))
 
@@ -139,7 +140,8 @@ def update_sucursal(db: Session, sucursal_id: int, sucursal: SucursalEditSchema,
                 "description": "update-sucursal",
                 "sucursal_id": sucursal_id,
                 "company_id": sucursal_to_edit.company_id,
-                "current_session_user_id": id_user
+                "user_id": id_user
+                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 
@@ -161,7 +163,8 @@ def delete_sucursal(db: Session, sucursal_id: int, id_user: int):
                 "description": "delete-sucursal",
                 "sucursal_id": sucursal_id,
                 "company_id": sucursal_to_delete.company_id,
-                "current_session_user_id": id_user
+                "user_id": id_user
+                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 

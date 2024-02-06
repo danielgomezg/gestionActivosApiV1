@@ -98,7 +98,8 @@ def create_company(db: Session, company: CompanySchema, id_user: int):
         history_params = {
             "description": "create-company",
             "company_id": _company.id,
-            "current_session_user_id": id_user
+            "user_id": id_user
+            #"current_session_user_id": id_user
         }
         create_history(db, HistorySchema(**history_params))
 
@@ -123,7 +124,8 @@ def update_company(db: Session, company_id: int, company: CompanyEditSchema, id_
             history_params = {
                 "description": "update-company",
                 "company_id": company_to_edit.id,
-                "current_session_user_id": id_user
+                "user_id": id_user
+                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 
@@ -145,7 +147,8 @@ def delete_company(db: Session, company_id: int, id_user: int):
             history_params = {
                 "description": "delete-company",
                 "company_id": company_id,
-                "current_session_user_id": id_user
+                "user_id": id_user
+                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 

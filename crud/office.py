@@ -61,7 +61,8 @@ def create_office(db: Session, office: OfficeSchema, id_user: int):
             "description": "create-office",
             "office_id": _office.id,
             "sucursal_id": _office.sucursal_id,
-            "current_session_user_id": id_user
+            "user_id": id_user
+            #"current_session_user_id": id_user
         }
         create_history(db, HistorySchema(**history_params))
 
@@ -85,7 +86,8 @@ def update_office(db: Session, office_id: int, office: OfficeEditSchema, id_user
                 "description": "update-office",
                 "office_id": office_to_edit.id,
                 "sucursal_id": office_to_edit.sucursal_id,
-                "current_session_user_id": id_user
+                "user_id": id_user
+                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 
@@ -107,7 +109,8 @@ def delete_office(db: Session, office_id: int, id_user: int):
                 "description": "delete-office",
                 "office_id": office_to_delete.id,
                 "sucursal_id": office_to_delete.sucursal_id,
-                "current_session_user_id": id_user
+                "user_id": id_user
+                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 

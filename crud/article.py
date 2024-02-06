@@ -43,6 +43,13 @@ def get_article_by_id(db: Session, article_id: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar articulo {e}")
 
+def get_article_by_company_and_code(db: Session, company_id: int, code: str, limit: int = 100, offset: int = 0):
+    try:
+        result = db.query(Article).filter(Article.company_id == company_id, Article.code == code, Article.removed == 0).offset(offset).limit(limit).first()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
 def get_article_by_id_company(db: Session, company_id: int, limit: int = 100, offset: int = 0):
     try:
         articles = (
@@ -65,6 +72,34 @@ def get_article_by_id_company(db: Session, company_id: int, limit: int = 100, of
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener Articulo {e}")
 
+def search_article_by_company(db: Session, search: str, company_id: int , limit: int = 100, offset: int = 0):
+    try:
+        query = db.query(Article, func.count(Active.id).label("count_actives")). \
+            outerjoin(Active, and_(Active.article_id == Article.id, Active.removed == 0)). \
+            filter(
+            Article.company_id == company_id,
+            Article.removed == 0,
+            (
+                    func.lower(Article.name).like(f"%{search}%") |
+                    func.lower(Article.code).like(f"%{search}%")
+            )
+            ).group_by(Article.id).order_by(desc(Article.id)).offset(offset).limit(limit)
+
+        Artilces = query.all()
+        result = []
+        for article in Artilces:
+            article[0].count_offices = article[1]
+            result.append(article[0])
+
+        count = db.query(Article).filter(Article.company_id == company_id, Article.removed == 0, (
+                func.lower(Article.name).like(f"%{search}%") |
+                func.lower(Article.code).like(f"%{search}%")
+            )).count()
+
+        return result, count
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar sucursales {e}")
+
 def get_image_url(file: UploadFile, upload_folder: Path) -> str:
     try:
         unique_id = uuid.uuid4().hex
@@ -85,6 +120,7 @@ def create_article(db: Session, article: ArticleSchema, id_user: int):
         _article = Article(
             name=article.name,
             description=article.description,
+            code=article.code,
             photo=article.photo,
             company_id=article.company_id
         )
@@ -98,7 +134,8 @@ def create_article(db: Session, article: ArticleSchema, id_user: int):
             "description": "create-article",
             "article_id": _article.id,
             "company_id": _article.company_id,
-            "current_session_user_id": id_user
+            "user_id": id_user
+            #"current_session_user_id": id_user
         }
         create_history(db, HistorySchema(**history_params))
 
@@ -114,6 +151,7 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema, id_
         if article_to_edit:
             article_to_edit.name = article.name
             article_to_edit.description = article.description
+            article_to_edit.code = article.code
 
             # Se elimina la foto reemplazada del servidor
             # Si la foto es nula, no se hace nada
@@ -137,12 +175,12 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema, id_
                 "description": "update-article",
                 "article_id": article_to_edit.id,
                 "company_id": article_to_edit.company_id,
-                "current_session_user_id": id_user
+                "user_id": id_user
+                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 
             return article_to_edit
-            #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Articulo no encontrado")
         
@@ -162,7 +200,8 @@ def delete_article(db: Session, article_id: int, id_user: int):
                 "description": "delete-article",
                 "article_id": article_to_delete.id,
                 "company_id": article_to_delete.company_id,
-                "current_session_user_id": id_user
+                "user_id": id_user
+                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 
@@ -172,16 +211,3 @@ def delete_article(db: Session, article_id: int, id_user: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando article: {e}")
 
-
-
-# def delete_article(db: Session, article_id: int):
-#     article_to_delete = db.query(Article).filter(Article.id == article_id).first()
-#     try:
-#         if article_to_delete:
-#             db.delete(article_to_delete)
-#             db.commit()
-#             return article_id
-#         else:
-#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Articulo con id {article_id} no encontrado")
-#     except Exception as e:
-#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando article: {e}")

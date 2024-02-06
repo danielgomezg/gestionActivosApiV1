@@ -8,10 +8,12 @@ T = TypeVar('T')
 class ArticleSchema(BaseModel):
     name: str = None
     description: Optional[str] = None
+    code : str
     photo: str
     company_id: int = None
 
 class ArticleEditSchema(BaseModel):
     name: str = None
     description: Optional[str] = None
+    code: str
     photo: Optional[str] = None

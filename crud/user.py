@@ -83,13 +83,13 @@ def create_user(db: Session, user: UserSchema, id_user: int):
         db.refresh(_user)
 
         # creacion del historial
-        history_params = {
-            "description": "create-user",
-            "user_id": _user.id,
-            "company_id": _user.company_id,
-            "current_session_user_id": id_user
-        }
-        create_history(db, HistorySchema(**history_params))
+        # history_params = {
+        #     "description": "create-user",
+        #     "user_id": _user.id,
+        #     "company_id": _user.company_id,
+        #     "current_session_user_id": id_user
+        # }
+        # create_history(db, HistorySchema(**history_params))
 
         return _user
     except Exception as e:
@@ -123,13 +123,13 @@ def update_user(db: Session, user_id: int, user: UserEditSchema, id_user: int):
             result = { k: v for k,v in user_to_edit.__dict__.items() if(k != "_password") }
 
             # creacion del historial
-            history_params = {
-                "description": "update-user",
-                "user_id": user_to_edit.id,
-                "company_id": user_to_edit.company_id,
-                "current_session_user_id": id_user
-            }
-            create_history(db, HistorySchema(**history_params))
+            # history_params = {
+            #     "description": "update-user",
+            #     "user_id": user_to_edit.id,
+            #     "company_id": user_to_edit.company_id,
+            #     "current_session_user_id": id_user
+            # }
+            # create_history(db, HistorySchema(**history_params))
 
             return user_to_edit
         else:
@@ -146,13 +146,13 @@ def delete_user(db: Session, user_id: int, id_user: int):
             db.commit()
 
             # creacion del historial
-            history_params = {
-                "description": "delete-user",
-                "user_id": user_to_delete.id,
-                "company_id": user_to_delete.company_id,
-                "current_session_user_id": id_user
-            }
-            create_history(db, HistorySchema(**history_params))
+            # history_params = {
+            #     "description": "delete-user",
+            #     "user_id": user_to_delete.id,
+            #     "company_id": user_to_delete.company_id,
+            #     "current_session_user_id": id_user
+            # }
+            # create_history(db, HistorySchema(**history_params))
 
             return user_id
         else:

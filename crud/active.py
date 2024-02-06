@@ -38,7 +38,7 @@ def get_active_all(db: Session, limit: int = 100, offset: int = 0):
 
 def get_active_by_article_and_barcode(db: Session, article_id: int, bar_code: str, limit: int = 100, offset: int = 0):
     try:
-        result = db.query(Active).filter(Active.article_id == article_id, Active.bar_code == bar_code, Active.removed == 0).options(joinedload(Active.article)).offset(offset).limit(limit).all()
+        result = db.query(Active).filter(Active.article_id == article_id, Active.bar_code == bar_code, Active.removed == 0).options(joinedload(Active.article)).offset(offset).limit(limit).first()
         #count = db.query(Active).filter(Active.article_id == article_id, Active.removed == 0).count()
         #print(result)
         return result
@@ -169,7 +169,6 @@ def create_active(db: Session, active: ActiveSchema, id_user: int):
             state=active.state,
             office_id=active.office_id,
             article_id=active.article_id
-            #creation_date=article.creation_date,
         )
 
         db.add(_active)
@@ -182,7 +181,8 @@ def create_active(db: Session, active: ActiveSchema, id_user: int):
             "active_id": _active.id,
             "article_id": _active.article_id,
             "office_id": _active.office_id,
-            "current_session_user_id": id_user
+            "user_id": id_user
+            #"current_session_user_id": id_user
         }
         create_history(db, HistorySchema(**history_params))
 
@@ -208,11 +208,6 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, id_user
 
             #Se elimina el archivo reemplazado del servidor
             if len(active_to_edit.accounting_document) > 0:
-            #if active_to_edit.accounting_document is not None and (active.accounting_document is None or active.accounting_document is not None):
-                # Extraer el nombre del archivo de la URL
-                # parsed_url = urlparse(active_to_edit.accounting_document)
-                # filename = Path(parsed_url.path).name
-                # Construir la ruta al archivo existente
                 existing_file_path = Path("files") / "files_active" / active_to_edit.accounting_document
 
                 # Verificar si el archivo existe y eliminarlo
@@ -229,7 +224,8 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, id_user
                 "active_id": active_to_edit.id,
                 "article_id": active_to_edit.article_id,
                 "office_id": active_to_edit.office_id,
-                "current_session_user_id": id_user
+                "user_id": id_user
+                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 
@@ -252,7 +248,8 @@ def delete_active(db: Session, active_id: int, id_user: int):
                 "active_id": active_to_delete.id,
                 "article_id": active_to_delete.article_id,
                 "office_id": active_to_delete.office_id,
-                "current_session_user_id": id_user
+                "user_id": id_user
+                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 

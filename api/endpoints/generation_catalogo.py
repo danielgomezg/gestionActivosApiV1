@@ -32,7 +32,7 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
             return Response(code="401", message="token-exp", result=[])
 
         # Lógica para obtener los detalles de los artículos (por ejemplo, desde una base de datos)
-        articles = get_article_by_id_company(db, id_company)
+        articles, count = get_article_by_id_company(db, id_company)
         company = get_company_by_id(db, id_company)
 
         #Fecha y hora
@@ -74,12 +74,15 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
                 draw_lines = draw_multiline_text(pdf, 50, y_position, f"Nombre: {article.name}")
                 y_line += (20 * draw_lines)
 
-                draw_lines = draw_multiline_text(pdf, 50, (y_position - y_line), f"Código: {article.id}")
+                draw_lines = draw_multiline_text(pdf, 50, (y_position - y_line), f"Código: {article.code}")
+                x_space = len(f"Código: {article.code}")
+                x_position_end = 50 + pdf.stringWidth(f"Código: {article.code}", "Helvetica", 12)
+                print(x_position_end)
                 # Generar y agregar el código de barras
-                ruta_imagen = os.path.join(ruta_barcodes, f"barcode_{article.id}")
+                ruta_imagen = os.path.join(ruta_barcodes, f"barcode_{article.code}")
                 ruta_imagen_png = ruta_imagen + ".png"
-                generate_barcode(str(article.id), ruta_imagen)
-                pdf.drawImage(ruta_imagen_png, x=120, y=(y_position - (y_line + 15)), width=40, height=40, preserveAspectRatio=True)
+                generate_barcode(str(article.code), ruta_imagen)
+                pdf.drawImage(ruta_imagen_png, x=x_position_end + 10, y=(y_position - (y_line + 15)), width=40, height=40, preserveAspectRatio=True)
                 y_line += (20 * draw_lines)
 
                 draw_lines = draw_multiline_text(pdf, 50, (y_position - y_line), f"Descripción: {article.description}")
@@ -466,13 +469,6 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
         worksheet.merge_range('D4:E4', f'{sucursal.number}   {sucursal.description}', formato_sub_titulo)
         worksheet.write('C5', 'Fecha', formato_sub_titulo)
         worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
-
-
-
-
-        #worksheet.merge_range('D3:E3', f'Cliente        {company.name}                     ',formato_sub_titulo)
-        #worksheet.merge_range('D4:E4', f'Sucursal        {sucursal.number}   {sucursal.description}  ', formato_sub_titulo)
-        #worksheet.merge_range('D5:E5', f'Fecha      {date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
         datos = ["Cod. de barra", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Rut encargado", "Cod. articulo", "Oficina"]

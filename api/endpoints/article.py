@@ -5,7 +5,8 @@ from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from pathlib import Path
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.article import get_article_all, get_article_by_id, create_article, update_article, delete_article, get_article_by_id_company, get_image_url
+from crud.article import (get_article_all, get_article_by_id, create_article, update_article, delete_article,
+                          get_article_by_id_company, get_image_url, search_article_by_company, get_article_by_company_and_code)
 from schemas.articleSchema import ArticleSchema, ArticleEditSchema
 from schemas.schemaGenerico import Response, ResponseGet
 from crud.company import get_company_by_id
@@ -57,6 +58,17 @@ def get_articles_por_company(id_company: int, db: Session = Depends(get_db), cur
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 
+@router.get('/articles/search/{company_id}')
+def search_articles(company_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    id_user, expiration_time = current_user_info
+    if expiration_time is None:
+        return Response(code="401", message="token-exp", result=[])
+
+    result, count = search_article_by_company(db, search, company_id, limit, offset)
+    if not result:
+        return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
+    return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
+
 @router.post("/image_article")
 def upload_image(file: UploadFile = File(...), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     try:
@@ -84,8 +96,12 @@ def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_i
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre no valido", result = [])
 
-    #if(len(request.photo) == 0):
-        #return  Response(code = "400", message = "Foto no valida", result = [])
+    if(len(request.code) == 0):
+        return  Response(code = "400", message = "Codigo no valido", result = [])
+
+    article_code = get_article_by_company_and_code(db, request.company_id, request.code)
+    if article_code:
+        return Response(code="400", message="Codigo de articulo ya ingresado", result=[])
 
     id_company = get_company_by_id(db, request.company_id)
     if(not id_company):
@@ -105,8 +121,12 @@ def update(request: ArticleEditSchema, id: int, db: Session = Depends(get_db), c
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre no valido", result = [])
 
-    #if(len(request.photo) == 0):
-        #return  Response(code = "400", message = "Foto no valida", result = [])
+    if(len(request.code) == 0):
+        return  Response(code = "400", message = "Codigo no valido", result = [])
+
+    article_code = get_article_by_company_and_code(db, request.company_id, request.code)
+    if article_code and id is not article_code.id:
+        return Response(code="400", message="Codigo de barra ya ingresado", result=[])
 
     _article = update_article(db, id,  request, id_user)
     return Response(code = "201", message = f"Articulo {_article.name} editado", result = _article).model_dump()
