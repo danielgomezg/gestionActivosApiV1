@@ -96,6 +96,21 @@ def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offs
 
 def search_active_sucursal(db: Session, search: str, sucursal_id: int, limit: int = 100, offset: int = 0):
     try:
+        count = db.query(Active). \
+            join(Office).join(Sucursal). \
+            filter(
+            Sucursal.id == sucursal_id,
+            Active.removed == 0,
+            (
+                    func.lower(Active.bar_code).like(f"%{search}%") |
+                    func.lower(Active.model).like(f"%{search}%") |
+                    func.lower(Active.serie).like(f"%{search}%") |
+                    func.lower(Active.accounting_record_number).like(f"%{search}%")
+            )).count()
+        
+        if count == 0:
+            return [], count
+
         query = db.query(Active). \
             join(Office).join(Sucursal). \
             filter(
@@ -111,14 +126,30 @@ def search_active_sucursal(db: Session, search: str, sucursal_id: int, limit: in
             ).order_by(Active.office_id).offset(offset).limit(limit)
 
         actives = query.all()
-        count = query.count()
 
         return actives, count
+    
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar activos por sucursal por nombre {e}")
 
 def search_active_offices(db: Session, search: str, office_ids: List[int], limit: int = 100, offset: int = 0):
     try:
+
+        count = db.query(Active). \
+            filter(
+            Active.office_id.in_(office_ids),
+            Active.removed == 0,
+            (
+                    func.lower(Active.bar_code).like(f"%{search}%") |
+                    func.lower(Active.model).like(f"%{search}%") |
+                    func.lower(Active.serie).like(f"%{search}%") |
+                    func.lower(Active.accounting_record_number).like(f"%{search}%")
+            )
+            ).count()
+    
+        if count == 0:
+            return [], count
+
         query = db.query(Active). \
             filter(
             Active.office_id.in_(office_ids),
@@ -133,9 +164,9 @@ def search_active_offices(db: Session, search: str, office_ids: List[int], limit
             ).order_by(Active.office_id).offset(offset).limit(limit)
 
         actives = query.all()
-        count = query.count()
 
         return actives, count
+    
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar activos por oficinas por nombre {e}")
 
