@@ -74,8 +74,8 @@ def get_company(id: int, db: Session = Depends(get_db), current_user_info: Tuple
 
     result = get_company_by_id(db, id)
     if result is None:
-        raise HTTPException(status_code=404, detail="Compania no encontrada")
-    return result
+        return Response(code= "404", result = [], message="Not found").model_dump()
+    return Response(code= "200", result = result, message="Company found").model_dump()
 
 @router.get("/company/sucursal/office/{office_id}")
 def get_company_offices(office_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):

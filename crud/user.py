@@ -52,10 +52,16 @@ def get_user_all(db: Session, limit: int = 100, offset: int = 0):
 
 def search_users_by_mail_rut(db: Session, search: str, limit: int = 100, offset: int = 0):
     try:
-        query =  (db.query(Usuario).
-                 filter(Usuario.removed == 0, (func.lower(Usuario.rut).like(f"%{search}%") |
-                        func.lower(Usuario.email).like(f"%{search}%") )).
-                  offset(offset).limit(limit))
+        query =  (
+                    db.query(Usuario).
+                        filter(Usuario.removed == 0, 
+                            (
+                                func.lower(Usuario.rut).like(f"%{search}%") |
+                                func.lower(Usuario.email).like(f"%{search}%") |
+                                func.lower(Usuario.firstName).like(f"%{search}%") |
+                                func.lower(Usuario.lastName).like(f"%{search}%") 
+                            ))
+                            .offset(offset).limit(limit))
 
         users = query.all()
         count = query.count()
