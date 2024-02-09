@@ -22,6 +22,7 @@ def get_history_by_company(db: Session, company_id: int, limit: int = 100, offse
                   .options(joinedload(History.company))
                   .options(joinedload(History.article))
                   .options(joinedload(History.user))
+                  .options(joinedload(History.office))
                   .filter(History.company_id == company_id)
                   .order_by(desc(History.id))
                   .offset(offset)
@@ -44,6 +45,10 @@ def get_history_by_company(db: Session, company_id: int, limit: int = 100, offse
                 history['article'] = history['article'].__dict__
                 history['article'].pop('_sa_instance_state', None)
 
+            if history['office'] is not None:
+                history['office'] = history['office'].__dict__
+                history['office'].pop('_sa_instance_state', None)
+
             if history['user'] is not None:
                 history['user'] = history['user'].__dict__
                 history['user'].pop('_sa_instance_state', None)
@@ -58,6 +63,7 @@ def get_history_by_company(db: Session, company_id: int, limit: int = 100, offse
             history.pop('company_id', None)
             history.pop('article_id', None)
             history.pop('user_id', None)
+            history.pop('office_id', None)
             #history.pop('current_session_user_id', None)
 
         count = db.query(History).filter(History.company_id == company_id).count()
