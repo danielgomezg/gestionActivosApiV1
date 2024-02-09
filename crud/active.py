@@ -19,7 +19,7 @@ from crud.history import create_history
 
 def get_active_by_id(db: Session, active_id: int):
     try:
-        result = db.query(Active).filter(Active.id == active_id).first()
+        result = db.query(Active).filter(Active.id == active_id).options(joinedload(Active.article)).first()
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar activo {e}")
@@ -206,13 +206,17 @@ def create_active(db: Session, active: ActiveSchema, id_user: int):
         db.commit()
         db.refresh(_active)
 
+        active_content = get_active_by_id(db, _active.id)
+        id_company = active_content.article.company_id
+
         # creacion del historial
         history_params = {
             "description": "create-active",
             "active_id": _active.id,
             "article_id": _active.article_id,
             "office_id": _active.office_id,
-            "user_id": id_user
+            "user_id": id_user,
+            "company_id": id_company
             #"current_session_user_id": id_user
         }
         create_history(db, HistorySchema(**history_params))
@@ -249,13 +253,17 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, id_user
 
             db.commit()
 
+            active_content = get_active_by_id(db, active_to_edit.id)
+            id_company = active_content.article.company_id
+
             # creacion del historial
             history_params = {
                 "description": "update-active",
                 "active_id": active_to_edit.id,
                 "article_id": active_to_edit.article_id,
                 "office_id": active_to_edit.office_id,
-                "user_id": id_user
+                "user_id": id_user,
+                "company_id": id_company
                 #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
@@ -273,13 +281,17 @@ def delete_active(db: Session, active_id: int, id_user: int):
             active_to_delete.removed = 1
             db.commit()
 
+            active_content = get_active_by_id(db, active_to_delete.id)
+            id_company = active_content.article.company_id
+
             # creacion del historial
             history_params = {
                 "description": "delete-active",
                 "active_id": active_to_delete.id,
                 "article_id": active_to_delete.article_id,
                 "office_id": active_to_delete.office_id,
-                "user_id": id_user
+                "user_id": id_user,
+                "company_id": id_company
                 #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))

@@ -88,7 +88,7 @@ def search_article_by_company(db: Session, search: str, company_id: int , limit:
         Artilces = query.all()
         result = []
         for article in Artilces:
-            article[0].count_offices = article[1]
+            article[0].count_actives = article[1]
             result.append(article[0])
 
         count = db.query(Article).filter(Article.company_id == company_id, Article.removed == 0, (

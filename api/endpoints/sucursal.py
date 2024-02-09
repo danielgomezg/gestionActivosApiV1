@@ -95,7 +95,7 @@ def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_
         return Response(code="400", message="Numero no valido", result=[])
 
     #valida si existe una sucursal con el mismo numero dentro de la empresa
-    sucursales_por_id_company = get_sucursal_by_id_company(db, request.company_id)
+    sucursales_por_id_company, count = get_sucursal_by_id_company(db, request.company_id)
     for sucursal_id_company in sucursales_por_id_company:
         if(sucursal_id_company.number == request.number):
             return Response(code="400", message="Número de sucursal ya ingresado", result=[])

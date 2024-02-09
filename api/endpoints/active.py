@@ -20,7 +20,7 @@ from typing import Tuple, List
 router = APIRouter()
 active.Base.metadata.create_all(bind=engine)
 
-@router.get("/active/{id}", response_model=ActiveSchema)
+@router.get("/active/{id}")
 def get_active(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
@@ -30,8 +30,8 @@ def get_active(id: int, db: Session = Depends(get_db), current_user_info: Tuple[
 
     result = get_active_by_id(db, id)
     if result is None:
-        raise HTTPException(status_code=404, detail="Activo no encontrado")
-    return result
+        return Response(code= "404", result = [], message="Not found").model_dump()
+    return Response(code= "200", result = result, message="Activo no encontrado").model_dump()
 
 @router.get('/actives')
 def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current),limit: int = 25, offset: int = 0):

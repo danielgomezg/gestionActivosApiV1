@@ -38,7 +38,7 @@ def get_office_by_id_sucursal(db: Session, sucursal_id: int, limit: int = 100, o
 
 def get_office_by_id(db: Session, office_id: int):
     try:
-        result = db.query(Office).filter(Office.id == office_id, Office.removed == 0).first()
+        result = db.query(Office).filter(Office.id == office_id, Office.removed == 0).options(joinedload(Office.sucursal)).first()
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar oficina {e}")
@@ -56,12 +56,16 @@ def create_office(db: Session, office: OfficeSchema, id_user: int):
         db.commit()
         db.refresh(_office)
 
+        oficce_content = get_office_by_id(db, _office.id)
+        id_company = oficce_content.sucursal.company_id
+
         # creacion del historial
         history_params = {
             "description": "create-office",
             "office_id": _office.id,
             "sucursal_id": _office.sucursal_id,
-            "user_id": id_user
+            "user_id": id_user,
+            "company_id": id_company
             #"current_session_user_id": id_user
         }
         create_history(db, HistorySchema(**history_params))
@@ -81,12 +85,16 @@ def update_office(db: Session, office_id: int, office: OfficeEditSchema, id_user
 
             db.commit()
 
+            oficce_content = get_office_by_id(db, office_to_edit.id)
+            id_company = oficce_content.sucursal.company_id
+
             # creacion del historial
             history_params = {
                 "description": "update-office",
                 "office_id": office_to_edit.id,
                 "sucursal_id": office_to_edit.sucursal_id,
-                "user_id": id_user
+                "user_id": id_user,
+                "company_id": id_company
                 #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
@@ -104,12 +112,16 @@ def delete_office(db: Session, office_id: int, id_user: int):
             office_to_delete.removed = 1
             db.commit()
 
+            oficce_content = get_office_by_id(db, office_to_delete.id)
+            id_company = oficce_content.sucursal.company_id
+
             # creacion del historial
             history_params = {
                 "description": "delete-office",
                 "office_id": office_to_delete.id,
                 "sucursal_id": office_to_delete.sucursal_id,
-                "user_id": id_user
+                "user_id": id_user,
+                "company_id": id_company
                 #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
