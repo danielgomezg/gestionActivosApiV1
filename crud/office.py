@@ -109,10 +109,12 @@ def delete_office(db: Session, office_id: int, id_user: int):
     try:
         office_to_delete = db.query(Office).filter(Office.id == office_id).first()
         if office_to_delete:
+            oficce_content = get_office_by_id(db, office_to_delete.id)
             office_to_delete.removed = 1
             db.commit()
 
-            oficce_content = get_office_by_id(db, office_to_delete.id)
+            
+            print(oficce_content.sucursal.company_id)
             id_company = oficce_content.sucursal.company_id
 
             # creacion del historial

@@ -126,7 +126,7 @@ def update(request: SucursalEditSchema, id: int, db: Session = Depends(get_db), 
 
     #valida si existe una sucursal con el mismo numero dentro de la empresa
     sucursal_to_edit = get_sucursal_by_id(db, id)
-    sucursales_por_id_company = get_sucursal_by_id_company(db, sucursal_to_edit.company_id)
+    sucursales_por_id_company, c = get_sucursal_by_id_company(db, sucursal_to_edit.company_id)
     for sucursal_id_company in sucursales_por_id_company:
         if(sucursal_id_company.number == request.number and sucursal_id_company.id != id):
             return Response(code="400", message="Número de sucursal ya ingresado", result=[])
