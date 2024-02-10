@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from schemas.sucursalSchema import SucursalSchema, SucursalEditSchema
 from models.sucursal import Sucursal
 from fastapi import HTTPException, status
@@ -92,6 +92,15 @@ def search_sucursal_by_company(db: Session, search: str, company_id: int , limit
         return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar sucursales {e}")
+
+def get_sucursal_by_company_and_number(db: Session, company_id: int, number: str, limit: int = 100, offset: int = 0):
+    try:
+        result = (db.query(Sucursal).filter(Sucursal.company_id == company_id, Sucursal.number == number, Sucursal.removed == 0)
+                  .options(joinedload(Sucursal.company)).first())
+
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener sucursal {e}")
 
 def create_sucursal(db: Session, sucursal: SucursalSchema, id_user: int):
     try:

@@ -17,18 +17,17 @@ from typing import Tuple
 router = APIRouter()
 #article.Base.metadata.create_all(bind=engine)
 
-@router.get("/article/{id}", response_model=ArticleSchema)
+@router.get("/article/{id}")
 def get_article(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
     result = get_article_by_id(db, id)
     if result is None:
-        raise HTTPException(status_code=404, detail="Articulo no encontrado")
-    return result
+        return Response(code="404", result=[], message="Articulo no encontrada").model_dump()
+    return Response(code="200", result=result, message="Articulo encontrado").model_dump()
 
 @router.get('/articles')
 def get_articles(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):

@@ -31,26 +31,23 @@ ALGORITHM = config('ALGORITHM')
 @router.get("/user/{id}")
 def get_user(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
     result = get_user_by_id(db, id)
     if result is None:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        return Response(code="404", result=[], message="Usuario no encontrado").model_dump()
     return Response(code= "200", message="Usuario encontrado", result = result).model_dump()
 
 @router.get('/users')
 def get_users(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     id_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
     result, count = get_user_all(db, limit, offset)
-    #return result
     if not result:
         return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
@@ -69,7 +66,6 @@ def search_users(search: str, db: Session = Depends(get_db), current_user_info: 
 @router.post('/user')
 def create(request: UserSchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -111,7 +107,6 @@ def create(request: UserSchema, db: Session = Depends(get_db), current_user_info
 @router.put('/user/{id}')
 def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -142,13 +137,11 @@ def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), curr
         return Response(code="400", message="id perfil no valido", result=[])
 
     _user = update_user(db, id, request, id_user)
-    #print(_user)
     return Response(code = "201", message = f"Usuario {_user.firstName} editado", result = _user).model_dump()
 
 @router.delete('/user/{id}')
 def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -175,9 +168,6 @@ def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
             "id": _user.id
         }
 
-        #id_perfil = _user.profile_id
-        #print(id_perfil)
-        # access_token = create_access_token(data={"sub": sub_data, "profile": _user.profile_id},expires_delta=access_token_expires)
         access_token = create_access_token(data={"sub": user_id, "profile": _user.profile_id, "user": additional_info},expires_delta=access_token_expires)
 
         expire_seconds = access_token_expires.total_seconds()
@@ -196,9 +186,7 @@ def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
             status_code=201,
         )
     else:
-        #print("user incorrecto")
         return Response(code="401", message="Usuario incorrecto", result=[])
-        #raise HTTPException(status_code=401, detail="Usuario incorrecto")
 
 @router.post('/token')
 def login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -225,15 +213,5 @@ def login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Ses
         expire_seconds = access_token_expires.total_seconds()
 
         return {"access_token": access_token, "token_type": "bearer", "expire_token": expire_seconds}
-        #return Response(code="201", message="Usuario loggeado correctamente", result={"access_token": access_token, "token_type": "bearer", "expire_token":access_token_expires})
-       # return JSONResponse(
-        #    content=Response(
-         #       code="201",
-          #      message="Usuario loggeado correctamente",
-           #     result={"access_token": access_token, "token_type": "bearer", "expire_token": expire_seconds},
-            #).dict(),
-            #status_code=201,
-        #)
     else:
-        #return Response(code="401", message="Usuario incorrecto", result=[])
         raise HTTPException(status_code=401, detail="Usuario incorrecto")

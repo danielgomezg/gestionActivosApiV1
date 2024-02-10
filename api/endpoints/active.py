@@ -154,10 +154,6 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
         return  Response(code = "400", message = "codigo de barra no valido", result = [])
 
     # valida si existe un codigo de barra con el mismo numero dentro de los articulos
-    #activos_por_id_articles = get_active_by_id_article(db, request.article_id)
-    #for active_por_article in activos_por_id_articles:
-        #if (active_por_article.bar_code == request.bar_code):
-            #return Response(code="400", message="Codigo de barra ya ingresado", result=[])
     active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
     if active_barcode:
         return Response(code="400", message="Codigo de barra ya ingresado", result=[])

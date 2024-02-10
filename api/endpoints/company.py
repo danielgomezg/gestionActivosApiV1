@@ -4,7 +4,7 @@ from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.company import create_company, get_company_by_id, get_company_all, count_company, get_company_all_id_name, delete_company, update_company, search_company, get_company_by_office
+from crud.company import create_company, get_company_by_id, get_company_all, count_company, get_company_all_id_name, delete_company, update_company, search_company, get_company_by_office, get_company_by_rut_and_country
 from schemas.companySchema import CompanySchema,CompanySchemaIdName, CompanyEditSchema
 from schemas.schemaGenerico import ResponseGet, Response
 import re
@@ -19,7 +19,6 @@ router = APIRouter()
 @router.get('/companies')
 def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     id_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return  Response(code = "401", message = "token-exp", result = [])
@@ -33,7 +32,6 @@ def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[int, s
 @router.get('/companiesIdName')
 def get_companies_id_name(db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     id_user, expiration_time = current_user_info
-    #print("funcion companiesIdName")
     #Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -48,15 +46,9 @@ def get_companies_id_name(db: Session = Depends(get_db), current_user_info: Tupl
 def search(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     id_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
-    print("funcion search")
-    print(search)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
-
-    # count = count_company(db)
-    # if(count == 0):
-    #     return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=count).model_dump()
     
     result, count = search_company(db, search, limit, offset)
     #return Response(code= "200", message = "Empresas encontradas", result = result).model_dump()
@@ -100,6 +92,9 @@ def create(request: CompanySchema, db: Session = Depends(get_db), current_user_i
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre de la empresa vacio", result = [])
 
+    if (len(request.country) == 0):
+        return Response(code="400", message="Pais no valido", result=[])
+
     #Valida RUT
     if(request.country == "Chile"):
         patron_rut = r'^\d{1,8}-[\dkK]$'
@@ -115,8 +110,10 @@ def create(request: CompanySchema, db: Session = Depends(get_db), current_user_i
         if not re.match(patron_dni, dni):
             return Response(code="400", message="DNI inválido", result=[])
 
-    if (len(request.country) == 0):
-        return Response(code="400", message="Pais no valido", result=[])
+    # valida si existe una compania con el mismo rut y pais
+    company_rut_country = get_company_by_rut_and_country(db, request.rut, request.country)
+    if company_rut_country:
+        return Response(code="400", message="rut de compania ya ingresado", result=[])
 
     if (len(request.contact_name) == 0):
         return Response(code="400", message="Nombre del contacto vacio", result=[])
@@ -134,7 +131,6 @@ def create(request: CompanySchema, db: Session = Depends(get_db), current_user_i
 @router.put('/company/{id}')
 def update(request: CompanyEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -158,8 +154,6 @@ def update(request: CompanyEditSchema, id: int, db: Session = Depends(get_db), c
 @router.delete('/company/{id}')
 def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    #print(additional_info)
-    # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])

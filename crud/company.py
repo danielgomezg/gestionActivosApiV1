@@ -78,6 +78,13 @@ def get_company_by_office(db: Session, office_id: int, limit: int = 100, offset:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
+def get_company_by_rut_and_country(db: Session, rut: str, country: str, limit: int = 100, offset: int = 0):
+    try:
+        result = (db.query(Company).filter(Company.rut == rut, Company.country == country, Company.removed == 0).first())
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener empresa {e}")
+
 def create_company(db: Session, company: CompanySchema, id_user: int):
     try:
         _company = Company(
@@ -134,7 +141,6 @@ def update_company(db: Session, company_id: int, company: CompanyEditSchema, id_
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Compañia no encontrada")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando compañia: {e}")
-
 
 def delete_company(db: Session, company_id: int, id_user: int):
     try:
