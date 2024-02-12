@@ -59,7 +59,7 @@ def get_active_by_offices(db: Session, office_ids: List[int], limit: int = 100, 
         result = (
             db.query(Active)
             .filter(Active.office_id.in_(office_ids), Active.removed == 0)
-            .options(joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company))
+            .options(joinedload(Active.article), joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company))
             .order_by(Active.office_id)
             .offset(offset)
             .limit(limit)
@@ -87,7 +87,7 @@ def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offs
         result = (db.query(Active).\
             join(Office).join(Sucursal).\
             filter(Sucursal.id == sucursal_id, Active.removed == 0).\
-            options(joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)).order_by(Active.office_id).offset(offset).limit(limit).all())
+            options(joinedload(Active.article), joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)).order_by(Active.office_id).offset(offset).limit(limit).all())
 
         count = db.query(Active).join(Office).join(Sucursal).filter(Sucursal.id == sucursal_id, Active.removed == 0).count()
         return result, count

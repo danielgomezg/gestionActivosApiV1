@@ -146,13 +146,6 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
         company = actives[0].office.sucursal.company
         print(sucursal.number)
         print(company.name)
-        #result = get_company_by_sucursal(db, id_sucursal)
-        #company = result[0]
-
-        #while len(actives) < 40:
-            #actives.extend(copy.deepcopy(actives))
-
-        #print(actives[0].office.sucursal.description)
         #Fecha y hora
         now = datetime.now()
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -244,7 +237,7 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
                     state_active,
                     active.name_in_charge_active,
                     active.rut_in_charge_active,
-                    active.article_id,
+                    active.article.code,
                     str(active.office.floor) + " - " + active.office.description
                 ])
 
@@ -388,7 +381,7 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
                     state_active,
                     active.name_in_charge_active,
                     active.rut_in_charge_active,
-                    active.article_id,
+                    active.article.code,
                     str(active.office.floor) + " - " + active.office.description
                 ])
 
@@ -405,6 +398,124 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
         return FileResponse(ruta_temporal, filename=f"catalogo_{company.name}.pdf", media_type="application/pdf")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al generar el catálogo de {company.name}: {e}")
+
+@router.get("/report/excel/active/sucursal/{id_sucursal}")
+def actives_catalog_office_excel(id_sucursal: int, db: Session = Depends(get_db)):
+    try:
+
+        # Lógica para obtener los detalles de los artículos
+        actives, count = get_active_by_sucursal(db, id_sucursal)
+        sucursal = actives[0].office.sucursal
+        company = actives[0].office.sucursal.company
+
+        now = datetime.now()
+        date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Lógica para generar el catálogo Excel
+        excel_filename = f'catalogo_{company.name}.xlsx'
+        excel_path = os.path.join('Generations_files', excel_filename)
+
+        # Crear un libro de trabajo y una hoja de trabajo
+        workbook = xlsxwriter.Workbook(excel_path)
+        worksheet = workbook.add_worksheet()
+
+        # Configurar la ruta de la imagen
+        imagen_path = "images-sca/sca-2.jpeg"
+        factor_x = 0.3
+        factor_y = 0.3
+
+        try:
+            # Insertar la imagen en la hoja de trabajo
+            worksheet.insert_image('G2', imagen_path, {'x_offset': 15, 'y_offset': 10, 'x_scale': factor_x, 'y_scale': factor_y})
+        except Exception as e:
+            print(f"No se pudo cargar la imagen para la portada: {e}")
+
+        #ancho por defecto de las filas
+        worksheet.set_default_row(18)
+
+        # Configurar un formato para el título con la fuente Helvetica
+        formato_titulo = workbook.add_format({
+            'bold': True,
+            'align': 'center',
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
+            'font_size': 18,  # Cambiar el tamaño de la fuente para el título
+        })
+
+        worksheet.set_row(1, 25)
+        # Escribir el título en una celda específica
+        worksheet.merge_range('C2:E2', ' Catálogo de activos ', formato_titulo)
+
+        formato_sub_titulo = workbook.add_format({
+            'align': 'left',
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
+            'font_size': 13,  # Cambiar el tamaño de la fuente para el título
+        })
+
+        worksheet.write('C3', 'Cliente', formato_sub_titulo)
+        worksheet.merge_range('D3:E3', f'{company.name}', formato_sub_titulo)
+        worksheet.write('C4', 'Sucursal', formato_sub_titulo)
+        worksheet.merge_range('D4:E4', f'{sucursal.number}   {sucursal.description}', formato_sub_titulo)
+        worksheet.write('C5', 'Fecha', formato_sub_titulo)
+        worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
+
+        # Datos a escribir en el archivo Excel
+        datos = ["Cod. de barra", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Rut encargado", "Cod. articulo", "Oficina"]
+
+        start_table = 7
+
+        # Configurar un formato para los encabezados
+        formato_encabezado = workbook.add_format({
+            'bold': True,
+            'align': 'center',
+            'valign': 'vcenter',
+            'bg_color': '#D3D3D3',
+            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
+            'font_size': 11,
+            'border': 1
+        })
+
+        # Escribir los encabezados en la primera fila
+        for col, encabezado in enumerate(datos):
+            worksheet.write(start_table, col, encabezado, formato_encabezado)
+
+        # Configurar un formato para los datos
+        formato_datos = workbook.add_format({
+            'align': 'center',
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
+            'font_size': 9  # Cambiar el tamaño de la fuente
+        })
+
+        # Escribir los datos en el resto de las filas
+        width_column = [0] * len(datos)
+        for index, value in enumerate(datos):
+            width_column[index] = len(value)
+
+        # Escribir los datos desde la base de datos en el resto de las filas
+        for row, active in enumerate(actives, start=1):
+            for col, value in enumerate([active.bar_code, active.model, active.serie, str(active.acquisition_date),
+                                         active.accounting_record_number, active.state, active.name_in_charge_active,
+                                         active.rut_in_charge_active, str(active.article.code),
+                                         str(active.office.floor) + " - " + active.office.description]):
+
+                width_column[col] = max(width_column[col], len(value))
+                worksheet.write(row + start_table, col, value, formato_datos)
+
+        # Ajustar automáticamente el ancho de las columnas después de escribir los datos
+        for index, col in enumerate(width_column):
+            worksheet.set_column(index, index, width_column[index] + 3)
+
+        # Cerrar el libro de trabajo (guardará el archivo)
+        workbook.close()
+
+        # Devolver el archivo Excel usando FileResponse
+        return FileResponse(excel_path, filename=excel_filename,
+                            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/report/excel/active/offices/{id_offices}")
 def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)):
@@ -507,7 +618,7 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
         for row, active in enumerate(actives, start=1):
             for col, value in enumerate([active.bar_code, active.model, active.serie, str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active,
-                                         active.rut_in_charge_active, str(active.article_id),
+                                         active.rut_in_charge_active, str(active.article.code),
                                          str(active.office.floor) + " - " + active.office.description]):
 
                 width_column[col] = max(width_column[col], len(value))
