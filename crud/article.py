@@ -50,8 +50,20 @@ def get_article_by_company_and_code(db: Session, company_id: int, code: str, lim
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
-def get_article_by_id_company(db: Session, company_id: int, limit: int = 100, offset: int = 0):
+def count_article_by_company(db: Session, company_id: int):
     try:
+        count = db.query(Article).filter(Article.company_id == company_id, Article.removed == 0).count()
+        return count
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener Articulo {e}")
+
+def get_article_by_id_company(db: Session, company_id: int, limit: int = 100, offset: int = 0, adjust_limit: bool = False):
+    try:
+        if adjust_limit:
+            count_articles = count_article_by_company(db, company_id)
+            if count_articles > limit:
+                limit = count_articles
+
         articles = (
             db.query(Article, func.count(Active.id).label("count_actives"))
             .outerjoin(Active, and_(Active.article_id == Article.id, Active.removed == 0))
