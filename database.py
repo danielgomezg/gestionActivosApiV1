@@ -3,7 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, AsyncEngine
 
-engine = create_engine("postgresql://postgres:admin@localhost:5432/gestion_activos")
+engine = create_engine("postgresql://postgres:gactivos@gbd-c:5432/gestion_activos")
+# engine = create_engine("postgresql://postgres:postgres@localhost:5432/gestion_activos")
 #engine: AsyncEngine = create_async_engine("postgresql://postgres:admin@localhost:5432/gestion_activos", echo=True)
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
