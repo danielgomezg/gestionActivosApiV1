@@ -54,8 +54,23 @@ def get_active_by_id_article(db: Session, article_id: int, limit: int = 100, off
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
-def get_active_by_offices(db: Session, office_ids: List[int], limit: int = 100, offset: int = 0):
+def count_active_by_offices(db: Session, office_ids: List[int]):
     try:
+        count = db.query(Active).filter(Active.office_id.in_(office_ids), Active.removed == 0).count()
+        return count
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Error al obtener activos {e}",
+        )
+
+def get_active_by_offices(db: Session, office_ids: List[int], limit: int = 100, offset: int = 0, adjust_limit: bool = False):
+    try:
+        if adjust_limit:
+            count_articles = count_active_by_offices(db, office_ids)
+            if count_articles > limit:
+                limit = count_articles
+
         result = (
             db.query(Active)
             .filter(Active.office_id.in_(office_ids), Active.removed == 0)
@@ -82,8 +97,20 @@ def get_active_by_office(db: Session, office_id: int, limit: int = 100, offset: 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
-def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offset: int = 0):
+def count_active_by_sucursal(db: Session, sucursal_id: int):
     try:
+        count = db.query(Active).join(Office).join(Sucursal).filter(Sucursal.id == sucursal_id, Active.removed == 0).count()
+        return count
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
+def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offset: int = 0, adjust_limit: bool = False):
+    try:
+        if adjust_limit:
+            count_articles = count_active_by_sucursal(db, sucursal_id)
+            if count_articles > limit:
+                limit = count_articles
+
         result = (db.query(Active).\
             join(Office).join(Sucursal).\
             filter(Sucursal.id == sucursal_id, Active.removed == 0).\

@@ -15,7 +15,7 @@ import xlsxwriter
 import io
 
 from crud.generation_catalogo import draw_multiline_text, portada_catalogo, generate_barcode, draw_table
-from crud.article import get_article_by_id_company
+from crud.article import get_article_by_id_company, count_article_by_company
 from crud.company import get_company_by_id, get_company_by_sucursal
 from crud.active import get_active_by_sucursal, get_active_by_offices
 
@@ -31,8 +31,9 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
 
-        # Lógica para obtener los detalles de los artículos (por ejemplo, desde una base de datos)
-        articles, count = get_article_by_id_company(db, id_company)
+        # Lógica para obtener los detalles de los artículos
+
+        articles, count = get_article_by_id_company(db, id_company, adjust_limit=True)
         company = get_company_by_id(db, id_company)
 
         #Fecha y hora
@@ -75,9 +76,9 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
                 y_line += (20 * draw_lines)
 
                 draw_lines = draw_multiline_text(pdf, 50, (y_position - y_line), f"Código: {article.code}")
-                x_space = len(f"Código: {article.code}")
+                #x_space = len(f"Código: {article.code}")
                 x_position_end = 50 + pdf.stringWidth(f"Código: {article.code}", "Helvetica", 12)
-                print(x_position_end)
+
                 # Generar y agregar el código de barras
                 ruta_imagen = os.path.join(ruta_barcodes, f"barcode_{article.code}")
                 ruta_imagen_png = ruta_imagen + ".png"
@@ -92,12 +93,13 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
                 y_line += (15 * draw_lines)
 
                 # Intentamos cargar la imagen desde una ruta específica
-                image_path = f"files/images_article/{article.photo}"
-                try:
+                if(len(article.photo) > 0):
+                    image_path = f"files/images_article/{article.photo}"
+                    #try:
                     image = ImageReader(image_path)
                     pdf.drawImage(image, x=400, y=y_position - (y_line - 10), width=70, height=70, preserveAspectRatio=True)
-                except Exception as e:
-                    print(f"No se pudo cargar la imagen para el artículo {article.name}: {e}")
+                    #except Exception as e:
+                        #print(f"No se pudo cargar la imagen para el artículo {article.name}: {e}")
 
                 # Agregamos un separador entre cada artículo
                 pdf.line(50, y_position - y_line, 550, y_position - y_line)
@@ -141,11 +143,10 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
             return Response(code="401", message="token-exp", result=[])
 
         # Lógica para obtener los detalles de los artículos (por ejemplo, desde una base de datos)
-        actives, count = get_active_by_sucursal(db, id_sucursal)
+        actives, count = get_active_by_sucursal(db, id_sucursal, adjust_limit=True)
         sucursal = actives[0].office.sucursal
         company = actives[0].office.sucursal.company
-        print(sucursal.number)
-        print(company.name)
+
         #Fecha y hora
         now = datetime.now()
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -170,29 +171,22 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
             alto_rect = 100
             eje_y = height - (alto_rect + 16)
             pdf.setLineWidth(1.5)
-            #pdf.rect(50, 500, 692, 100)
             pdf.rect(50, eje_y, ancho_rect, alto_rect)
 
             # Agregamos el título al PDF
             pdf.setFont("Helvetica-Bold", 16)
-            #pdf.drawString(70, 575, f"Catálogo de activos")
             pdf.drawString(70, eje_y + 75, f"Catálogo de activos")
 
             pdf.setFont("Helvetica", 12)
-            #pdf.drawString(70, 555, f"Cliente")
-            #pdf.drawString(145, 555, f"{company.name}")
             pdf.drawString(70, eje_y + 55, f"Cliente")
             pdf.drawString(145, eje_y + 55, f"{company.name}")
 
             pdf.drawString(70, eje_y + 35, f"Sucursal")
             pdf.drawString(145, eje_y + 35, f"{sucursal.number}    {sucursal.description}")
-            #pdf.drawString(70, 710, f"Sucursal")
-            #pdf.drawString(145, 710, f"{sucursal.number}    {sucursal.description}")
 
             image_path = "images-sca/sca-2.jpeg"
             try:
                 image = ImageReader(image_path)
-                #pdf.drawImage(image, x=582, y=490, width=140, height=140, preserveAspectRatio=True)
                 pdf.drawImage(image, x=606, y=eje_y - 10, width=140, height=140, preserveAspectRatio=True)
             except Exception as e:
                 print(f"No se pudo cargar la imagen para la portada: {e}")
@@ -204,7 +198,6 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
             page_number = 1
             cant_items = 0
             # Iteramos sobre los artículos y los agregamos al PDF
-            #y_line = 90
             eje_y_table = eje_y - 40
             for i, active in enumerate(actives, start=1):
                 if (active.state == "new"):
@@ -241,28 +234,7 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
                     str(active.office.floor) + " - " + active.office.description
                 ])
 
-
-            print(i)
             draw_table(pdf, table_data, eje_y_table, i - cant_items)
-            #table_style = TableStyle([
-                #('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                #('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-             #   ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-              #  ('FONTNAME', (0, 0), (-1, 0), 'Helvetica'),
-              #  ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-             #   ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-                #('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
-             #   ('FONTSIZE', (0, 0), (-1, 0), 11),
-             #   ('FONTSIZE', (0, 1), (-1, -1), 9),
-             #   ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.black),
-           #
-            #table = Table(table_data)
-            #table.setStyle(table_style)
-
-            # Posicionar la tabla en el PDF
-            #eje_y_table = eje_y - 60
-            #table.wrapOn(pdf, 0, 0)
-            #table.drawOn(pdf, 30, eje_y_table - (i*20))
 
             pdf.setFont("Helvetica", 8)
             pdf.drawRightString(755, 30, f"Página {page_number}")
@@ -287,7 +259,7 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
         id_offices_list = id_offices.split(",")
         id_offices_int = [int(id_office) for id_office in id_offices_list]
         print(len(id_offices_int))
-        actives, count = get_active_by_offices(db, id_offices_int)
+        actives, count = get_active_by_offices(db, id_offices_int, adjust_limit=True)
         sucursal = actives[0].office.sucursal
         company = actives[0].office.sucursal.company
 
@@ -400,11 +372,16 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
         raise HTTPException(status_code=500, detail=f"Error al generar el catálogo de {company.name}: {e}")
 
 @router.get("/report/excel/active/sucursal/{id_sucursal}")
-def actives_catalog_office_excel(id_sucursal: int, db: Session = Depends(get_db)):
+def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     try:
 
+        id_user, expiration_time = current_user_info
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+
         # Lógica para obtener los detalles de los artículos
-        actives, count = get_active_by_sucursal(db, id_sucursal)
+        actives, count = get_active_by_sucursal(db, id_sucursal, adjust_limit=True)
         sucursal = actives[0].office.sucursal
         company = actives[0].office.sucursal.company
 
@@ -518,14 +495,19 @@ def actives_catalog_office_excel(id_sucursal: int, db: Session = Depends(get_db)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/report/excel/active/offices/{id_offices}")
-def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)):
+def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     try:
+
+        id_user, expiration_time = current_user_info
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
 
         # Lógica para obtener los detalles de los artículos (por ejemplo, desde una base de datos)
         id_offices_list = id_offices.split(",")
         id_offices_int = [int(id_office) for id_office in id_offices_list]
         print(len(id_offices_int))
-        actives, count = get_active_by_offices(db, id_offices_int)
+        actives, count = get_active_by_offices(db, id_offices_int, adjust_limit=True)
         sucursal = actives[0].office.sucursal
         company = actives[0].office.sucursal.company
 
