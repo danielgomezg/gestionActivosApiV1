@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session, joinedload, load_only
 from schemas.userSchema import UserSchema, UserEditSchema
 from models.user import Usuario
 from fastapi import HTTPException, status, Depends
+from sqlalchemy import func
 
 #login
 from datetime import datetime, timedelta
@@ -14,6 +15,10 @@ from typing import Optional, Tuple
 from jose import jwt, JWTError
 
 from passlib.hash import bcrypt
+
+#historial
+from schemas.historySchema import HistorySchema
+from crud.history import create_history
 
 #Variables
 SECRET_KEY = config('SECRET_KEY')
@@ -30,7 +35,6 @@ def get_user_by_id(db: Session, user_id: int):
 def get_user_email(db: Session, email: str):
     try:
         result = db.query(Usuario).filter(Usuario.email == email).first()
-        #print(result)
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener user por email {e}")
@@ -39,11 +43,34 @@ def get_user_email(db: Session, email: str):
 def get_user_all(db: Session, limit: int = 100, offset: int = 0):
     #return db.query(Usuario).offset(offset).limit(limit).all()
     try:
-        return (db.query(Usuario).options(joinedload(Usuario.profile)).offset(offset).limit(limit).all())
+        result = (db.query(Usuario).options(joinedload(Usuario.profile)).filter(Usuario.removed == 0).offset(offset).limit(limit).all())
+
+        count = db.query(Usuario).filter(Usuario.removed == 0).count()
+        return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener usuarios {e}")
 
-def create_user(db: Session, user: UserSchema):
+def search_users_by_mail_rut(db: Session, search: str, limit: int = 100, offset: int = 0):
+    try:
+        query =  (
+                    db.query(Usuario).
+                        filter(Usuario.removed == 0, 
+                            (
+                                func.lower(Usuario.rut).like(f"%{search}%") |
+                                func.lower(Usuario.email).like(f"%{search}%") |
+                                func.lower(Usuario.firstName).like(f"%{search}%") |
+                                func.lower(Usuario.lastName).like(f"%{search}%") 
+                            ))
+                            .offset(offset).limit(limit))
+
+        users = query.all()
+        count = query.count()
+
+        return users, count
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar Usuarios {e}")
+
+def create_user(db: Session, user: UserSchema, id_user: int):
     try:
         _user = Usuario(
             firstName=user.firstName,
@@ -60,11 +87,21 @@ def create_user(db: Session, user: UserSchema):
         db.add(_user)
         db.commit()
         db.refresh(_user)
+
+        # creacion del historial
+        # history_params = {
+        #     "description": "create-user",
+        #     "user_id": _user.id,
+        #     "company_id": _user.company_id,
+        #     "current_session_user_id": id_user
+        # }
+        # create_history(db, HistorySchema(**history_params))
+
         return _user
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando user {e}")
 
-def update_user(db: Session, user_id: int, user: UserEditSchema):
+def update_user(db: Session, user_id: int, user: UserEditSchema, id_user: int):
 
     try:
         user_to_edit = db.query(Usuario).filter(Usuario.id == user_id).first()
@@ -89,39 +126,52 @@ def update_user(db: Session, user_id: int, user: UserEditSchema):
                 user_to_edit.profile_id = user.profile_id
 
             db.commit()
-            print(user_to_edit)
             result = { k: v for k,v in user_to_edit.__dict__.items() if(k != "_password") }
-            print(user)
-            return result
+
+            # creacion del historial
+            # history_params = {
+            #     "description": "update-user",
+            #     "user_id": user_to_edit.id,
+            #     "company_id": user_to_edit.company_id,
+            #     "current_session_user_id": id_user
+            # }
+            # create_history(db, HistorySchema(**history_params))
+
+            return user_to_edit
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando usuario: {e}")
 
-def delete_user(db: Session, user_id: int):
+def delete_user(db: Session, user_id: int, id_user: int):
 
     try:
         user_to_delete = db.query(Usuario).filter(Usuario.id == user_id).first()
         if user_to_delete:
-            db.delete(user_to_delete)
+            user_to_delete.removed = 1
             db.commit()
+
+            # creacion del historial
+            # history_params = {
+            #     "description": "delete-user",
+            #     "user_id": user_to_delete.id,
+            #     "company_id": user_to_delete.company_id,
+            #     "current_session_user_id": id_user
+            # }
+            # create_history(db, HistorySchema(**history_params))
+
             return user_id
-            #return {"message": "Acción actualizada correctamente", "action": action_to_edit}
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Ususario con id {user_id} no encontrada")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando usuario: {e}")
 
 def authenticate_user(email: str, password: str, db: Session):
-    #print(email)
-    #print(password)
     try:
         userExist = get_user_email(db, email)
-        if(userExist):
-            # print(userExist.password)
+        if(userExist and userExist.removed == 0):
             passwordValid = Usuario.verify_password(password, userExist.password)
             if(passwordValid):
-                #print("exito")
                 return userExist
             else:
                 return False
@@ -153,12 +203,8 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     try:
         payload = jwt.decode(token, key=SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-        additional_info = payload.get("additional_info", {})
-
-        #id_user:str = payload.get("sub")
+        additional_info = payload.get("user", {})
         id_user = payload.get("sub")
-        id_perfil = payload.get("profile")
 
         # Obtener el tiempo de expiración (exp) del token
         expiration_time = payload['exp']
@@ -174,7 +220,6 @@ def get_user_disable_current(current_user_info: Tuple[str, Optional[str]] = Depe
     # Obtener la fecha y hora actual
     current_time = datetime.utcnow().timestamp()
     id_user, expiration_time = current_user_info
-    #print("Tiempo actual: ", current_time)
     # Validar si el token ha expirado
     if int(expiration_time) > int(current_time):
         print("El token no ha expirado aún.")

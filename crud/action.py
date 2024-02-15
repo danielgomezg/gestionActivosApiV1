@@ -38,11 +38,11 @@ def create_action(db: Session, action: ActionSchema):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando accion {e}")
 
 
-def update_action(db: Session, action_id: int, name_edit: str):
+def update_action(db: Session, action_id: int, name_edited: str):
     action_to_edit = db.query(Action).filter(Action.id == action_id).first()
     try:
         if action_to_edit:
-            action_to_edit.name = name_edit
+            action_to_edit.name = name_edited
 
             db.commit()
             action = get_action_by_id(db, action_id)

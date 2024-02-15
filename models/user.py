@@ -4,8 +4,6 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from passlib.hash import bcrypt
 from sqlalchemy.orm import relationship
 
-#from api.endpoints import company
-#from api.endpoints import profile
 from models import company
 from models import profile
 from database import engine
@@ -24,6 +22,7 @@ class Usuario(Base):
     email = Column(String, unique=True, nullable=False)
     _password = Column(String, nullable=False)
     rut = Column(String, unique=True, nullable=False)
+    removed = Column(Integer, default=0, nullable=False)
 
     #Relacion con empresa
     company_id = Column(Integer, ForeignKey('compania.id'), nullable=True)
@@ -32,7 +31,13 @@ class Usuario(Base):
 
 
     company = relationship('Company', back_populates='users')
+
     profile = relationship('Profile', back_populates='users')
+
+    # Relacion con historial
+    historial = relationship('History', back_populates='user')
+
+    #actives = relationship('Active', back_populates='user')
 
 
     @hybrid_property
