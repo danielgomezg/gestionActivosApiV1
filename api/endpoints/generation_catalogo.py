@@ -12,7 +12,7 @@ from crud.user import get_user_disable_current
 import os
 from datetime import datetime
 import xlsxwriter
-import io
+import pytz
 
 from crud.generation_catalogo import draw_multiline_text, portada_catalogo, generate_barcode, draw_table
 from crud.article import get_article_by_id_company, count_article_by_company
@@ -37,8 +37,11 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
         company = get_company_by_id(db, id_company)
 
         #Fecha y hora
-        now = datetime.now()
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+        #now = datetime.now()
+        #date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
 
         # Lógica para generar el catálogo PDF con ReportLab
@@ -148,7 +151,8 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
         company = actives[0].office.sucursal.company
 
         #Fecha y hora
-        now = datetime.now()
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
 
@@ -267,7 +271,8 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
             actives.extend(copy.deepcopy(actives))
 
         #Fecha y hora
-        now = datetime.now()
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
 
@@ -385,7 +390,8 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
         sucursal = actives[0].office.sucursal
         company = actives[0].office.sucursal.company
 
-        now = datetime.now()
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
         # Lógica para generar el catálogo Excel
@@ -511,7 +517,8 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
         sucursal = actives[0].office.sucursal
         company = actives[0].office.sucursal.company
 
-        now = datetime.now()
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
         # Lógica para generar el catálogo Excel
