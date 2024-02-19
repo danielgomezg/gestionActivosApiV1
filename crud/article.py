@@ -8,6 +8,7 @@ from models.active import Active
 import uuid
 from urllib.parse import urlparse
 from pathlib import Path
+import hashlib
 
 #historial
 from schemas.historySchema import HistorySchema
@@ -112,9 +113,16 @@ def search_article_by_company(db: Session, search: str, company_id: int , limit:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar sucursales {e}")
 
+def generate_short_unique_id(data: str, length: int = 10) -> str:
+    hash_object = hashlib.sha256(data.encode())
+    hex_dig = hash_object.hexdigest()
+    return hex_dig[:length]
+
+
 def get_image_url(file: UploadFile, upload_folder: Path) -> str:
     try:
-        unique_id = uuid.uuid4().hex
+        #unique_id = uuid.uuid4().hex
+        unique_id = generate_short_unique_id(file.filename)
         # Concatena el UUID al nombre del archivo original
         filename_with_uuid = f"{unique_id}_{file.filename}"
         file_path = upload_folder / filename_with_uuid

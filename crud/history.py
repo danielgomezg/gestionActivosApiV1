@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session, joinedload, load_only
 from schemas.historySchema import HistorySchema
 from models.history import History
 from fastapi import HTTPException, status
-from sqlalchemy import func, and_, desc
+from sqlalchemy import func, and_, desc, not_
 
 from models.user import Usuario
 
@@ -23,7 +23,7 @@ def get_history_by_company(db: Session, company_id: int, limit: int = 100, offse
                   .options(joinedload(History.article))
                   .options(joinedload(History.user))
                   .options(joinedload(History.office))
-                  .filter(History.company_id == company_id)
+                  .filter(History.company_id == company_id, not_(History.description.like('%active%')), not_(History.description.like('%article%')))
                   .order_by(desc(History.id))
                   .offset(offset)
                   .limit(limit)
