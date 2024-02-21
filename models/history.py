@@ -4,12 +4,13 @@ from sqlalchemy.orm import relationship
 from datetime import date
 
 
-from models import  active
-from models import article
-from models import office
-from models import sucursal
+from models import  active, article, office, sucursal, category
+#from models import article
+#from models import office
+#from models import sucursal
 from database import engine
 
+category.Base.metadata.create_all(bind=engine)
 active.Base.metadata.create_all(bind=engine)
 article.Base.metadata.create_all(bind=engine)
 sucursal.Base.metadata.create_all(bind=engine)

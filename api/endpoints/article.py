@@ -10,6 +10,7 @@ from crud.article import (get_article_all, get_article_by_id, create_article, up
 from schemas.articleSchema import ArticleSchema, ArticleEditSchema
 from schemas.schemaGenerico import Response, ResponseGet
 from crud.company import get_company_by_id
+from crud.category import get_category_by_id
 from fastapi.responses import FileResponse
 from crud.user import  get_user_disable_current
 from typing import Tuple
@@ -102,6 +103,10 @@ def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_i
     if article_code:
         return Response(code="400", message="Codigo de articulo ya ingresado", result=[])
 
+    # id_category = get_category_by_id(db, request.category_id)
+    # if not id_category:
+    #     return Response(code="400", message="id categoria no valido", result=[])
+
     id_company = get_company_by_id(db, request.company_id)
     if(not id_company):
         return Response(code="400", message="id compania no valido", result=[])
@@ -112,7 +117,6 @@ def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_i
 @router.put('/article/{id}')
 def update(request: ArticleEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
     id_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -126,6 +130,10 @@ def update(request: ArticleEditSchema, id: int, db: Session = Depends(get_db), c
     article_code = get_article_by_company_and_code(db, request.company_id, request.code)
     if article_code and id is not article_code.id:
         return Response(code="400", message="Codigo de barra ya ingresado", result=[])
+
+    # id_category = get_category_by_id(db, request.category_id)
+    # if not id_category:
+    #     return Response(code="400", message="id categoria no valido", result=[])
 
     _article = update_article(db, id,  request, id_user)
     return Response(code = "201", message = f"Articulo {_article.name} editado", result = _article).model_dump()

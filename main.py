@@ -18,6 +18,7 @@ from api.endpoints import article
 from api.endpoints import active
 from api.endpoints import history
 from api.endpoints import generation_catalogo
+from api.endpoints import category
 
 #cors
 from fastapi.middleware.cors import CORSMiddleware
@@ -124,6 +125,10 @@ def middleware_validacion_permisos( request: Request, call_next):
                 #nombre_accion = diccionario.get(request.method) + "-" + "historial"
                 return call_next(request)
 
+            elif (re.search(r'categor', path_peticion, flags=re.IGNORECASE)):
+                #nombre_accion = diccionario.get(request.method) + "-" + "historial"
+                return call_next(request)
+
             else:
                 return JSONResponse(content={"detail": "La accion a realizar no existe"}, status_code=401)
 
@@ -161,6 +166,7 @@ app.include_router(sucursal.router)
 app.include_router(office.router)
 app.include_router(action.router)
 app.include_router(profileAction.router)
+app.include_router(category.router)
 app.include_router(article.router)
 app.include_router(active.router)
 app.include_router(history.router)

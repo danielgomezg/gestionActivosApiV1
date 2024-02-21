@@ -17,7 +17,7 @@ from crud.history import create_history
 def get_article_all(db: Session, limit: int = 100, offset: int = 0):
     try:
         articles = (
-            db.query(Article, func.count(Active.id).label("count_active"))
+            db.query(Article, func.count(Active.id).label("count_actives"))
             .outerjoin(Active, and_(Active.article_id == Article.id, Active.removed == 0))
             .filter(Article.removed == 0)
             .group_by(Article.id)
@@ -113,7 +113,7 @@ def search_article_by_company(db: Session, search: str, company_id: int , limit:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar sucursales {e}")
 
-def generate_short_unique_id(data: str, length: int = 10) -> str:
+def generate_short_unique_id(data: str, length: int = 20) -> str:
     hash_object = hashlib.sha256(data.encode())
     hex_dig = hash_object.hexdigest()
     return hex_dig[:length]
@@ -142,6 +142,7 @@ def create_article(db: Session, article: ArticleSchema, id_user: int):
             description=article.description,
             code=article.code,
             photo=article.photo,
+            category_id=article.category_id,
             company_id=article.company_id
         )
 
@@ -172,19 +173,40 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema, id_
             article_to_edit.name = article.name
             article_to_edit.description = article.description
             article_to_edit.code = article.code
+            #article_to_edit.category_id = article.category_id
 
             # Se elimina la foto reemplazada del servidor
             # Si la foto es nula, no se hace nada
             if len(article_to_edit.photo) > 0 and article_to_edit.photo != article.photo:
-                # Extraer el nombre del archivo de la URL
-                # parsed_url = urlparse(article_to_edit.photo)
-                # filename = Path(parsed_url.path).name
-                # Construir la ruta al archivo existente
-                existing_file_path = Path("files") / "images_article" / article_to_edit.photo
 
-                # Verificar si el archivo existe y eliminarlo
-                if existing_file_path.exists():
-                   existing_file_path.unlink()
+                photos_old = article_to_edit.photo.split(",")
+                photos_new = article.photo.split(",")
+                print(photos_old)
+                print(photos_new)
+
+                # Convierte las listas en conjuntos
+                photos_old_set = set(photos_old)
+                photos_new_set = set(photos_new)
+
+                photos_deletes = list(photos_old_set - photos_new_set)
+                print(photos_deletes)
+
+                for photo_to_delete in photos_deletes:
+                    # Construir la ruta al archivo existente
+                    existing_file_path = Path("files") / "images_article" / photo_to_delete
+
+                    # Verificar si el archivo existe y eliminarlo
+                    if existing_file_path.exists():
+                        existing_file_path.unlink()
+
+                    print(photo_to_delete)
+
+                # # Construir la ruta al archivo existente
+                # existing_file_path = Path("files") / "images_article" / article_to_edit.photo
+                #
+                # # Verificar si el archivo existe y eliminarlo
+                # if existing_file_path.exists():
+                #    existing_file_path.unlink()
 
             article_to_edit.photo = article.photo
 
