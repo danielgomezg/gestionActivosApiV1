@@ -8,13 +8,13 @@ from models import  active, article, office, sucursal, category
 #from models import article
 #from models import office
 #from models import sucursal
-from database import engine
+# from database import engine
 
-category.Base.metadata.create_all(bind=engine)
-active.Base.metadata.create_all(bind=engine)
-article.Base.metadata.create_all(bind=engine)
-sucursal.Base.metadata.create_all(bind=engine)
-office.Base.metadata.create_all(bind=engine)
+# category.Base.metadata.create_all(bind=engine)
+# active.Base.metadata.create_all(bind=engine)
+# article.Base.metadata.create_all(bind=engine)
+# sucursal.Base.metadata.create_all(bind=engine)
+# office.Base.metadata.create_all(bind=engine)
 
 class History(Base):
     __tablename__ = 'historial'

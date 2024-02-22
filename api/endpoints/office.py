@@ -1,6 +1,6 @@
 from models import office
 from models.office import Office
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
@@ -15,7 +15,7 @@ from typing import Tuple
 from api.endpoints.sucursal import get_sucursal_by_id
 
 router = APIRouter()
-office.Base.metadata.create_all(bind=engine)
+# office.Base.metadata.create_all(bind=engine)
 
 @router.get('/offices')
 def get_offices(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):

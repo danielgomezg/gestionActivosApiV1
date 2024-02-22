@@ -1,6 +1,6 @@
 from models import user
 from models.user import Usuario
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends, status
 from sqlalchemy.orm import Session
 from database import get_db
@@ -21,7 +21,7 @@ from decouple import config
 
 
 router = APIRouter()
-user.Base.metadata.create_all(bind=engine)
+# user.Base.metadata.create_all(bind=engine)
 
 oauth2_scheme = OAuth2PasswordBearer("/token")
 

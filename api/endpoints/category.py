@@ -1,6 +1,6 @@
 from models import category
 from models.category import Category
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db

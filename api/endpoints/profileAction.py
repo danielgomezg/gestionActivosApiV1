@@ -1,6 +1,6 @@
 from models import profile_action
 from models.profile_action import ProfileAction
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
@@ -17,7 +17,7 @@ from crud.action import get_action_by_id
 
 
 router = APIRouter()
-profile_action.Base.metadata.create_all(bind=engine)
+# profile_action.Base.metadata.create_all(bind=engine)
 
 @router.get('/profileActions')
 def get_profile_sctions(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):

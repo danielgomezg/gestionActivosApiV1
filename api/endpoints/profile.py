@@ -1,6 +1,6 @@
 from models import profile
 from models.profile import Profile
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db

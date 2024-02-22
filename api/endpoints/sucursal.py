@@ -1,6 +1,6 @@
 from models import sucursal
 from models.sucursal import Sucursal
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
@@ -14,7 +14,7 @@ from crud.user import get_user_disable_current
 from api.endpoints.company import get_company_by_id
 
 router = APIRouter()
-sucursal.Base.metadata.create_all(bind=engine)
+# sucursal.Base.metadata.create_all(bind=engine)
 
 
 @router.get('/sucursales')

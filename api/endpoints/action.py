@@ -1,6 +1,6 @@
 from models import action
 from models.action import Action
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
@@ -12,7 +12,7 @@ from crud.user import  get_user_disable_current
 from typing import Optional, Tuple
 
 router = APIRouter()
-action.Base.metadata.create_all(bind=engine)
+# action.Base.metadata.create_all(bind=engine)
 
 @router.get('/actions')
 def get_actions(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):

@@ -1,6 +1,6 @@
 from models import article
 from models.article import Article
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from pathlib import Path
 from sqlalchemy.orm import Session

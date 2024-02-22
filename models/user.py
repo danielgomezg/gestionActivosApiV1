@@ -6,11 +6,11 @@ from sqlalchemy.orm import relationship
 
 from models import company
 from models import profile
-from database import engine
+# from database import engine
 
 
-company.Base.metadata.create_all(bind=engine)
-profile.Base.metadata.create_all(bind=engine)
+# company.Base.metadata.create_all(bind=engine)
+# profile.Base.metadata.create_all(bind=engine)
 
 class Usuario(Base):
     __tablename__ = 'usuario'

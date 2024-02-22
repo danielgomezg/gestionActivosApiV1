@@ -1,9 +1,9 @@
 from models import company
 from models.company import Company
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
-from database import get_db
+from database import get_db, create_database
 from crud.company import create_company, get_company_by_id, get_company_all, count_company, get_company_all_id_name, delete_company, update_company, search_company, get_company_by_office, get_company_by_rut_and_country
 from schemas.companySchema import CompanySchema,CompanySchemaIdName, CompanyEditSchema
 from schemas.schemaGenerico import ResponseGet, Response
@@ -126,6 +126,9 @@ def create(request: CompanySchema, db: Session = Depends(get_db), current_user_i
         return Response(code="400", message="Email del contacto invalido", result=[])
 
     _company = create_company(db, request, id_user)
+
+    create_database(_company.name.lower().replace(" ", "_"))
+
     return Response(code = "201", message = f"Empresa {_company.name} creada", result = _company).model_dump()
 
 @router.put('/company/{id}')

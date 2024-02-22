@@ -1,6 +1,6 @@
 from models import history
 from models.history import History
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from database import get_db
@@ -12,7 +12,7 @@ from typing import Tuple, Optional
 from fastapi.responses import JSONResponse
 
 router = APIRouter()
-history.Base.metadata.create_all(bind=engine)
+# history.Base.metadata.create_all(bind=engine)
 
 @router.get('/histories')
 def get_histories(db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):

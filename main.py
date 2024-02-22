@@ -26,17 +26,45 @@ from decouple import config
 
 #DB
 from sqlalchemy.orm import Session
-from database import get_db, SessionLocal
+from database import get_db, engine, SessionLocal
 
 #middleware
 from crud.profileAction import get_profile_action_by_id_profile_action
 from crud.action import get_action_by_name
 
+# models
+
+
+# importar Base de los modelos, sin considerar __init__.py
+# from models import user as user_model
+# from models import company as company_model
+# from models import profile as profile_model
+# from models import office as office_model
+# from models import sucursal as sucursal_model
+# from models import action as action_model
+# from models import profile_action as profile_action_model
+# from models import article as article_model
+# from models import active as active_model
+# from models import history as history_model
+# from models import category as category_model
+
 import re
 
-from schemas.schemaGenerico import Response
+from models import user as user_model
+from models import company as company_model
+from models import profile as profile_model
+from models import office as office_model
+from models import sucursal as sucursal_model
+from models import action as action_model
+from models import profile_action as profile_action_model
+from models import article as article_model
+from models import active as active_model
+from models import history as history_model
+from models import category as category_model
 
 
+
+user_model.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 

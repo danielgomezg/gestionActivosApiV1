@@ -1,5 +1,5 @@
 from models import active
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from database import get_db
@@ -18,7 +18,7 @@ from crud.user import  get_user_disable_current, get_user_by_id
 from typing import Tuple, List
 
 router = APIRouter()
-active.Base.metadata.create_all(bind=engine)
+# active.Base.metadata.create_all(bind=engine)
 
 @router.get("/active/{id}")
 def get_active(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
