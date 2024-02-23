@@ -43,7 +43,7 @@ def get_office_by_id(db: Session, office_id: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar oficina {e}")
 
-def create_office(db: Session, office: OfficeSchema, id_user: int):
+def create_office(db: Session, office: OfficeSchema, name_user: str):
     try:
         _office = Office(
             description=office.description,
@@ -64,7 +64,7 @@ def create_office(db: Session, office: OfficeSchema, id_user: int):
             "description": "create-office",
             "office_id": _office.id,
             "sucursal_id": _office.sucursal_id,
-            "user_id": id_user,
+            "name_user": name_user,
             "company_id": id_company
             #"current_session_user_id": id_user
         }
@@ -74,7 +74,7 @@ def create_office(db: Session, office: OfficeSchema, id_user: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando oficina {e}")
 
-def update_office(db: Session, office_id: int, office: OfficeEditSchema, id_user: int):
+def update_office(db: Session, office_id: int, office: OfficeEditSchema, name_user: str):
 
     try:
         office_to_edit = db.query(Office).filter(Office.id == office_id).first()
@@ -93,7 +93,7 @@ def update_office(db: Session, office_id: int, office: OfficeEditSchema, id_user
                 "description": "update-office",
                 "office_id": office_to_edit.id,
                 "sucursal_id": office_to_edit.sucursal_id,
-                "user_id": id_user,
+                "name_user": name_user,
                 "company_id": id_company
                 #"current_session_user_id": id_user
             }
@@ -105,7 +105,7 @@ def update_office(db: Session, office_id: int, office: OfficeEditSchema, id_user
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando oficina: {e}")
 
-def delete_office(db: Session, office_id: int, id_user: int):
+def delete_office(db: Session, office_id: int, name_user: str):
     try:
         office_to_delete = db.query(Office).filter(Office.id == office_id).first()
         if office_to_delete:
@@ -122,7 +122,7 @@ def delete_office(db: Session, office_id: int, id_user: int):
                 "description": "delete-office",
                 "office_id": office_to_delete.id,
                 "sucursal_id": office_to_delete.sucursal_id,
-                "user_id": id_user,
+                "name_user": name_user,
                 "company_id": id_company
                 #"current_session_user_id": id_user
             }

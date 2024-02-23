@@ -85,8 +85,9 @@ def get_company_by_rut_and_country(db: Session, rut: str, country: str, limit: i
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener empresa {e}")
 
-def create_company(db: Session, company: CompanySchema, id_user: int):
+def create_company(db: Session, company: CompanySchema, name_user: str):
     try:
+        print("creando....")
         _company = Company(
             name=company.name,
             rut=company.rut,
@@ -99,22 +100,23 @@ def create_company(db: Session, company: CompanySchema, id_user: int):
         db.add(_company)
         db.commit()
         db.refresh(_company)
+        print("termino...")
         _company.count_sucursal = 0
-
         # creacion del historial
         history_params = {
             "description": "create-company",
             "company_id": _company.id,
-            "user_id": id_user
+            "name_user": name_user
             #"current_session_user_id": id_user
         }
         create_history(db, HistorySchema(**history_params))
+        print("termino hisotrial")
 
         return _company
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando compania {e}")
 
-def update_company(db: Session, company_id: int, company: CompanyEditSchema, id_user: int):
+def update_company(db: Session, company_id: int, company: CompanyEditSchema, name_user: str):
 
     try:
         company_to_edit = db.query(Company).filter(Company.id == company_id).first()
@@ -131,7 +133,7 @@ def update_company(db: Session, company_id: int, company: CompanyEditSchema, id_
             history_params = {
                 "description": "update-company",
                 "company_id": company_to_edit.id,
-                "user_id": id_user
+                "name_user": name_user
                 #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
@@ -142,7 +144,7 @@ def update_company(db: Session, company_id: int, company: CompanyEditSchema, id_
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando compañia: {e}")
 
-def delete_company(db: Session, company_id: int, id_user: int):
+def delete_company(db: Session, company_id: int, name_user: str):
     try:
         company_to_delete = db.query(Company).filter(Company.id == company_id).first()
         if company_to_delete:
@@ -153,12 +155,12 @@ def delete_company(db: Session, company_id: int, id_user: int):
             history_params = {
                 "description": "delete-company",
                 "company_id": company_id,
-                "user_id": id_user
+                "name_user": name_user
                 #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 
-            return company_id
+            return company_id, company_to_delete.name
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Compañia con id {company_id} no encontrada")
     except Exception as e:

@@ -15,8 +15,8 @@ router = APIRouter()
 # history.Base.metadata.create_all(bind=engine)
 
 @router.get('/histories')
-def get_histories(db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+def get_histories(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    name_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -29,8 +29,8 @@ def get_histories(db: Session = Depends(get_db), current_user_info: Tuple[int, s
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/history/company/{id_company}")
-def get_history_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+def get_history_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -41,8 +41,8 @@ def get_history_por_company(id_company: int, db: Session = Depends(get_db), curr
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/history/sucursal/{id_sucursal}")
-def get_history_por_sucursal(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+def get_history_por_sucursal(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -53,8 +53,8 @@ def get_history_por_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/history/office/{id_office}")
-def get_history_por_office(id_office: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+def get_history_por_office(id_office: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -65,8 +65,8 @@ def get_history_por_office(id_office: int, db: Session = Depends(get_db), curren
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/history/article/{id_article}")
-def get_history_por_article(id_article: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+def get_history_por_article(id_article: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -77,8 +77,8 @@ def get_history_por_article(id_article: int, db: Session = Depends(get_db), curr
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/history/active/{id_active}")
-def get_history_por_active(id_active: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+def get_history_por_active(id_active: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -104,7 +104,7 @@ def get_history_por_active(id_active: int, db: Session = Depends(get_db), curren
 
 @router.post('/action')
 def create(request: HistorySchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:

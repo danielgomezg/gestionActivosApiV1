@@ -24,9 +24,9 @@ import copy
 router = APIRouter()
 
 @router.get("/report/article/{id_company}")
-def articles_catalog(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
+def articles_catalog(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     try:
-        id_user, expiration_time = current_user_info
+        name_user, expiration_time = current_user_info
         # Se valida la expiracion del token
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
@@ -138,9 +138,9 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
         raise HTTPException(status_code=500, detail=f"Error al generar el catálogo de {company.name}: {e}")
 
 @router.get("/report/active/sucursal/{id_sucursal}")
-def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
+def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     try:
-        id_user, expiration_time = current_user_info
+        name_user, expiration_time = current_user_info
         # Se valida la expiracion del token
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
@@ -252,9 +252,9 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
         raise HTTPException(status_code=500, detail=f"Error al generar el catálogo de {company.name}: {e}")
 
 @router.get("/report/active/offices/{id_offices}")
-def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
+def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     try:
-        id_user, expiration_time = current_user_info
+        name_user, expiration_time = current_user_info
         # Se valida la expiracion del token
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
@@ -377,10 +377,9 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
         raise HTTPException(status_code=500, detail=f"Error al generar el catálogo de {company.name}: {e}")
 
 @router.get("/report/excel/active/sucursal/{id_sucursal}")
-def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
+def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     try:
-
-        id_user, expiration_time = current_user_info
+        name_user, expiration_time = current_user_info
         # Se valida la expiracion del token
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
@@ -501,10 +500,9 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/report/excel/active/offices/{id_offices}")
-def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
+def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     try:
-
-        id_user, expiration_time = current_user_info
+        name_user, expiration_time = current_user_info
         # Se valida la expiracion del token
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])

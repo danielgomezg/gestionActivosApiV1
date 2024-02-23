@@ -45,7 +45,7 @@ def get_sucursal(id: int, db: Session = Depends(get_db), current_user_info: Tupl
 
 @router.get("/sucursalPorCompany/{id_company}")
 def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -58,7 +58,7 @@ def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), cur
 
 @router.get('/sucursal/search/{company_id}')
 def search_sucursal(company_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
@@ -68,8 +68,8 @@ def search_sucursal(company_id: int, search: str, db: Session = Depends(get_db),
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.post('/sucursal')
-def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -99,12 +99,12 @@ def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_
     if sucursal_number:
         return Response(code="400", message="numero de sucursal ya ingresado", result=[])
 
-    _sucursal = create_sucursal(db, request, id_user)
+    _sucursal = create_sucursal(db, request, name_user)
     return Response(code = "201", message = f"Sucursal {_sucursal.number} creada", result = _sucursal).model_dump()
 
 @router.put('/sucursal/{id}')
-def update(request: SucursalEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def update(request: SucursalEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -125,15 +125,15 @@ def update(request: SucursalEditSchema, id: int, db: Session = Depends(get_db), 
     if sucursal_number and sucursal_number.id is not id:
         return Response(code="400", message="numero de sucursal ya ingresado", result=[])
 
-    _sucursal = update_sucursal(db, id,  request, id_user)
+    _sucursal = update_sucursal(db, id,  request, name_user)
     return Response(code = "201", message = f"Sucursal {_sucursal.number} editada", result = _sucursal).model_dump()
 
 @router.delete('/sucursal/{id}')
-def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    _sucursal = delete_sucursal(db, id, id_user)
+    _sucursal = delete_sucursal(db, id, name_user)
     return Response(code = "201", message = f"Sucursal con id {id} eliminada", result = _sucursal).model_dump()

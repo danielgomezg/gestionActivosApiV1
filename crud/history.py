@@ -4,7 +4,7 @@ from models.history import History
 from fastapi import HTTPException, status
 from sqlalchemy import func, and_, desc, not_
 
-from models.user import Usuario
+#from models.user import Usuario
 
 def get_history_all(db: Session, limit: int = 100, offset: int = 0):
     #return db.query(Usuario).offset(offset).limit(limit).all()
@@ -21,7 +21,7 @@ def get_history_by_company(db: Session, company_id: int, limit: int = 100, offse
                   .options(joinedload(History.sucursal))
                   .options(joinedload(History.company))
                   .options(joinedload(History.article))
-                  .options(joinedload(History.user))
+                  #.options(joinedload(History.user))
                   .options(joinedload(History.office))
                   .filter(History.company_id == company_id, not_(History.description.like('%active%')), not_(History.description.like('%article%')))
                   .order_by(desc(History.id))
@@ -49,9 +49,9 @@ def get_history_by_company(db: Session, company_id: int, limit: int = 100, offse
                 history['office'] = history['office'].__dict__
                 history['office'].pop('_sa_instance_state', None)
 
-            if history['user'] is not None:
-                history['user'] = history['user'].__dict__
-                history['user'].pop('_sa_instance_state', None)
+            # if history['user'] is not None:
+            #     history['user'] = history['user'].__dict__
+            #     history['user'].pop('_sa_instance_state', None)
 
             # Aquí haces el get del usuario y lo asignas a la clave 'current_user'
             # current_session_user = history.get('current_session_user_id')
@@ -62,7 +62,7 @@ def get_history_by_company(db: Session, company_id: int, limit: int = 100, offse
             history.pop('sucursal_id', None)
             history.pop('company_id', None)
             history.pop('article_id', None)
-            history.pop('user_id', None)
+            #history.pop('user_id', None)
             history.pop('office_id', None)
             #history.pop('current_session_user_id', None)
 
@@ -78,7 +78,7 @@ def get_history_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, off
                   .options(joinedload(History.sucursal))
                   .options(joinedload(History.company))
                   .options(joinedload(History.office))
-                  .options(joinedload(History.user))
+                  #.options(joinedload(History.user))
                   .filter(History.sucursal_id == sucursal_id)
                   .order_by(desc(History.id))
                   .offset(offset)
@@ -99,9 +99,9 @@ def get_history_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, off
                 history['office'] = history['office'].__dict__
                 history['office'].pop('_sa_instance_state', None)
 
-            if history['user'] is not None:
-                history['user'] = history['user'].__dict__
-                history['user'].pop('_sa_instance_state', None)
+            # if history['user'] is not None:
+            #     history['user'] = history['user'].__dict__
+            #     history['user'].pop('_sa_instance_state', None)
 
             # Get del usuario actual
             # current_session_user = history.get('current_session_user_id')
@@ -112,7 +112,7 @@ def get_history_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, off
             history.pop('sucursal_id', None)
             history.pop('company_id', None)
             history.pop('office_id', None)
-            history.pop('user_id', None)
+            #history.pop('user_id', None)
             #history.pop('current_session_user_id', None)
 
         count = db.query(History).filter(History.sucursal_id == sucursal_id).count()
@@ -128,7 +128,7 @@ def get_history_by_office(db: Session, office_id: int, limit: int = 100, offset:
                   .options(joinedload(History.office))
                   .options(joinedload(History.active))
                   .options(joinedload(History.article))
-                  .options(joinedload(History.user))
+                  #.options(joinedload(History.user))
                   .filter(History.office_id == office_id)
                   .order_by(desc(History.id))
                   .offset(offset)
@@ -153,9 +153,9 @@ def get_history_by_office(db: Session, office_id: int, limit: int = 100, offset:
                 history['article'] = history['article'].__dict__
                 history['article'].pop('_sa_instance_state', None)
 
-            if history['user'] is not None:
-                history['user'] = history['user'].__dict__
-                history['user'].pop('_sa_instance_state', None)
+            # if history['user'] is not None:
+            #     history['user'] = history['user'].__dict__
+            #     history['user'].pop('_sa_instance_state', None)
 
             # Get del usuario actual
             # current_session_user = history.get('current_session_user_id')
@@ -167,7 +167,7 @@ def get_history_by_office(db: Session, office_id: int, limit: int = 100, offset:
             history.pop('active_id', None)
             history.pop('office_id', None)
             history.pop('article_id', None)
-            history.pop('user_id', None)
+            #history.pop('user_id', None)
             #history.pop('current_session_user_id', None)
 
         count = db.query(History).filter(History.office_id == office_id).count()
@@ -183,7 +183,7 @@ def get_history_by_article(db: Session, article_id: int, limit: int = 100, offse
                   .options(joinedload(History.company))
                   .options(joinedload(History.office))
                   .options(joinedload(History.active))
-                  .options(joinedload(History.user))
+                  #.options(joinedload(History.user))
                   .filter(History.article_id == article_id)
                   .order_by(desc(History.id))
                   .offset(offset)
@@ -208,9 +208,9 @@ def get_history_by_article(db: Session, article_id: int, limit: int = 100, offse
                 history['office'] = history['office'].__dict__
                 history['office'].pop('_sa_instance_state', None)
 
-            if history['user'] is not None:
-                history['user'] = history['user'].__dict__
-                history['user'].pop('_sa_instance_state', None)
+            # if history['user'] is not None:
+            #     history['user'] = history['user'].__dict__
+            #     history['user'].pop('_sa_instance_state', None)
 
             # Get del usuario actual
             # current_session_user = history.get('current_session_user_id')
@@ -224,7 +224,7 @@ def get_history_by_article(db: Session, article_id: int, limit: int = 100, offse
             history.pop('active_id', None)
             history.pop('article_id', None)
             history.pop('office_id', None)
-            history.pop('user_id', None)
+            #history.pop('user_id', None)
             #history.pop('current_session_user_id', None)
 
         count = db.query(History).filter(History.article_id == article_id).count()
@@ -239,7 +239,7 @@ def get_history_by_active(db: Session, active_id: int, limit: int = 100, offset:
                   .options(joinedload(History.office))
                   .options(joinedload(History.article))
                   .options(joinedload(History.active))
-                  .options(joinedload(History.user))
+                  #.options(joinedload(History.user))
                   .filter(History.active_id == active_id)
                   .order_by(desc(History.id))
                   .offset(offset)
@@ -260,9 +260,9 @@ def get_history_by_active(db: Session, active_id: int, limit: int = 100, offset:
                 history['active'] = history['active'].__dict__
                 history['active'].pop('_sa_instance_state', None)
 
-            if history['user'] is not None:
-                history['user'] = history['user'].__dict__
-                history['user'].pop('_sa_instance_state', None)
+            # if history['user'] is not None:
+            #     history['user'] = history['user'].__dict__
+            #     history['user'].pop('_sa_instance_state', None)
 
             # Get del usuario actual
             # current_session_user = history.get('current_session_user_id')
@@ -275,7 +275,7 @@ def get_history_by_active(db: Session, active_id: int, limit: int = 100, offset:
             history.pop('article_id', None)
             history.pop('active_id', None)
             history.pop('office_id', None)
-            history.pop('user_id', None)
+            #history.pop('user_id', None)
             #history.pop('current_session_user_id', None)
 
         count = db.query(History).filter(History.active_id == active_id).count()
@@ -339,7 +339,8 @@ def create_history(db: Session, history: HistorySchema):
             office_id=history.office_id,
             article_id=history.article_id,
             active_id=history.active_id,
-            user_id=history.user_id,
+            name_user=history.name_user,
+            #user_id=history.user_id,
             #current_session_user_id=history.current_session_user_id
         )
 

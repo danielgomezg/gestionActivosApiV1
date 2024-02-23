@@ -203,7 +203,10 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     try:
         payload = jwt.decode(token, key=SECRET_KEY, algorithms=[ALGORITHM])
-        additional_info = payload.get("user", {})
+        #additional_info = payload.get("user", {})
+        additional_info = payload["user"]
+        name_user = additional_info["firstName"] + " " + additional_info["secondName"] + " " + additional_info["lastName"] + " " + additional_info["secondLastName"]
+        #print(name_user)
         id_user = payload.get("sub")
 
         # Obtener el tiempo de expiración (exp) del token
@@ -214,16 +217,17 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
     #Recoradr que es str
-    return id_user, expiration_time
+    #return id_user, expiration_time
+    return name_user, expiration_time
 
 def get_user_disable_current(current_user_info: Tuple[str, Optional[str]] = Depends(get_current_user)):
     # Obtener la fecha y hora actual
     current_time = datetime.utcnow().timestamp()
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # Validar si el token ha expirado
     if int(expiration_time) > int(current_time):
         print("El token no ha expirado aún.")
-        return id_user, expiration_time
+        return name_user, expiration_time
     else:
         print("El token ha expirado.")
         return (None, None)

@@ -22,7 +22,7 @@ router = APIRouter()
 
 @router.get("/active/{id}")
 def get_active(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -35,7 +35,7 @@ def get_active(id: int, db: Session = Depends(get_db), current_user_info: Tuple[
 
 @router.get('/actives')
 def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current),limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -50,7 +50,7 @@ def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str
 
 @router.get("/activePorArticle/{id_article}")
 def get_active_por_article(id_article: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -64,7 +64,7 @@ def get_active_por_article(id_article: int, db: Session = Depends(get_db), curre
 
 @router.get("/active/office/{id_office}")
 def get_active_por_office(id_office: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -77,7 +77,7 @@ def get_active_por_office(id_office: int, db: Session = Depends(get_db), current
 
 @router.get("/active/offices/{id_offices}")
 def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -91,7 +91,7 @@ def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), curr
 
 @router.get("/active/sucursal/{sucursal_id}")
 def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -102,7 +102,7 @@ def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), cu
 
 @router.get('/active/search/sucursal/{sucursal_id}')
 def search_by_sucursal(sucursal_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -114,7 +114,7 @@ def search_by_sucursal(sucursal_id: int, search: str, db: Session = Depends(get_
 
 @router.get('/active/search/offices/{id_offices}')
 def search_by_offices(id_offices: str, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -143,8 +143,8 @@ def upload_file(file: UploadFile = File(...), current_user_info: Tuple[str, str]
         raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {e}")
 
 @router.post('/active')
-def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -200,12 +200,12 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
     if (not id_article):
         return Response(code="400", message="id articulo no valido", result=[])
 
-    _active = create_active(db, request, id_user)
+    _active = create_active(db, request, name_user)
     return Response(code = "201", message = f"Activo {_active.bar_code} creado", result = _active).model_dump()
 
 @router.put('/active/{id}')
-def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -262,18 +262,18 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     if (not id_office):
         return Response(code="400", message="id oficina no valido", result=[])
 
-    _active = update_active(db, id,  request, id_user)
+    _active = update_active(db, id,  request, name_user)
     return Response(code = "201", message = f"Activo {_active.bar_code} editado", result = _active).model_dump()
 
 @router.delete('/active/{id}')
-def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    _active = delete_active(db, id, id_user)
+    _active = delete_active(db, id, name_user)
     return Response(code = "201", message = f"Activo con id {id} eliminado", result = _active).model_dump()
 
 @router.get("/file_active/{file_path}")

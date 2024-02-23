@@ -135,7 +135,7 @@ def get_image_url(file: UploadFile, upload_folder: Path) -> str:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar la imagen: {e}")
 
 
-def create_article(db: Session, article: ArticleSchema, id_user: int):
+def create_article(db: Session, article: ArticleSchema, name_user: str):
     try:
         _article = Article(
             name=article.name,
@@ -155,7 +155,7 @@ def create_article(db: Session, article: ArticleSchema, id_user: int):
             "description": "create-article",
             "article_id": _article.id,
             "company_id": _article.company_id,
-            "user_id": id_user
+            "name_user": name_user
             #"current_session_user_id": id_user
         }
         create_history(db, HistorySchema(**history_params))
@@ -166,7 +166,7 @@ def create_article(db: Session, article: ArticleSchema, id_user: int):
 
 
 
-def update_article(db: Session, article_id: int, article: ArticleEditSchema, id_user: int):
+def update_article(db: Session, article_id: int, article: ArticleEditSchema, name_user: str):
     try:
         article_to_edit = db.query(Article).filter(Article.id == article_id).first()
         if article_to_edit:
@@ -217,7 +217,7 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema, id_
                 "description": "update-article",
                 "article_id": article_to_edit.id,
                 "company_id": article_to_edit.company_id,
-                "user_id": id_user
+                "name_user": name_user
                 #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
@@ -229,7 +229,7 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema, id_
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando articulo: {e}")
 
-def delete_article(db: Session, article_id: int, id_user: int):
+def delete_article(db: Session, article_id: int, name_user: str):
     try:
         article_to_delete = db.query(Article).filter(Article.id == article_id).first()
         if article_to_delete:
@@ -242,7 +242,7 @@ def delete_article(db: Session, article_id: int, id_user: int):
                 "description": "delete-article",
                 "article_id": article_to_delete.id,
                 "company_id": article_to_delete.company_id,
-                "user_id": id_user
+                "name_user": name_user
                 #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))

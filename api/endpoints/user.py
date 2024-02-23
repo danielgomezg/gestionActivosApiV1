@@ -30,7 +30,7 @@ ALGORITHM = config('ALGORITHM')
 
 @router.get("/user/{id}")
 def get_user(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -42,7 +42,7 @@ def get_user(id: int, db: Session = Depends(get_db), current_user_info: Tuple[st
 
 @router.get('/users')
 def get_users(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -54,7 +54,7 @@ def get_users(db: Session = Depends(get_db), current_user_info: Tuple[str, str] 
 
 @router.get('/users/search')
 def search_users(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
@@ -64,8 +64,8 @@ def search_users(search: str, db: Session = Depends(get_db), current_user_info: 
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.post('/user')
-def create(request: UserSchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def create(request: UserSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -101,12 +101,12 @@ def create(request: UserSchema, db: Session = Depends(get_db), current_user_info
     if (not id_perfil):
         return Response(code="400", message="id perfil no valido", result=[])
 
-    _user = create_user(db, request, id_user)
+    _user = create_user(db, request, name_user)
     return Response(code = "201", message = f"Usuario {_user.firstName} creado", result = _user).model_dump()
 
 @router.put('/user/{id}')
-def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -136,17 +136,17 @@ def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), curr
     if (not id_perfil):
         return Response(code="400", message="id perfil no valido", result=[])
 
-    _user = update_user(db, id, request, id_user)
+    _user = update_user(db, id, request, name_user)
     return Response(code = "201", message = f"Usuario {_user.firstName} editado", result = _user).model_dump()
 
 @router.delete('/user/{id}')
-def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    _user = delete_user(db, id, id_user)
+    _user = delete_user(db, id, name_user)
     return Response(code = "201", message = f"Usuario con id {id} eliminado", result = _user).model_dump()
 
 @router.post('/login')

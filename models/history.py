@@ -20,6 +20,7 @@ class History(Base):
     __tablename__ = 'historial'
     id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(String, nullable=True)
+    name_user = Column(String, nullable=False)
     creation_date = Column(Date, default=date.today, nullable=False)
     #current_session_user_id = Column(Integer, nullable=False)
 
@@ -44,6 +45,6 @@ class History(Base):
     active = relationship('Active', back_populates='historial')
 
     # Relacion con user
-    user_id = Column(Integer, ForeignKey('usuario.id'), nullable=True)
-    user = relationship('Usuario', back_populates='historial')
+    #user_id = Column(Integer, ForeignKey('usuario.id'), nullable=True)
+    #user = relationship('Usuario', back_populates='historial')
 

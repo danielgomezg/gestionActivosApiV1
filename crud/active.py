@@ -212,7 +212,7 @@ def get_file_url(file: UploadFile, upload_folder: Path) -> str:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar el documento de activo: {e}")
 
-def create_active(db: Session, active: ActiveSchema, id_user: int):
+def create_active(db: Session, active: ActiveSchema, name_user: str):
     try:
         _active = Active(
             bar_code=active.bar_code,
@@ -242,7 +242,7 @@ def create_active(db: Session, active: ActiveSchema, id_user: int):
             "active_id": _active.id,
             "article_id": _active.article_id,
             "office_id": _active.office_id,
-            "user_id": id_user,
+            "name_user": name_user,
             "company_id": id_company
             #"current_session_user_id": id_user
         }
@@ -253,7 +253,7 @@ def create_active(db: Session, active: ActiveSchema, id_user: int):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando activo {e}")
 
 
-def update_active(db: Session, active_id: int, active: ActiveEditSchema, id_user: int):
+def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_user: str):
     try:
         active_to_edit = db.query(Active).filter(Active.id == active_id).first()
         if active_to_edit:
@@ -289,7 +289,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, id_user
                 "active_id": active_to_edit.id,
                 "article_id": active_to_edit.article_id,
                 "office_id": active_to_edit.office_id,
-                "user_id": id_user,
+                "name_user": name_user,
                 "company_id": id_company
                 #"current_session_user_id": id_user
             }
@@ -301,7 +301,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, id_user
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando activo: {e}")
 
-def delete_active(db: Session, active_id: int, id_user: int):
+def delete_active(db: Session, active_id: int, name_user: str):
     try:
         active_to_delete = db.query(Active).filter(Active.id == active_id).first()
         if active_to_delete:
@@ -317,7 +317,7 @@ def delete_active(db: Session, active_id: int, id_user: int):
                 "active_id": active_to_delete.id,
                 "article_id": active_to_delete.article_id,
                 "office_id": active_to_delete.office_id,
-                "user_id": id_user,
+                "name_user": name_user,
                 "company_id": id_company
                 #"current_session_user_id": id_user
             }

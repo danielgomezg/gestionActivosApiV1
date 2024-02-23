@@ -16,7 +16,7 @@ router = APIRouter()
 
 @router.get('/actions')
 def get_actions(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -27,7 +27,7 @@ def get_actions(db: Session = Depends(get_db), current_user_info: Tuple[str, str
 
 @router.get("/action/{id}", response_model=ActionSchema)
 def get_action(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -40,7 +40,7 @@ def get_action(id: int, db: Session = Depends(get_db), current_user_info: Tuple[
     return result
 @router.post('/action')
 def create(request: ActionSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -54,7 +54,7 @@ def create(request: ActionSchema, db: Session = Depends(get_db), current_user_in
 
 @router.put('/action/{id}')
 def update(request: ActionSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -68,7 +68,7 @@ def update(request: ActionSchema, id: int, db: Session = Depends(get_db), curren
 
 @router.delete('/action/{id}')
 def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:

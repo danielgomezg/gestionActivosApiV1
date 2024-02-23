@@ -17,8 +17,8 @@ router = APIRouter()
 
 
 @router.get('/categories')
-def get_categories(db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+def get_categories(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return  Response(code = "401", message = "token-exp", result = [])
@@ -31,7 +31,7 @@ def get_categories(db: Session = Depends(get_db), current_user_info: Tuple[int, 
 
 @router.get("/category/{id}")
 def get_category(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -42,8 +42,8 @@ def get_category(id: int, db: Session = Depends(get_db), current_user_info: Tupl
     return Response(code= "200", result = result, message="Categoryy found").model_dump()
 
 @router.post('/category')
-def create(request: CategorySchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def create(request: CategorySchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -68,8 +68,8 @@ def create(request: CategorySchema, db: Session = Depends(get_db), current_user_
     return Response(code = "201", message = f"Categoria {_category.description} creada", result = _category).model_dump()
 
 @router.put('/category/{id}')
-def update(request: CategoryEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def update(request: CategoryEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -81,8 +81,8 @@ def update(request: CategoryEditSchema, id: int, db: Session = Depends(get_db), 
     return Response(code = "201", message = f"La Categoria {_category.description} editada", result = _category).model_dump()
 
 @router.delete('/category/{id}')
-def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
