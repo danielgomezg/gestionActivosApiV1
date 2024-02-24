@@ -1,7 +1,7 @@
 from models import sucursal
 from models.sucursal import Sucursal
 # from database import engine
-from fastapi import APIRouter, HTTPException, Path, Depends
+from fastapi import APIRouter, HTTPException, Path, Depends, Header
 from sqlalchemy.orm import Session
 from database import get_db, conexion
 from crud.sucursal import (create_sucursal, get_sucursal_by_id, get_sucursal_all, count_sucursal, get_sucursal_by_id_company, delete_sucursal,
@@ -19,8 +19,13 @@ router = APIRouter()
 
 
 @router.get('/sucursales')
-def get_sucursales(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_sucursales(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
     id_user, expiration_time = current_user_info
+    
+    db = next(conexion(db, companyId))
+    if db is None:
+        return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=0).model_dump()
+    
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:

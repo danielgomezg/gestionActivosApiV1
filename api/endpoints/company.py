@@ -131,9 +131,11 @@ def create(request: CompanySchema, db: Session = Depends(get_db), current_user_i
 
     _company = create_company(db, request, name_user)
     #Creando nueva bd para la empresa e inserta la empresa
-    create_database(_company.name.lower().replace(" ", "_"))
-    db_company = next(conexion(_company.name.lower().replace(" ", "_")))
+    create_database(_company.name_db)
+    
+    db_company = next(conexion(_company.name_db))
     _company_db_own = create_company(db_company, request, name_user)
+
     return Response(code = "201", message = f"Empresa {_company.name} creada", result = _company).model_dump()
 
 @router.put('/company/{id}')

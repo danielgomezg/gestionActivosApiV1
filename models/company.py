@@ -14,7 +14,8 @@ class Company(Base):
     contact_phone = Column(String, nullable=False)
     contact_email = Column(String, nullable=False)
     removed = Column(Integer, default=0, nullable=False)
-
+    name_db = Column(String, nullable=False)
+    
     #Relacion con sucursales
     sucursales = relationship('Sucursal', back_populates='company')
     sucursales_count_var = None

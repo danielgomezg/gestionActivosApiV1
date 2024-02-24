@@ -102,7 +102,8 @@ def create_company(db: Session, company: CompanySchema, name_user: str):
             country=company.country,
             contact_name=company.contact_name,
             contact_phone=company.contact_phone,
-            contact_email=company.contact_email
+            contact_email=company.contact_email,   
+            name_db=company.name.replace(" ", "_").lower()
         )
 
         db.add(_company)
@@ -179,5 +180,12 @@ def search_company(db: Session, search: str,  limit: int = 100, offset: int = 0)
         companies = (db.query(Company).filter(func.lower(Company.name).like(f"%{search}%")).offset(offset).limit(limit).all())
         count = db.query(Company).filter(func.lower(Company.name).like(f"%{search}%")).count()
         return companies, count
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania por nombre {e}")
+    
+
+def get_name_db_company(db: Session, company_id: int):
+    try:
+        return db.query(Company.name_db).filter(Company.id == company_id).first()
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania por nombre {e}")
