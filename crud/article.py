@@ -44,9 +44,17 @@ def get_article_by_id(db: Session, article_id: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar articulo {e}")
 
+# reemplazada por get_article_by_code
 def get_article_by_company_and_code(db: Session, company_id: int, code: str, limit: int = 100, offset: int = 0):
     try:
         result = db.query(Article).filter(Article.company_id == company_id, Article.code == code, Article.removed == 0).offset(offset).limit(limit).first()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
+def get_article_by_code(db: Session, code: str, limit: int = 100, offset: int = 0):
+    try:
+        result = db.query(Article).filter(Article.code == code, Article.removed == 0).offset(offset).limit(limit).first()
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
@@ -142,7 +150,7 @@ def create_article(db: Session, article: ArticleSchema, name_user: str):
             description=article.description,
             code=article.code,
             photo=article.photo,
-            category_id=article.category_id,
+            #category_id=article.category_id,
             company_id=article.company_id
         )
 

@@ -55,32 +55,40 @@ def get_company_by_id(db: Session, company_id: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania {e}")
 
+#Para la Generacion de catatlogo
+# def get_company_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offset: int = 0):
+#     try:
+#         result = (db.query(Company).
+#                   join(Sucursal, Company.id == Sucursal.company_id).
+#                   filter(Sucursal.id == sucursal_id, Company.removed == 0).
+#                   offset(offset).limit(limit).all())
+#         return result
+#     except Exception as e:
+#         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
-def get_company_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offset: int = 0):
-    try:
-        result = (db.query(Company).
-                  join(Sucursal, Company.id == Sucursal.company_id).
-                  filter(Sucursal.id == sucursal_id, Company.removed == 0).
-                  offset(offset).limit(limit).all())
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
-def get_company_by_office(db: Session, office_id: int, limit: int = 100, offset: int = 0):
-    try:
-        result = (db.query(Company).
-                  join(Sucursal, Company.id == Sucursal.company_id).
-                  join(Office, Sucursal.id == Office.sucursal_id).
-                  filter(Office.id == office_id, Company.removed == 0).
-                  offset(offset).limit(limit).all())
-        count = db.query(Company).join(Sucursal, Company.id == Sucursal.company_id).join(Office, Sucursal.id == Office.sucursal_id).filter(Office.id == office_id, Company.removed == 0).count()
-        return result, count
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+# def get_company_by_office(db: Session, office_id: int, limit: int = 100, offset: int = 0):
+#     try:
+#         result = (db.query(Company).
+#                   join(Sucursal, Company.id == Sucursal.company_id).
+#                   join(Office, Sucursal.id == Office.sucursal_id).
+#                   filter(Office.id == office_id, Company.removed == 0).
+#                   offset(offset).limit(limit).all())
+#         count = db.query(Company).join(Sucursal, Company.id == Sucursal.company_id).join(Office, Sucursal.id == Office.sucursal_id).filter(Office.id == office_id, Company.removed == 0).count()
+#         return result, count
+#     except Exception as e:
+#        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
 def get_company_by_rut_and_country(db: Session, rut: str, country: str, limit: int = 100, offset: int = 0):
     try:
         result = (db.query(Company).filter(Company.rut == rut, Company.country == country, Company.removed == 0).first())
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener empresa {e}")
+
+def get_company_by_name(db: Session, name_company: str, limit: int = 100, offset: int = 0):
+    try:
+        result = (db.query(Company).filter(Company.name == name_company, Company.removed == 0).first())
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener empresa {e}")

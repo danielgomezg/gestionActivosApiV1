@@ -16,7 +16,7 @@ import pytz
 
 from crud.generation_catalogo import draw_multiline_text, portada_catalogo, generate_barcode, draw_table
 from crud.article import get_article_by_id_company, count_article_by_company
-from crud.company import get_company_by_id, get_company_by_sucursal
+from crud.company import get_company_by_id#, get_company_by_sucursal
 from crud.active import get_active_by_sucursal, get_active_by_offices
 
 import copy

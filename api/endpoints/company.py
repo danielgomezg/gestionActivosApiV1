@@ -4,7 +4,8 @@ from models.company import Company
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db, create_database, conexion
-from crud.company import create_company, get_company_by_id, get_company_all, count_company, get_company_all_id_name, delete_company, update_company, search_company, get_company_by_office, get_company_by_rut_and_country
+from crud.company import (create_company, get_company_by_id, get_company_all, count_company, get_company_all_id_name, delete_company, update_company,
+                          search_company, get_company_by_rut_and_country, get_company_by_name)
 from schemas.companySchema import CompanySchema,CompanySchemaIdName, CompanyEditSchema
 from schemas.schemaGenerico import ResponseGet, Response
 import re
@@ -69,17 +70,17 @@ def get_company(id: int, db: Session = Depends(get_db), current_user_info: Tuple
         return Response(code= "404", result = [], message="Not found").model_dump()
     return Response(code= "200", result = result, message="Company found").model_dump()
 
-@router.get("/company/sucursal/office/{office_id}")
-def get_company_offices(office_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    name_user, expiration_time = current_user_info
-    # Se valida la expiracion del token
-    if expiration_time is None:
-        return Response(code="401", message="token-exp", result=[])
-
-    result, count = get_company_by_office(db, office_id, limit, offset)
-    if not result:
-        return ResponseGet(code= "200", result = [], limit= limit, offset = offset, count = 0).model_dump()
-    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
+# @router.get("/company/sucursal/office/{office_id}")
+# def get_company_offices(office_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+#     name_user, expiration_time = current_user_info
+#     # Se valida la expiracion del token
+#     if expiration_time is None:
+#         return Response(code="401", message="token-exp", result=[])
+#
+#     result, count = get_company_by_office(db, office_id, limit, offset)
+#     if not result:
+#         return ResponseGet(code= "200", result = [], limit= limit, offset = offset, count = 0).model_dump()
+#     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.post('/company')
 def create(request: CompanySchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
@@ -91,6 +92,9 @@ def create(request: CompanySchema, db: Session = Depends(get_db), current_user_i
 
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre de la empresa vacio", result = [])
+    name_company = get_company_by_name(db, request.name)
+    if(name_company):
+        return Response(code="400", message="nombre de compania ya ingresado", result=[])
 
     if (len(request.country) == 0):
         return Response(code="400", message="Pais no valido", result=[])
@@ -141,6 +145,9 @@ def update(request: CompanyEditSchema, id: int, db: Session = Depends(get_db), c
 
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre de la empresa vacio", result = [])
+    name_company = get_company_by_name(db, request.name)
+    if (name_company and name_company.id is not id):
+        return Response(code="400", message="nombre de compania ya ingresado", result=[])
 
     if (len(request.contact_name) == 0):
         return Response(code="400", message="Nombre del contacto vacio", result=[])

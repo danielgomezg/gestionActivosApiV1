@@ -93,11 +93,19 @@ def search_sucursal_by_company(db: Session, search: str, company_id: int , limit
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar sucursales {e}")
 
+#reemplazada por get_sucursal_by_number
 def get_sucursal_by_company_and_number(db: Session, company_id: int, number: str, limit: int = 100, offset: int = 0):
     try:
         result = (db.query(Sucursal).filter(Sucursal.company_id == company_id, Sucursal.number == number, Sucursal.removed == 0)
                   .options(joinedload(Sucursal.company)).first())
 
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener sucursal {e}")
+
+def get_sucursal_by_number(db: Session, number: str, limit: int = 100, offset: int = 0):
+    try:
+        result = (db.query(Sucursal).filter( Sucursal.number == number, Sucursal.removed == 0).first())
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener sucursal {e}")

@@ -57,8 +57,9 @@ def conexion(db_name):
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     db = SessionLocal()
     try:
+        print(db_name)
         yield db
-    finally:
+    finall
         db.close()
 
 #meta = MetaData()

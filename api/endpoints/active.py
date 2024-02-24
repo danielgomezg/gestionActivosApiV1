@@ -2,7 +2,7 @@ from models import active
 # from database import engine
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query
 from sqlalchemy.orm import Session
-from database import get_db
+from database import get_db, conexion
 from crud.active import (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
                          get_active_by_office, get_active_by_offices, count_active, get_active_by_article_and_barcode, search_active_sucursal, search_active_offices)
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
@@ -143,18 +143,20 @@ def upload_file(file: UploadFile = File(...), current_user_info: Tuple[str, str]
         raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {e}")
 
 @router.post('/active')
-def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), name_company: str = ""):
     name_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
+
+    db_company = next(conexion(name_company.lower().replace(" ", "_")))
 
     if(len(request.bar_code) == 0):
         return  Response(code = "400", message = "codigo de barra no valido", result = [])
 
     # valida si existe un codigo de barra con el mismo numero dentro de los articulos
-    active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+    #active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+    active_barcode = get_active_by_article_and_barcode(db_company, request.article_id, request.bar_code)
     if active_barcode:
         return Response(code="400", message="Codigo de barra ya ingresado", result=[])
 
@@ -192,30 +194,35 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
     if (len(request.state) == 0):
         return Response(code="400", message="Estado no valido", result=[])
 
-    id_office = get_office_by_id(db, request.office_id)
+    #id_office = get_office_by_id(db, request.office_id)
+    id_office = get_office_by_id(db_company, request.office_id)
     if(not id_office):
         return Response(code="400", message="id oficina no valido", result=[])
 
-    id_article = get_article_by_id(db, request.article_id)
+    #id_article = get_article_by_id(db, request.article_id)
+    id_article = get_article_by_id(db_company, request.article_id)
     if (not id_article):
         return Response(code="400", message="id articulo no valido", result=[])
 
-    _active = create_active(db, request, name_user)
+    #_active = create_active(db, request, name_user)
+    _active = create_active(db_company, request, name_user)
     return Response(code = "201", message = f"Activo {_active.bar_code} creado", result = _active).model_dump()
 
 @router.put('/active/{id}')
-def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), name_company: str = ""):
     name_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
+
+    db_company = next(conexion(name_company.lower().replace(" ", "_")))
 
     if (len(request.bar_code) == 0):
         return Response(code="400", message="codigo de barra no valido", result=[])
 
     # valida si existe un codigo de barra con el mismo numero dentro de los articulos
-    active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+    #active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+    active_barcode = get_active_by_article_and_barcode(db_company, request.article_id, request.bar_code)
     if active_barcode and id is not active_barcode.id:
         return Response(code="400", message="Codigo de barra ya ingresado", result=[])
 
@@ -258,22 +265,25 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     if (len(request.state) == 0):
         return Response(code="400", message="Esatdo no valido", result=[])
 
-    id_office = get_office_by_id(db, request.office_id)
+    #id_office = get_office_by_id(db, request.office_id)
+    id_office = get_office_by_id(db_company, request.office_id)
     if (not id_office):
         return Response(code="400", message="id oficina no valido", result=[])
 
-    _active = update_active(db, id,  request, name_user)
+    #_active = update_active(db, id,  request, name_user)
+    _active = update_active(db_company, id, request, name_user)
     return Response(code = "201", message = f"Activo {_active.bar_code} editado", result = _active).model_dump()
 
 @router.delete('/active/{id}')
-def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), name_company: str = ""):
     name_user, expiration_time = current_user_info
-    # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
+    db_company = next(conexion(name_company.lower().replace(" ", "_")))
 
-    _active = delete_active(db, id, name_user)
+    #_active = delete_active(db, id, name_user)
+    _active = delete_active(db_company, id, name_user)
     return Response(code = "201", message = f"Activo con id {id} eliminado", result = _active).model_dump()
 
 @router.get("/file_active/{file_path}")
