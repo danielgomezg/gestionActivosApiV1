@@ -18,5 +18,5 @@ class ArticleEditSchema(BaseModel):
     description: Optional[str] = None
     code: str
     photo: Optional[str] = None
-    company_id: int = None
+    #company_id: int = None
     #category_id: int = None

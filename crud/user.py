@@ -70,7 +70,7 @@ def search_users_by_mail_rut(db: Session, search: str, limit: int = 100, offset:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar Usuarios {e}")
 
-def create_user(db: Session, user: UserSchema, id_user: int):
+def create_user(db: Session, user: UserSchema):
     try:
         _user = Usuario(
             firstName=user.firstName,
@@ -101,7 +101,7 @@ def create_user(db: Session, user: UserSchema, id_user: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando user {e}")
 
-def update_user(db: Session, user_id: int, user: UserEditSchema, id_user: int):
+def update_user(db: Session, user_id: int, user: UserEditSchema):
 
     try:
         user_to_edit = db.query(Usuario).filter(Usuario.id == user_id).first()
@@ -143,7 +143,7 @@ def update_user(db: Session, user_id: int, user: UserEditSchema, id_user: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando usuario: {e}")
 
-def delete_user(db: Session, user_id: int, id_user: int):
+def delete_user(db: Session, user_id: int):
 
     try:
         user_to_delete = db.query(Usuario).filter(Usuario.id == user_id).first()

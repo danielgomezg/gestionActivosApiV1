@@ -22,7 +22,7 @@ def draw_multiline_text(pdf, x, y_position, text):
 
 def portada_catalogo(pdf, company):
     pdf.setFont("Helvetica-Bold", 32)
-    pdf.drawCentredString(300, 450, f"{company.name}")
+    pdf.drawCentredString(300, 450, f"{company.name.upper()}")
 
     # Intentamos cargar la imagen desde una ruta específica
     image_path = "images-sca/sca-1.jpeg"

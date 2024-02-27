@@ -25,8 +25,7 @@ def get_sucursales(db: Session = Depends(get_db), current_user_info: Tuple[str, 
     db = next(conexion(db, companyId))
     if db is None:
         return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=0).model_dump()
-    
-    #print("Tiempo de expiración: ", expiration_time)
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -38,8 +37,13 @@ def get_sucursales(db: Session = Depends(get_db), current_user_info: Tuple[str, 
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/sucursal/{id}")
-def get_sucursal(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def get_sucursal(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     id_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code= "404", result = [], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -52,7 +56,11 @@ def get_sucursal(id: int, db: Session = Depends(get_db), current_user_info: Tupl
 @router.get("/sucursalPorCompany/{id_company}")
 def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     name_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
+
+    db = next(conexion(db, id_company))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -65,6 +73,11 @@ def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), cur
 @router.get('/sucursal/search/{company_id}')
 def search_sucursal(company_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, company_id))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
@@ -74,14 +87,21 @@ def search_sucursal(company_id: int, search: str, db: Session = Depends(get_db),
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.post('/sucursal')
-def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), name_company: str = ""):
+def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     name_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
+
+    #Se verifica el id de la company en BD Main
+    id_company = get_company_by_id(db, request.company_id)
+    if (not id_company):
+        return Response(code="400", message="id compania no valido", result=[])
+
+    db = next(conexion(db, request.company_id))
+    if db is None:
+        Response(code= "404", result = [], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
-
-    db_company = next(conexion(name_company.lower().replace(" ", "_")))
 
     if(len(request.description) == 0):
         return  Response(code = "400", message = "Descripcion no valida", result = [])
@@ -104,24 +124,25 @@ def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_
 
     # valida si existe una sucursal con el mismo numero dentro de la empresa
     #sucursal_number = get_sucursal_by_company_and_number(db, request.company_id, request.number)
-    sucursal_number = get_sucursal_by_number(db_company, request.number)
+    sucursal_number = get_sucursal_by_number(db, request.number)
     if sucursal_number:
         return Response(code="400", message="numero de sucursal ya ingresado", result=[])
 
     #_sucursal = create_sucursal(db, request, name_user)
-    request.company_id = 1
-    _sucursal = create_sucursal(db_company, request, name_user)
+    _sucursal = create_sucursal(db, request, name_user)
     return Response(code = "201", message = f"Sucursal {_sucursal.number} creada", result = _sucursal).model_dump()
 
 @router.put('/sucursal/{id}')
-def update(request: SucursalEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), name_company: str = ""):
+def update(request: SucursalEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
-
-    db_company = next(conexion(name_company.lower().replace(" ", "_")))
 
     if(len(request.description) == 0):
         return  Response(code = "400", message = "Descripcion no valida", result = [])
@@ -135,21 +156,24 @@ def update(request: SucursalEditSchema, id: int, db: Session = Depends(get_db), 
     #valida si existe una sucursal con el mismo numero dentro de la empresa
     #sucursal_to_edit = get_sucursal_by_id(db, id)
     #sucursal_number = get_sucursal_by_company_and_number(db, sucursal_to_edit.company_id, request.number)
-    sucursal_number = get_sucursal_by_number(db_company, request.number)
+    sucursal_number = get_sucursal_by_number(db, request.number)
     if sucursal_number and sucursal_number.id is not id:
         return Response(code="400", message="numero de sucursal ya ingresado", result=[])
 
-    _sucursal = update_sucursal(db_company, id,  request, name_user)
+    _sucursal = update_sucursal(db, id,  request, name_user)
     return Response(code = "201", message = f"Sucursal {_sucursal.number} editada", result = _sucursal).model_dump()
 
 @router.delete('/sucursal/{id}')
-def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), name_company: str = ""):
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    db_company = next(conexion(name_company.lower().replace(" ", "_")))
-
-    _sucursal = delete_sucursal(db_company, id, name_user)
+    _sucursal = delete_sucursal(db, id, name_user)
     return Response(code = "201", message = f"Sucursal con id {id} eliminada", result = _sucursal).model_dump()

@@ -93,18 +93,31 @@ def get_company_by_name(db: Session, name_company: str, limit: int = 100, offset
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener empresa {e}")
 
-def create_company(db: Session, company: CompanySchema, name_user: str):
+def create_company(db: Session, company: CompanySchema, name_user: str, id_company_new_db: int = 0):
     try:
         print("creando....")
-        _company = Company(
-            name=company.name,
-            rut=company.rut,
-            country=company.country,
-            contact_name=company.contact_name,
-            contact_phone=company.contact_phone,
-            contact_email=company.contact_email,   
-            name_db=company.name.replace(" ", "_").lower()
-        )
+        if(id_company_new_db == 0):
+            _company = Company(
+                name=company.name,
+                rut=company.rut,
+                country=company.country,
+                contact_name=company.contact_name,
+                contact_phone=company.contact_phone,
+                contact_email=company.contact_email,
+                name_db=company.name.replace(" ", "_").lower()
+            )
+        else:
+            _company = Company(
+                id=id_company_new_db,
+                name=company.name,
+                rut=company.rut,
+                country=company.country,
+                contact_name=company.contact_name,
+                contact_phone=company.contact_phone,
+                contact_email=company.contact_email,
+                name_db=company.name.replace(" ", "_").lower()
+            )
+
 
         db.add(_company)
         db.commit()
@@ -121,6 +134,7 @@ def create_company(db: Session, company: CompanySchema, name_user: str):
         create_history(db, HistorySchema(**history_params))
         print("termino hisotrial")
 
+        print(_company.id)
         return _company
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando compania {e}")

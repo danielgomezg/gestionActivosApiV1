@@ -101,7 +101,7 @@ def create(request: UserSchema, db: Session = Depends(get_db), current_user_info
     if (not id_perfil):
         return Response(code="400", message="id perfil no valido", result=[])
 
-    _user = create_user(db, request, name_user)
+    _user = create_user(db, request)
     return Response(code = "201", message = f"Usuario {_user.firstName} creado", result = _user).model_dump()
 
 @router.put('/user/{id}')
@@ -136,7 +136,7 @@ def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), curr
     if (not id_perfil):
         return Response(code="400", message="id perfil no valido", result=[])
 
-    _user = update_user(db, id, request, name_user)
+    _user = update_user(db, id, request)
     return Response(code = "201", message = f"Usuario {_user.firstName} editado", result = _user).model_dump()
 
 @router.delete('/user/{id}')
@@ -146,7 +146,7 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    _user = delete_user(db, id, name_user)
+    _user = delete_user(db, id)
     return Response(code = "201", message = f"Usuario con id {id} eliminado", result = _user).model_dump()
 
 @router.post('/login')

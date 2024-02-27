@@ -133,14 +133,19 @@ def create(request: CompanySchema, db: Session = Depends(get_db), current_user_i
     #Creando nueva bd para la empresa e inserta la empresa
     create_database(_company.name_db)
     
-    db_company = next(conexion(_company.name_db))
-    _company_db_own = create_company(db_company, request, name_user)
+    db_company = next(conexion(db, _company.id))
+    _company_db_own = create_company(db_company, request, name_user, _company.id)
 
     return Response(code = "201", message = f"Empresa {_company.name} creada", result = _company).model_dump()
 
 @router.put('/company/{id}')
 def update(request: CompanyEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     name_user, expiration_time = current_user_info
+
+    db_company = next(conexion(db, id))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -162,10 +167,9 @@ def update(request: CompanyEditSchema, id: int, db: Session = Depends(get_db), c
         return Response(code="400", message="Email del contacto invalido", result=[])
 
     _company = update_company(db, id, request, name_user)
+    _company_db_own = update_company(db_company, id, request, name_user)
 
-    db_company = next(conexion(_company.name.lower().replace(" ", "_")))
-    _company_db_own = update_company(db_company, 1, request, name_user)
-    return Response(code = "201", message = f"La Empresa {_company.name} editada", result = _company).model_dump()
+    return Response(code = "201", message = f"La Empresa {request.name} editada", result = _company).model_dump()
 
 @router.delete('/company/{id}')
 def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
@@ -174,10 +178,11 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    _company, name_company = delete_company(db, id, name_user)
+    db_company = next(conexion(db, id))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
 
-    print(name_company)
-    db_company = next(conexion(name_company.lower().replace(" ", "_")))
-    _company_db_own = delete_company(db_company, 1, name_user)
+    _company, name_company = delete_company(db, id, name_user)
+    _company_db_own = delete_company(db_company, id, name_user)
 
     return Response(code = "201", message = f"Compañia con id {id} eliminada", result = _company).model_dump()

@@ -1,4 +1,4 @@
-from fastapi import Depends, File, HTTPException
+from fastapi import Depends, File, HTTPException, Header
 from fastapi.responses import FileResponse
 from fastapi import APIRouter
 from typing import Tuple
@@ -7,7 +7,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from schemas.schemaGenerico import Response
 from sqlalchemy.orm import Session
-from database import get_db
+from database import get_db, conexion
 from crud.user import get_user_disable_current
 import os
 from datetime import datetime
@@ -31,8 +31,11 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
 
-        # Lógica para obtener los detalles de los artículos
+        db = next(conexion(db, id_company))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
 
+        # Lógica para obtener los detalles de los artículos
         articles, count = get_article_by_id_company(db, id_company, adjust_limit=True)
         company = get_company_by_id(db, id_company)
 
@@ -57,12 +60,12 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
             #Portada
             portada_catalogo(pdf,company)
 
-            pdf.setTitle(f"Catálogo de Artículos de {company.name}")
+            pdf.setTitle(f"Catálogo de Artículos de {company.name.upper()}")
             pdf.showPage()
 
             # Agregamos el título al PDF
             pdf.setFont("Helvetica", 16)
-            pdf.drawCentredString(300, 750, f"Catálogo de Artículos de {company.name}")
+            pdf.drawCentredString(300, 750, f"Catálogo de Artículos de {company.name.upper()}")
 
             y_position = 720
             page_number = 1
@@ -133,17 +136,21 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
             pdf.save()
 
         # Devolver el archivo PDF al cliente
-        return FileResponse(ruta_temporal, filename=f"catalogo_{company.name}.pdf", media_type="application/pdf")
+        return FileResponse(ruta_temporal, filename=f"catalogo_{company.name.upper()}.pdf", media_type="application/pdf")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al generar el catálogo de {company.name}: {e}")
 
 @router.get("/report/active/sucursal/{id_sucursal}")
-def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     try:
         name_user, expiration_time = current_user_info
         # Se valida la expiracion del token
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
+
+        db = next(conexion(db, companyId))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
 
         # Lógica para obtener los detalles de los artículos (por ejemplo, desde una base de datos)
         actives, count = get_active_by_sucursal(db, id_sucursal, adjust_limit=True)
@@ -168,7 +175,7 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
             width, height = pdf._pagesize
             print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
 
-            pdf.setTitle(f"Catálogo de Activos de {company.name}")
+            pdf.setTitle(f"Catálogo de Activos de {company.name.upper()}")
 
             # Dibujar un rectángulo
             ancho_rect = width - 100
@@ -183,7 +190,7 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
 
             pdf.setFont("Helvetica", 12)
             pdf.drawString(70, eje_y + 55, f"Cliente")
-            pdf.drawString(145, eje_y + 55, f"{company.name}")
+            pdf.drawString(145, eje_y + 55, f"{company.name.upper()}")
 
             pdf.drawString(70, eje_y + 35, f"Sucursal")
             pdf.drawString(145, eje_y + 35, f"{sucursal.number}    {sucursal.description}")
@@ -247,26 +254,31 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
             pdf.save()
 
         # Devolver el archivo PDF al cliente
-        return FileResponse(ruta_temporal, filename=f"catalogo_{company.name}.pdf", media_type="application/pdf")
+        return FileResponse(ruta_temporal, filename=f"catalogo_{company.name.upper()}.pdf", media_type="application/pdf")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al generar el catálogo de {company.name}: {e}")
 
 @router.get("/report/active/offices/{id_offices}")
-def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     try:
         name_user, expiration_time = current_user_info
         # Se valida la expiracion del token
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
 
+        db = next(conexion(db, companyId))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
         # Lógica para obtener los detalles de los artículos (por ejemplo, desde una base de datos)
         id_offices_list = id_offices.split(",")
         id_offices_int = [int(id_office) for id_office in id_offices_list]
-        print(len(id_offices_int))
+        #print(len(id_offices_int))
         actives, count = get_active_by_offices(db, id_offices_int, adjust_limit=True)
         sucursal = actives[0].office.sucursal
         company = actives[0].office.sucursal.company
 
+        #Creando mas datos para test
         while len(actives) < 80:
             actives.extend(copy.deepcopy(actives))
 
@@ -289,7 +301,7 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
             width, height = pdf._pagesize
             print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
 
-            pdf.setTitle(f"Catálogo de Activos de {company.name}")
+            pdf.setTitle(f"Catálogo de Activos de {company.name.upper()}")
 
             # Dibujar un rectángulo
             ancho_rect = width - 100
@@ -304,7 +316,7 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
 
             pdf.setFont("Helvetica", 12)
             pdf.drawString(70, eje_y + 55, f"Cliente")
-            pdf.drawString(145, eje_y + 55, f"{company.name}")
+            pdf.drawString(145, eje_y + 55, f"{company.name.upper()}")
 
             pdf.drawString(70, eje_y + 35, f"Sucursal")
             pdf.drawString(145, eje_y + 35, f"{sucursal.number}    {sucursal.description}")
@@ -372,17 +384,21 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
             pdf.save()
 
         # Devolver el archivo PDF al cliente
-        return FileResponse(ruta_temporal, filename=f"catalogo_{company.name}.pdf", media_type="application/pdf")
+        return FileResponse(ruta_temporal, filename=f"catalogo_{company.name.upper()}.pdf", media_type="application/pdf")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al generar el catálogo de {company.name}: {e}")
 
 @router.get("/report/excel/active/sucursal/{id_sucursal}")
-def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     try:
         name_user, expiration_time = current_user_info
         # Se valida la expiracion del token
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
+
+        db = next(conexion(db, companyId))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
 
         # Lógica para obtener los detalles de los artículos
         actives, count = get_active_by_sucursal(db, id_sucursal, adjust_limit=True)
@@ -394,7 +410,7 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
         # Lógica para generar el catálogo Excel
-        excel_filename = f'catalogo_{company.name}.xlsx'
+        excel_filename = f'catalogo_{company.name.upper()}.xlsx'
         excel_path = os.path.join('Generations_files', excel_filename)
 
         # Crear un libro de trabajo y una hoja de trabajo
@@ -426,20 +442,30 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
 
         worksheet.set_row(1, 25)
         # Escribir el título en una celda específica
-        worksheet.merge_range('C2:E2', ' Catálogo de activos ', formato_titulo)
+        worksheet.merge_range('B2:E2', ' Catálogo de activos ', formato_titulo)
 
         formato_sub_titulo = workbook.add_format({
             'align': 'left',
+            'indent': 1,
             'valign': 'vcenter',
             'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
             'font_size': 13,  # Cambiar el tamaño de la fuente para el título
         })
 
-        worksheet.write('C3', 'Cliente', formato_sub_titulo)
-        worksheet.merge_range('D3:E3', f'{company.name}', formato_sub_titulo)
-        worksheet.write('C4', 'Sucursal', formato_sub_titulo)
+        formato_sub_titulo_2 = workbook.add_format({
+            'align': 'right',
+            'indent': 1,
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
+            'font_size': 13,  # Cambiar el tamaño de la fuente para el título
+        })
+
+        #worksheet.write('C3', 'Cliente', formato_sub_titulo)
+        worksheet.merge_range('B3:C3', 'Cliente', formato_sub_titulo_2)
+        worksheet.merge_range('D3:E3', f'{company.name.upper()}', formato_sub_titulo)
+        worksheet.merge_range('B4:C4', 'Sucursal', formato_sub_titulo_2)
         worksheet.merge_range('D4:E4', f'{sucursal.number}   {sucursal.description}', formato_sub_titulo)
-        worksheet.write('C5', 'Fecha', formato_sub_titulo)
+        worksheet.merge_range('B5:C5', 'Fecha', formato_sub_titulo_2)
         worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
@@ -500,12 +526,16 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/report/excel/active/offices/{id_offices}")
-def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     try:
         name_user, expiration_time = current_user_info
         # Se valida la expiracion del token
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
+
+        db = next(conexion(db, companyId))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
 
         # Lógica para obtener los detalles de los artículos (por ejemplo, desde una base de datos)
         id_offices_list = id_offices.split(",")
@@ -520,7 +550,7 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
         # Lógica para generar el catálogo Excel
-        excel_filename = f'catalogo_{company.name}.xlsx'
+        excel_filename = f'catalogo_{company.name.upper()}.xlsx'
         excel_path = os.path.join('Generations_files', excel_filename)
 
         # Crear un libro de trabajo y una hoja de trabajo
@@ -552,20 +582,29 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
 
         worksheet.set_row(1, 25)
         # Escribir el título en una celda específica
-        worksheet.merge_range('C2:E2', ' Catálogo de activos ', formato_titulo)
+        worksheet.merge_range('B2:E2', ' Catálogo de activos ', formato_titulo)
 
         formato_sub_titulo = workbook.add_format({
             'align': 'left',
+            'indent': 1,
             'valign': 'vcenter',
             'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
             'font_size': 13,  # Cambiar el tamaño de la fuente para el título
         })
 
-        worksheet.write('C3', 'Cliente', formato_sub_titulo)
-        worksheet.merge_range('D3:E3', f'{company.name}', formato_sub_titulo)
-        worksheet.write('C4', 'Sucursal', formato_sub_titulo)
+        formato_sub_titulo_2 = workbook.add_format({
+            'align': 'right',
+            'indent': 1,
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
+            'font_size': 13,  # Cambiar el tamaño de la fuente para el título
+        })
+
+        worksheet.merge_range('B3:C3', 'Cliente', formato_sub_titulo_2)
+        worksheet.merge_range('D3:E3', f'{company.name.upper()}', formato_sub_titulo)
+        worksheet.merge_range('B4:C4', 'Sucursal', formato_sub_titulo_2)
         worksheet.merge_range('D4:E4', f'{sucursal.number}   {sucursal.description}', formato_sub_titulo)
-        worksheet.write('C5', 'Fecha', formato_sub_titulo)
+        worksheet.merge_range('B5:C5', 'Fecha', formato_sub_titulo_2)
         worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel

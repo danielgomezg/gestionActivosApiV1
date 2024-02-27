@@ -1,7 +1,7 @@
 from models import article
 from models.article import Article
 # from database import engine
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Header
 from pathlib import Path
 from sqlalchemy.orm import Session
 from database import get_db, conexion
@@ -19,8 +19,13 @@ router = APIRouter()
 #article.Base.metadata.create_all(bind=engine)
 
 @router.get("/article/{id}")
-def get_article(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+def get_article(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -31,15 +36,18 @@ def get_article(id: int, db: Session = Depends(get_db), current_user_info: Tuple
     return Response(code="200", result=result, message="Articulo encontrado").model_dump()
 
 @router.get('/articles')
-def get_articles(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_articles(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
-    # print("Tiempo de expiración: ", expiration_time)
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
     result, count = get_article_all(db, limit, offset)
-    #return result
     if not result:
         return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
@@ -47,7 +55,11 @@ def get_articles(db: Session = Depends(get_db), current_user_info: Tuple[str, st
 @router.get('/articles/company/{id_company}')
 def get_articles_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     name_user, expiration_time = current_user_info
-    # print("Tiempo de expiración: ", expiration_time)
+
+    db = next(conexion(db, id_company))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -61,6 +73,11 @@ def get_articles_por_company(id_company: int, db: Session = Depends(get_db), cur
 @router.get('/articles/search/{company_id}')
 def search_articles(company_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, company_id))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
@@ -86,14 +103,20 @@ def upload_image(file: UploadFile = File(...), current_user_info: Tuple[str, str
         raise HTTPException(status_code=500, detail=f"Error al procesar la imagen: {e}")
 
 @router.post('/article')
-def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), name_company: str = ""):
+def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     name_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    db_company = next(conexion(name_company.lower().replace(" ", "_")))
+    id_company = get_company_by_id(db, request.company_id)
+    if (not id_company):
+        return Response(code="400", message="id compania no valido", result=[])
+
+    db = next(conexion(db, request.company_id))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
 
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre no valido", result = [])
@@ -110,23 +133,21 @@ def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_i
     # if not id_category:
     #     return Response(code="400", message="id categoria no valido", result=[])
 
-    id_company = get_company_by_id(db, request.company_id)
-    if(not id_company):
-        return Response(code="400", message="id compania no valido", result=[])
-
-    request.company_id = 1
-    _article = create_article(db_company, request, name_user)
+    _article = create_article(db, request, name_user)
     #_article = create_article(db, request, name_user)
     return Response(code = "201", message = f"Articulo {_article.name} creado", result = _article).model_dump()
 
 @router.put('/article/{id}')
-def update(request: ArticleEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), name_company: str = ""):
+def update(request: ArticleEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
-
-    db_company = next(conexion(name_company.lower().replace(" ", "_")))
 
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre no valido", result = [])
@@ -135,7 +156,7 @@ def update(request: ArticleEditSchema, id: int, db: Session = Depends(get_db), c
         return  Response(code = "400", message = "Codigo no valido", result = [])
 
     #article_code = get_article_by_company_and_code(db, request.company_id, request.code)
-    article_code = get_article_by_code(db_company, request.code)
+    article_code = get_article_by_code(db, request.code)
     if article_code and id is not article_code.id:
         return Response(code="400", message="Codigo de barra ya ingresado", result=[])
 
@@ -144,19 +165,22 @@ def update(request: ArticleEditSchema, id: int, db: Session = Depends(get_db), c
     #     return Response(code="400", message="id categoria no valido", result=[])
 
     #_article = update_article(db, id,  request, name_user)
-    _article = update_article(db_company, id, request, name_user)
+    _article = update_article(db, id, request, name_user)
     return Response(code = "201", message = f"Articulo {_article.name} editado", result = _article).model_dump()
 
 @router.delete('/article/{id}')
-def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), name_company: str = ""):
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    db_company = next(conexion(name_company.lower().replace(" ", "_")))
-
-    _article = delete_article(db_company, id, name_user)
+    _article = delete_article(db, id, name_user)
     return Response(code = "201", message = f"Articulo con id {id} eliminado", result = _article).model_dump()
 
 

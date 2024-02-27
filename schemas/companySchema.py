@@ -5,6 +5,7 @@ T = TypeVar('T')
 
 
 class CompanySchema(BaseModel):
+    id: Optional[int] = None
     name: str
     rut: str
     country: str
