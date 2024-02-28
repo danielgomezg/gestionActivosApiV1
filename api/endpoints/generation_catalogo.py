@@ -39,6 +39,9 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
         articles, count = get_article_by_id_company(db, id_company, adjust_limit=True)
         company = get_company_by_id(db, id_company)
 
+        while len(articles) < 10:
+            articles.extend(copy.deepcopy(articles))
+
         #Fecha y hora
         chile_timezone = pytz.timezone('Chile/Continental')
         now = datetime.now(chile_timezone)
@@ -57,6 +60,9 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
         with open(ruta_temporal, 'wb') as f:
             pdf = canvas.Canvas(f, pagesize=letter)
 
+            width, height = pdf._pagesize
+            print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
+
             #Portada
             portada_catalogo(pdf,company)
 
@@ -67,7 +73,7 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
             pdf.setFont("Helvetica", 16)
             pdf.drawCentredString(300, 750, f"Catálogo de Artículos de {company.name.upper()}")
 
-            y_position = 720
+            y_position = 770
             page_number = 1
 
             # Iteramos sobre los artículos y los agregamos al PDF
@@ -89,33 +95,46 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
                 ruta_imagen = os.path.join(ruta_barcodes, f"barcode_{article.code}")
                 ruta_imagen_png = ruta_imagen + ".png"
                 generate_barcode(str(article.code), ruta_imagen)
-                pdf.drawImage(ruta_imagen_png, x=x_position_end + 10, y=(y_position - (y_line + 15)), width=40, height=40, preserveAspectRatio=True)
+                #pdf.drawImage(ruta_imagen_png, x=x_position_end + 10, y=(y_position - (y_line + 15)), width=40, height=40, preserveAspectRatio=True)
+                pdf.drawImage(ruta_imagen_png, x=380, y=(y_position - (y_line + 60)), width=100, height=100, preserveAspectRatio=True)
                 y_line += (20 * draw_lines)
 
                 draw_lines = draw_multiline_text(pdf, 50, (y_position - y_line), f"Descripción: {article.description}")
                 y_line += (20 * draw_lines)
-
                 draw_lines = draw_multiline_text(pdf, 50, y_position - y_line, f"Fecha de Creación: {article.creation_date}")
                 y_line += (15 * draw_lines)
+                #Se carga las imagenes de articulo
+                if (len(article.photo) > 0):
+                    photos_article = article.photo.split(",")
 
-                # Intentamos cargar la imagen desde una ruta específica
-                if(len(article.photo) > 0):
-                    image_path = f"files/images_article/{article.photo}"
-                    #try:
-                    image = ImageReader(image_path)
-                    pdf.drawImage(image, x=400, y=y_position - (y_line - 10), width=70, height=70, preserveAspectRatio=True)
-                    #except Exception as e:
-                        #print(f"No se pudo cargar la imagen para el artículo {article.name}: {e}")
+                    eje_x = 100
+                    y_line = y_line + 65
+                    for photo_article in photos_article:
+
+                    # Intentamos cargar la imagen desde una ruta específica x=400  y = y_position - (y_line - 10)
+                    #if (len(article.photo) > 0):
+                        image_path = f"files/images_article/{photo_article}"
+                        # try:
+                        image = ImageReader(image_path)
+                        pdf.drawImage(image, x=eje_x, y=y_position - y_line, width=70, height=70,
+                                      preserveAspectRatio=True)
+                        eje_x = eje_x + 100
+                        # except Exception as e:
+                        # print(f"No se pudo cargar la imagen para el artículo {article.name}: {e}")
+
+                    y_line = y_line + 5
+
 
                 # Agregamos un separador entre cada artículo
                 pdf.line(50, y_position - y_line, 550, y_position - y_line)
+                print(y_line)
                 y_line += 15
 
                 #elimina el codigo de barra generado
                 os.remove(ruta_imagen_png)
 
                 # Verificamos si hay espacio suficiente en la página actual
-                if y_position - y_line <= 100 and i < len(articles):
+                if y_position - y_line <= 180 and i < len(articles):
                     pdf.setFont("Helvetica", 8)
                     #numero pagina
                     pdf.drawRightString(550, 30, f"Página {page_number}")
@@ -125,7 +144,7 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
 
                     pdf.showPage()
                     # siguiente página
-                    y_position = 800
+                    y_position = 870
                     page_number += 1
 
 
