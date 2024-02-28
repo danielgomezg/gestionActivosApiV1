@@ -123,7 +123,12 @@ def create_company(db: Session, company: CompanySchema, name_user: str, id_compa
         db.commit()
         db.refresh(_company)
         print("termino...")
-        _company.count_sucursal = 0
+
+        # Actualiza name_db con la ID del nuevo registro
+        _company.name_db = f"{company.name.replace(' ', '_').lower()}_{_company.id}"
+        db.commit()
+        db.refresh(_company)
+        
         # creacion del historial
         history_params = {
             "description": "create-company",
