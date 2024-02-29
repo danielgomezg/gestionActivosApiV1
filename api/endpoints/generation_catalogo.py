@@ -66,7 +66,7 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
             #Portada
             portada_catalogo(pdf,company)
 
-            pdf.setTitle(f"Catálogo de Artículos de {company.name.upper()}")
+            pdf.setTitle(f"Catálogo de Artículos des {company.name.upper()}")
             pdf.showPage()
 
             # Agregamos el título al PDF
@@ -129,6 +129,150 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
                 pdf.line(50, y_position - y_line, 550, y_position - y_line)
                 print(y_line)
                 y_line += 15
+
+                #elimina el codigo de barra generado
+                os.remove(ruta_imagen_png)
+
+                # Verificamos si hay espacio suficiente en la página actual
+                if y_position - y_line <= 180 and i < len(articles):
+                    pdf.setFont("Helvetica", 8)
+                    #numero pagina
+                    pdf.drawRightString(550, 30, f"Página {page_number}")
+
+                    #Fexha y hora
+                    pdf.drawString(50, 30, f"{date_time}")
+
+                    pdf.showPage()
+                    # siguiente página
+                    y_position = 870
+                    page_number += 1
+
+
+            pdf.setFont("Helvetica", 8)
+            pdf.drawRightString(550, 30, f"Página {page_number}")
+            pdf.drawString(50, 30, f"{date_time}")
+
+            pdf.save()
+
+        # Devolver el archivo PDF al cliente
+        return FileResponse(ruta_temporal, filename=f"catalogo_{company.name.upper()}.pdf", media_type="application/pdf")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al generar el catálogo de {company.name}: {e}")
+
+
+@router.get("/report/article/test/{id_company}")
+def articles_catalog_2(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    try:
+        name_user, expiration_time = current_user_info
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+
+        db = next(conexion(db, id_company))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
+        # Lógica para obtener los detalles de los artículos
+        articles, count = get_article_by_id_company(db, id_company, adjust_limit=True)
+        company = get_company_by_id(db, id_company)
+
+        while len(articles) < 10:
+            articles.extend(copy.deepcopy(articles))
+
+        #Fecha y hora
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
+        date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+        #now = datetime.now()
+        #date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
+
+        # Lógica para generar el catálogo PDF con ReportLab
+        ruta_temporal = os.path.abspath("Generations_files/catalogo_reportlab.pdf")
+        os.makedirs(os.path.dirname(ruta_temporal), exist_ok=True)
+
+        ruta_barcodes = os.path.abspath("bar_codes")
+        os.makedirs(ruta_barcodes, exist_ok=True)
+
+        with (open(ruta_temporal, 'wb') as f):
+            pdf = canvas.Canvas(f, pagesize=letter)
+
+            width, height = pdf._pagesize
+            print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
+
+            #Portada
+            portada_catalogo(pdf,company)
+
+            pdf.setTitle(f"Catálogo de Artículos des {company.name.upper()}")
+            pdf.showPage()
+
+            # Agregamos el título al PDF
+            pdf.setFont("Helvetica", 16)
+            pdf.drawCentredString(300, 750, f"Catálogo de Artículos de {company.name.upper()}")
+
+            y_position = 770
+            page_number = 1
+
+            # Iteramos sobre los artículos y los agregamos al PDF
+            y_line = 90
+            for i, article in enumerate(articles, start=1):
+                y_position -= y_line
+                y_position_img = y_position #posicion eje y para img
+                y_line = 0
+
+                pdf.setFont("Helvetica", 12)
+
+                draw_lines = draw_multiline_text(pdf, 260, y_position, f"Nombre: {article.name}")
+                y_line += (20 * draw_lines)
+
+                draw_lines = draw_multiline_text(pdf, 260, (y_position - y_line), f"Código: {article.code}")
+                #x_space = len(f"Código: {article.code}")
+                #x_position_end = 50 + pdf.stringWidth(f"Código: {article.code}", "Helvetica", 12)
+                y_line += (20 * draw_lines)
+
+                draw_lines = draw_multiline_text(pdf, 260, (y_position - y_line), f"Descripción: {article.description}")
+                y_line += (20 * draw_lines)
+                draw_lines = draw_multiline_text(pdf, 260, y_position - y_line, f"Fecha de Creación: {article.creation_date}")
+                y_line += (15 * draw_lines)
+
+                # Generar y agregar el código de barras
+                ruta_imagen = os.path.join(ruta_barcodes, f"barcode_{article.code}")
+                ruta_imagen_png = ruta_imagen + ".png"
+                generate_barcode(str(article.code), ruta_imagen)
+                # pdf.drawImage(ruta_imagen_png, x=x_position_end + 10, y=(y_position - (y_line + 15)), width=40, height=40, preserveAspectRatio=True)
+                pdf.drawImage(ruta_imagen_png, x=280, y=y_position - (y_line + 80 ), width=100, height=100, preserveAspectRatio=True)
+                #y_line += (15 * draw_lines)
+
+                #Se carga las imagenes de articulo
+                y_line = y_line + 65
+                if (len(article.photo) > 0):
+                    photos_article = article.photo.split(",")
+
+                    y_position_img = y_position_img - 65
+                    eje_x = 70
+                    num_photos = 1
+                    for photo_article in photos_article:
+                        # Intentamos cargar la imagen desde una ruta específica x=400  y = y_position - (y_line - 10)
+                        image_path = f"files/images_article/{photo_article}"
+                        try:
+                            image = ImageReader(image_path)
+                            pdf.drawImage(image, x=eje_x, y=y_position_img, width=70, height=70,
+                                          preserveAspectRatio=True)
+                            eje_x = eje_x + 80
+                            num_photos+= 1
+                            if(num_photos == 3):
+                                eje_x = 70
+                                y_position_img = y_position_img - 75
+
+                        except Exception as e:
+                            print(f"No se pudo cargar la imagen para el artículo {article.name}: {e}")
+
+                y_line = y_line + 10
+
+
+                # Agregamos un separador entre cada artículo
+                pdf.line(50, y_position - y_line, 550, y_position - y_line)
+                y_line += 20
 
                 #elimina el codigo de barra generado
                 os.remove(ruta_imagen_png)
@@ -222,7 +366,7 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
                 print(f"No se pudo cargar la imagen para la portada: {e}")
 
             # Crear y configurar la tabla
-            table_data = [["Cod. de barra","Modelo", "Serie", "Fecha adquisición", "Num. de registro","Estado", "Encargado", "Rut encargado", "Cod. articulo", "Oficina"]]
+            table_data = [["Cod. de barra","Modelo", "Serie", "F. Adquisición", "Num. de registro","Estado", "Encargado", "Rut encargado", "Cod. articulo", "Oficina"]]
 
             #y_position = 700
             page_number = 1
@@ -230,14 +374,8 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
             # Iteramos sobre los artículos y los agregamos al PDF
             eje_y_table = eje_y - 40
             for i, active in enumerate(actives, start=1):
-                if (active.state == "new"):
-                    state_active = "nuevo"
-                elif(active.state == "damage"):
-                    state_active = "dañado"
-                else:
-                    state_active = active.state
 
-                if ((eje_y_table - (20 * len(table_data))) < 120 and i < len(actives)):
+                if ((eje_y_table - (20 * len(table_data))) < 80 and i < len(actives)):
                     if (page_number == 1):
                         draw_table(pdf, table_data, eje_y_table, i)
                     else:
@@ -257,7 +395,7 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
                     active.serie,
                     str(active.acquisition_date),
                     active.accounting_record_number,
-                    state_active,
+                    active.state,
                     active.name_in_charge_active,
                     active.rut_in_charge_active,
                     active.article.code,
@@ -348,7 +486,7 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
                 print(f"No se pudo cargar la imagen para la portada: {e}")
 
             # Crear y configurar la tabla
-            table_data = [["Cod. de barra", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado",
+            table_data = [["Cod. de barra", "Modelo", "Serie", "F. Adquisición", "Num. de registro", "Estado",
                            "Encargado", "Rut encargado", "Cod. articulo", "Oficina"]]
 
             # y_position = 700
@@ -366,7 +504,7 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
                 else:
                     state_active = active.state
 
-                if ((eje_y_table - (20 * len(table_data))) < 120 and i < len(actives)):
+                if ((eje_y_table - (20 * len(table_data))) < 80 and i < len(actives)):
                     if (page_number == 1):
                         draw_table(pdf, table_data, eje_y_table, i)
                     else:

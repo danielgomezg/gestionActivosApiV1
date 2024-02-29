@@ -48,7 +48,7 @@ def draw_table(pdf, table_data, eje_y_table, i):
         ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
         # ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
-        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
         ('FONTSIZE', (0, 1), (-1, -1), 9),
         ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.black),
     ])
@@ -56,7 +56,7 @@ def draw_table(pdf, table_data, eje_y_table, i):
     table.setStyle(table_style)
 
     table.wrapOn(pdf, 0, 0)
-    table.drawOn(pdf, 30, eje_y_table - table._height)
+    table.drawOn(pdf, 40, eje_y_table - table._height)
 
 
 
