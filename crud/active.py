@@ -269,7 +269,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
             active_to_edit.office_id = active.office_id
 
             #Se elimina el archivo reemplazado del servidor
-            if len(active_to_edit.accounting_document) > 0:
+            if len(active_to_edit.accounting_document) > 0 and active_to_edit.accounting_document != active.accounting_document:
                 existing_file_path = Path("files") / "files_active" / active_to_edit.accounting_document
 
                 # Verificar si el archivo existe y eliminarlo
