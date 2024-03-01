@@ -192,13 +192,14 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
         return Response(code="401", message="token-exp", result=[])
 
     if(len(request.bar_code) == 0):
-        return  Response(code = "400", message = "codigo de barra no valido", result = [])
+        return  Response(code = "400", message = "código de barra no valido", result = [])
 
     # valida si existe un codigo de barra con el mismo numero dentro de los articulos
     #active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+    print(request.bar_code)
     active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
     if active_barcode:
-        return Response(code="400", message="Codigo de barra ya ingresado", result=[])
+        return Response(code="400", message="Código de barra ya ingresado", result=[])
 
     try:
         # Intenta convertir la fecha a un objeto date
@@ -223,7 +224,7 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
     patron_rut = r'^\d{1,8}-[\dkK]$'
     rut = str(request.rut_in_charge_active.replace(".", ""))
     if not re.match(patron_rut, rut):
-        return Response(code="400", message="Rut del responsable inválido", result=[])
+        return Response(code="400", message="Rut del encargado inválido", result=[])
 
     if (len(request.serie) == 0):
         return Response(code="400", message="Número de serie no valido", result=[])
@@ -312,6 +313,10 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     id_office = get_office_by_id(db, request.office_id)
     if (not id_office):
         return Response(code="400", message="id oficina no valido", result=[])
+
+    id_article = get_article_by_id(db, request.article_id)
+    if (not id_article):
+        return Response(code="400", message="id articulo no valido", result=[])
 
     #_active = update_active(db, id,  request, name_user)
     _active = update_active(db, id, request, name_user)

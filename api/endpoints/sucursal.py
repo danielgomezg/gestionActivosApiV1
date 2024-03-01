@@ -126,7 +126,7 @@ def create(request: SucursalSchema, db: Session = Depends(get_db), current_user_
     #sucursal_number = get_sucursal_by_company_and_number(db, request.company_id, request.number)
     sucursal_number = get_sucursal_by_number(db, request.number)
     if sucursal_number:
-        return Response(code="400", message="numero de sucursal ya ingresado", result=[])
+        return Response(code="400", message="Número de sucursal ya ingresado", result=[])
 
     #_sucursal = create_sucursal(db, request, name_user)
     _sucursal = create_sucursal(db, request, name_user)

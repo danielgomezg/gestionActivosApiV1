@@ -196,7 +196,7 @@ def delete_company(db: Session, company_id: int, name_user: str):
 
 def search_company(db: Session, search: str,  limit: int = 100, offset: int = 0):
     try:
-        companies = (db.query(Company).filter(func.lower(Company.name).like(f"%{search}%")).offset(offset).limit(limit).all())
+        companies = (db.query(Company).filter(func.lower(Company.name).like(f"%{search}%"), Company.removed == 0).offset(offset).limit(limit).all())
         count = db.query(Company).filter(func.lower(Company.name).like(f"%{search}%")).count()
         return companies, count
     except Exception as e:

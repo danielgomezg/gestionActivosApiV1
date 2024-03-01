@@ -39,8 +39,6 @@ def get_active_all(db: Session, limit: int = 100, offset: int = 0):
 def get_active_by_article_and_barcode(db: Session, article_id: int, bar_code: str, limit: int = 100, offset: int = 0):
     try:
         result = db.query(Active).filter(Active.article_id == article_id, Active.bar_code == bar_code, Active.removed == 0).options(joinedload(Active.article)).offset(offset).limit(limit).first()
-        #count = db.query(Active).filter(Active.article_id == article_id, Active.removed == 0).count()
-        #print(result)
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")

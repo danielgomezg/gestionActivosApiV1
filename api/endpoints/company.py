@@ -94,7 +94,7 @@ def create(request: CompanySchema, db: Session = Depends(get_db), current_user_i
         return  Response(code = "400", message = "Nombre de la empresa vacio", result = [])
     name_company = get_company_by_name(db, request.name)
     if(name_company):
-        return Response(code="400", message="nombre de compania ya ingresado", result=[])
+        return Response(code="400", message="Nombre de la empresa ya ingresado", result=[])
 
     if (len(request.country) == 0):
         return Response(code="400", message="Pais no valido", result=[])
@@ -117,17 +117,17 @@ def create(request: CompanySchema, db: Session = Depends(get_db), current_user_i
     # valida si existe una compania con el mismo rut y pais
     company_rut_country = get_company_by_rut_and_country(db, request.rut, request.country)
     if company_rut_country:
-        return Response(code="400", message="rut de compania ya ingresado", result=[])
+        return Response(code="400", message="Rut de la empresa ya ingresado", result=[])
 
     if (len(request.contact_name) == 0):
-        return Response(code="400", message="Nombre del contacto vacio", result=[])
+        return Response(code="400", message="Nombre del responsable vacio", result=[])
 
     if (len(request.contact_phone) == 0):
-        return Response(code="400", message="Telefono del contacto vacio", result=[])
+        return Response(code="400", message="Telefono del responsable vacio", result=[])
 
     patron = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     if (re.match(patron, request.contact_email) is None):
-        return Response(code="400", message="Email del contacto invalido", result=[])
+        return Response(code="400", message="Email del responsable inválido", result=[])
 
     _company = create_company(db, request, name_user)
     #Creando nueva bd para la empresa e inserta la empresa
@@ -151,20 +151,20 @@ def update(request: CompanyEditSchema, id: int, db: Session = Depends(get_db), c
         return Response(code="401", message="token-exp", result=[])
 
     if(len(request.name) == 0):
-        return  Response(code = "400", message = "Nombre de la empresa vacio", result = [])
+        return  Response(code = "400", message = "Nombre de la empresa vacío", result = [])
     name_company = get_company_by_name(db, request.name)
     if (name_company and name_company.id is not id):
-        return Response(code="400", message="nombre de compania ya ingresado", result=[])
+        return Response(code="400", message="Nombre de la empresa ya ingresado", result=[])
 
     if (len(request.contact_name) == 0):
-        return Response(code="400", message="Nombre del contacto vacio", result=[])
+        return Response(code="400", message="Nombre del responsable vacio", result=[])
 
     if (len(request.contact_phone) == 0):
-        return Response(code="400", message="Telefono del contacto vacio", result=[])
+        return Response(code="400", message="Telefono del responsable vacio", result=[])
 
     patron = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     if (re.match(patron, request.contact_email) is None):
-        return Response(code="400", message="Email del contacto invalido", result=[])
+        return Response(code="400", message="Email del responsable inválido", result=[])
 
     _company = update_company(db, id, request, name_user)
     _company_db_own = update_company(db_company, id, request, name_user)

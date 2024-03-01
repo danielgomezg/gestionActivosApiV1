@@ -79,12 +79,12 @@ def create(request: UserSchema, db: Session = Depends(get_db), current_user_info
     patron = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     email = str(request.email)
     if(re.match(patron, email) is None):
-        return Response(code = "400", message = "Email invalido", result = [])
+        return Response(code = "400", message = "Correo inválido", result = [])
 
     #valida si el mail ya esta registrado
     existeEmail = get_user_email(db, email)
     if(existeEmail):
-        return Response(code="400", message="Email registrado", result=[])
+        return Response(code="400", message="Correo ya registrado", result=[])
 
     patron_rut = r'^\d{1,8}-[\dkK]$'
     rut = str(request.rut.replace(".", ""))
@@ -120,12 +120,12 @@ def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), curr
     patron = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     email = str(request.email)
     if (re.match(patron, email) is None):
-        return Response(code="400", message="Email invalido", result=[])
+        return Response(code="400", message="Correo invalido", result=[])
 
     # valida si el mail ya esta registrado
     existeEmail = get_user_email(db, email)
     if (existeEmail and id != existeEmail.id):
-        return Response(code="400", message="Email registrado", result=[])
+        return Response(code="400", message="Correo ya registrado", result=[])
 
     if (request.company_id is not None):
         id_compania = get_company_by_id(db, request.company_id)

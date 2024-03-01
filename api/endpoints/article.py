@@ -112,22 +112,22 @@ def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_i
 
     id_company = get_company_by_id(db, request.company_id)
     if (not id_company):
-        return Response(code="400", message="id compania no valido", result=[])
+        return Response(code="400", message="id compania no válido", result=[])
 
     db = next(conexion(db, request.company_id))
     if db is None:
         return Response(code="404", result=[], message="BD no encontrada").model_dump()
 
     if(len(request.name) == 0):
-        return  Response(code = "400", message = "Nombre no valido", result = [])
+        return  Response(code = "400", message = "Nombre no válido", result = [])
 
     if(len(request.code) == 0):
-        return  Response(code = "400", message = "Codigo no valido", result = [])
+        return  Response(code = "400", message = "Código no válido", result = [])
 
     #article_code = get_article_by_company_and_code(db, request.company_id, request.code)
     article_code = get_article_by_code(db, request.code)
     if article_code:
-        return Response(code="400", message="Codigo de articulo ya ingresado", result=[])
+        return Response(code="400", message="Código del artículo ya ingresado", result=[])
 
     # id_category = get_category_by_id(db, request.category_id)
     # if not id_category:
@@ -158,7 +158,7 @@ def update(request: ArticleEditSchema, id: int, db: Session = Depends(get_db), c
     #article_code = get_article_by_company_and_code(db, request.company_id, request.code)
     article_code = get_article_by_code(db, request.code)
     if article_code and id is not article_code.id:
-        return Response(code="400", message="Codigo de barra ya ingresado", result=[])
+        return Response(code="400", message="Código del artículo ya ingresado", result=[])
 
     # id_category = get_category_by_id(db, request.category_id)
     # if not id_category:
