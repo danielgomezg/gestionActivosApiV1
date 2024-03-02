@@ -4,21 +4,23 @@ from sqlalchemy.orm import relationship
 from datetime import date
 
 
-from models import  active
-from models import article
-from models import office
-from models import sucursal
-from database import engine
+from models import  active, article, office, sucursal, category
+#from models import article
+#from models import office
+#from models import sucursal
+# from database import engine
 
-active.Base.metadata.create_all(bind=engine)
-article.Base.metadata.create_all(bind=engine)
-sucursal.Base.metadata.create_all(bind=engine)
-office.Base.metadata.create_all(bind=engine)
+# category.Base.metadata.create_all(bind=engine)
+# active.Base.metadata.create_all(bind=engine)
+# article.Base.metadata.create_all(bind=engine)
+# sucursal.Base.metadata.create_all(bind=engine)
+# office.Base.metadata.create_all(bind=engine)
 
 class History(Base):
     __tablename__ = 'historial'
     id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(String, nullable=True)
+    name_user = Column(String, nullable=False)
     creation_date = Column(Date, default=date.today, nullable=False)
     #current_session_user_id = Column(Integer, nullable=False)
 
@@ -43,6 +45,6 @@ class History(Base):
     active = relationship('Active', back_populates='historial')
 
     # Relacion con user
-    user_id = Column(Integer, ForeignKey('usuario.id'), nullable=True)
-    user = relationship('Usuario', back_populates='historial')
+    #user_id = Column(Integer, ForeignKey('usuario.id'), nullable=True)
+    #user = relationship('Usuario', back_populates='historial')
 

@@ -18,6 +18,7 @@ from api.endpoints import article
 from api.endpoints import active
 from api.endpoints import history
 from api.endpoints import generation_catalogo
+from api.endpoints import category
 
 #cors
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,17 +26,45 @@ from decouple import config
 
 #DB
 from sqlalchemy.orm import Session
-from database import get_db, SessionLocal
+from database import get_db, engine, SessionLocal
 
 #middleware
 from crud.profileAction import get_profile_action_by_id_profile_action
 from crud.action import get_action_by_name
 
+# models
+
+
+# importar Base de los modelos, sin considerar __init__.py
+# from models import user as user_model
+# from models import company as company_model
+# from models import profile as profile_model
+# from models import office as office_model
+# from models import sucursal as sucursal_model
+# from models import action as action_model
+# from models import profile_action as profile_action_model
+# from models import article as article_model
+# from models import active as active_model
+# from models import history as history_model
+# from models import category as category_model
+
 import re
 
-from schemas.schemaGenerico import Response
+from models import user as user_model
+from models import company as company_model
+from models import profile as profile_model
+from models import office as office_model
+from models import sucursal as sucursal_model
+from models import action as action_model
+from models import profile_action as profile_action_model
+from models import article as article_model
+from models import active as active_model
+from models import history as history_model
+from models import category as category_model
 
 
+
+user_model.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -124,6 +153,10 @@ def middleware_validacion_permisos( request: Request, call_next):
                 #nombre_accion = diccionario.get(request.method) + "-" + "historial"
                 return call_next(request)
 
+            elif (re.search(r'categor', path_peticion, flags=re.IGNORECASE)):
+                #nombre_accion = diccionario.get(request.method) + "-" + "historial"
+                return call_next(request)
+
             else:
                 return JSONResponse(content={"detail": "La accion a realizar no existe"}, status_code=401)
 
@@ -161,6 +194,7 @@ app.include_router(sucursal.router)
 app.include_router(office.router)
 app.include_router(action.router)
 app.include_router(profileAction.router)
+app.include_router(category.router)
 app.include_router(article.router)
 app.include_router(active.router)
 app.include_router(history.router)

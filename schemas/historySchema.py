@@ -12,4 +12,5 @@ class HistorySchema(BaseModel):
     office_id: Optional[int] = None
     article_id: Optional[int] = None
     active_id: Optional[int] = None
-    user_id: Optional[int] = None
+    name_user: Optional[str] = None
+    #user_id: Optional[int] = None

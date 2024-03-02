@@ -1,6 +1,6 @@
 from models import profile
 from models.profile import Profile
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
@@ -17,7 +17,7 @@ router = APIRouter()
 
 @router.get('/profiles')
 def get_profiles(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -28,7 +28,7 @@ def get_profiles(db: Session = Depends(get_db), current_user_info: Tuple[str, st
 
 @router.get("/profile/{id}")
 def get_profile(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -42,7 +42,7 @@ def get_profile(id: int, db: Session = Depends(get_db), current_user_info: Tuple
 
 @router.post('/profile')
 def create(request: ProfileSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -56,7 +56,7 @@ def create(request: ProfileSchema, db: Session = Depends(get_db), current_user_i
 
 @router.put('/profile/{id}')
 def update(request: ProfileEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -70,7 +70,7 @@ def update(request: ProfileEditSchema, id: int, db: Session = Depends(get_db), c
 
 @router.delete('/profile/{id}')
 def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     #print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:

@@ -1,8 +1,8 @@
 from models import active
-from database import engine
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query
+# from database import engine
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query, Header
 from sqlalchemy.orm import Session
-from database import get_db
+from database import get_db, conexion
 from crud.active import (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
                          get_active_by_office, get_active_by_offices, count_active, get_active_by_article_and_barcode, search_active_sucursal, search_active_offices)
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
@@ -18,12 +18,16 @@ from crud.user import  get_user_disable_current, get_user_by_id
 from typing import Tuple, List
 
 router = APIRouter()
-active.Base.metadata.create_all(bind=engine)
+# active.Base.metadata.create_all(bind=engine)
 
 @router.get("/active/{id}")
-def get_active(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
-    # print("Tiempo de expiración: ", expiration_time)
+def get_active(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -34,9 +38,13 @@ def get_active(id: int, db: Session = Depends(get_db), current_user_info: Tuple[
     return Response(code= "200", result = result, message="Activo no encontrado").model_dump()
 
 @router.get('/actives')
-def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current),limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
-    # print("Tiempo de expiración: ", expiration_time)
+def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current),limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -49,9 +57,13 @@ def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/activePorArticle/{id_article}")
-def get_active_por_article(id_article: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
+def get_active_por_article(id_article: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -63,8 +75,13 @@ def get_active_por_article(id_article: int, db: Session = Depends(get_db), curre
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/active/office/{id_office}")
-def get_active_por_office(id_office: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+def get_active_por_office(id_office: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -76,8 +93,13 @@ def get_active_por_office(id_office: int, db: Session = Depends(get_db), current
 
 
 @router.get("/active/offices/{id_offices}")
-def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -90,8 +112,13 @@ def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), curr
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.get("/active/sucursal/{sucursal_id}")
-def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -101,8 +128,13 @@ def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), cu
 
 
 @router.get('/active/search/sucursal/{sucursal_id}')
-def search_by_sucursal(sucursal_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+def search_by_sucursal(sucursal_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -113,8 +145,13 @@ def search_by_sucursal(sucursal_id: int, search: str, db: Session = Depends(get_
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.get('/active/search/offices/{id_offices}')
-def search_by_offices(id_offices: str, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+def search_by_offices(id_offices: str, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -143,20 +180,26 @@ def upload_file(file: UploadFile = File(...), current_user_info: Tuple[str, str]
         raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {e}")
 
 @router.post('/active')
-def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
+def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
     if(len(request.bar_code) == 0):
-        return  Response(code = "400", message = "codigo de barra no valido", result = [])
+        return  Response(code = "400", message = "código de barra no valido", result = [])
 
     # valida si existe un codigo de barra con el mismo numero dentro de los articulos
+    #active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+    print(request.bar_code)
     active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
     if active_barcode:
-        return Response(code="400", message="Codigo de barra ya ingresado", result=[])
+        return Response(code="400", message="Código de barra ya ingresado", result=[])
 
     try:
         # Intenta convertir la fecha a un objeto date
@@ -181,7 +224,7 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
     patron_rut = r'^\d{1,8}-[\dkK]$'
     rut = str(request.rut_in_charge_active.replace(".", ""))
     if not re.match(patron_rut, rut):
-        return Response(code="400", message="Rut del responsable inválido", result=[])
+        return Response(code="400", message="Rut del encargado inválido", result=[])
 
     if (len(request.serie) == 0):
         return Response(code="400", message="Número de serie no valido", result=[])
@@ -192,21 +235,28 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
     if (len(request.state) == 0):
         return Response(code="400", message="Estado no valido", result=[])
 
+    #id_office = get_office_by_id(db, request.office_id)
     id_office = get_office_by_id(db, request.office_id)
     if(not id_office):
         return Response(code="400", message="id oficina no valido", result=[])
 
+    #id_article = get_article_by_id(db, request.article_id)
     id_article = get_article_by_id(db, request.article_id)
     if (not id_article):
         return Response(code="400", message="id articulo no valido", result=[])
 
-    _active = create_active(db, request, id_user)
+    #_active = create_active(db, request, name_user)
+    _active = create_active(db, request, name_user)
     return Response(code = "201", message = f"Activo {_active.bar_code} creado", result = _active).model_dump()
 
 @router.put('/active/{id}')
-def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
-    #print("Tiempo de expiración: ", expiration_time)
+def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -215,6 +265,7 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
         return Response(code="400", message="codigo de barra no valido", result=[])
 
     # valida si existe un codigo de barra con el mismo numero dentro de los articulos
+    #active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
     active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
     if active_barcode and id is not active_barcode.id:
         return Response(code="400", message="Codigo de barra ya ingresado", result=[])
@@ -258,22 +309,33 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     if (len(request.state) == 0):
         return Response(code="400", message="Esatdo no valido", result=[])
 
+    #id_office = get_office_by_id(db, request.office_id)
     id_office = get_office_by_id(db, request.office_id)
     if (not id_office):
         return Response(code="400", message="id oficina no valido", result=[])
 
-    _active = update_active(db, id,  request, id_user)
+    id_article = get_article_by_id(db, request.article_id)
+    if (not id_article):
+        return Response(code="400", message="id articulo no valido", result=[])
+
+    #_active = update_active(db, id,  request, name_user)
+    _active = update_active(db, id, request, name_user)
     return Response(code = "201", message = f"Activo {_active.bar_code} editado", result = _active).model_dump()
 
 @router.delete('/active/{id}')
-def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
-    # print("Tiempo de expiración: ", expiration_time)
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    _active = delete_active(db, id, id_user)
+    #_active = delete_active(db, id, name_user)
+    _active = delete_active(db, id, name_user)
     return Response(code = "201", message = f"Activo con id {id} eliminado", result = _active).model_dump()
 
 @router.get("/file_active/{file_path}")

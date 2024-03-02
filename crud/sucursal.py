@@ -93,6 +93,7 @@ def search_sucursal_by_company(db: Session, search: str, company_id: int , limit
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar sucursales {e}")
 
+#reemplazada por get_sucursal_by_number
 def get_sucursal_by_company_and_number(db: Session, company_id: int, number: str, limit: int = 100, offset: int = 0):
     try:
         result = (db.query(Sucursal).filter(Sucursal.company_id == company_id, Sucursal.number == number, Sucursal.removed == 0)
@@ -102,7 +103,14 @@ def get_sucursal_by_company_and_number(db: Session, company_id: int, number: str
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener sucursal {e}")
 
-def create_sucursal(db: Session, sucursal: SucursalSchema, id_user: int):
+def get_sucursal_by_number(db: Session, number: str, limit: int = 100, offset: int = 0):
+    try:
+        result = (db.query(Sucursal).filter( Sucursal.number == number, Sucursal.removed == 0).first())
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener sucursal {e}")
+
+def create_sucursal(db: Session, sucursal: SucursalSchema, name_user: str):
     try:
         _sucursal = Sucursal(
             description=sucursal.description,
@@ -123,7 +131,7 @@ def create_sucursal(db: Session, sucursal: SucursalSchema, id_user: int):
             "description": "create-sucursal",
             "sucursal_id": _sucursal.id,
             "company_id": _sucursal.company_id,
-            "user_id": id_user
+            "name_user": name_user
             #"current_session_user_id": id_user
         }
         create_history(db, HistorySchema(**history_params))
@@ -132,7 +140,7 @@ def create_sucursal(db: Session, sucursal: SucursalSchema, id_user: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando sucursal {e}")
 
-def update_sucursal(db: Session, sucursal_id: int, sucursal: SucursalEditSchema, id_user: int):
+def update_sucursal(db: Session, sucursal_id: int, sucursal: SucursalEditSchema, name_user: str):
 
     try:
         sucursal_to_edit = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
@@ -149,7 +157,7 @@ def update_sucursal(db: Session, sucursal_id: int, sucursal: SucursalEditSchema,
                 "description": "update-sucursal",
                 "sucursal_id": sucursal_id,
                 "company_id": sucursal_to_edit.company_id,
-                "user_id": id_user
+                "name_user": name_user
                 #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
@@ -160,7 +168,7 @@ def update_sucursal(db: Session, sucursal_id: int, sucursal: SucursalEditSchema,
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando sucursal: {e}")
 
-def delete_sucursal(db: Session, sucursal_id: int, id_user: int):
+def delete_sucursal(db: Session, sucursal_id: int, name_user: str):
     try:
         sucursal_to_delete = db.query(Sucursal).filter(Sucursal.id == sucursal_id).first()
         if sucursal_to_delete:
@@ -172,7 +180,7 @@ def delete_sucursal(db: Session, sucursal_id: int, id_user: int):
                 "description": "delete-sucursal",
                 "sucursal_id": sucursal_id,
                 "company_id": sucursal_to_delete.company_id,
-                "user_id": id_user
+                "name_user": name_user
                 #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))

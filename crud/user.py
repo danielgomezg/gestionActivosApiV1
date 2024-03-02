@@ -70,7 +70,7 @@ def search_users_by_mail_rut(db: Session, search: str, limit: int = 100, offset:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar Usuarios {e}")
 
-def create_user(db: Session, user: UserSchema, id_user: int):
+def create_user(db: Session, user: UserSchema):
     try:
         _user = Usuario(
             firstName=user.firstName,
@@ -101,7 +101,7 @@ def create_user(db: Session, user: UserSchema, id_user: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando user {e}")
 
-def update_user(db: Session, user_id: int, user: UserEditSchema, id_user: int):
+def update_user(db: Session, user_id: int, user: UserEditSchema):
 
     try:
         user_to_edit = db.query(Usuario).filter(Usuario.id == user_id).first()
@@ -143,7 +143,7 @@ def update_user(db: Session, user_id: int, user: UserEditSchema, id_user: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando usuario: {e}")
 
-def delete_user(db: Session, user_id: int, id_user: int):
+def delete_user(db: Session, user_id: int):
 
     try:
         user_to_delete = db.query(Usuario).filter(Usuario.id == user_id).first()
@@ -203,7 +203,10 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     try:
         payload = jwt.decode(token, key=SECRET_KEY, algorithms=[ALGORITHM])
-        additional_info = payload.get("user", {})
+        #additional_info = payload.get("user", {})
+        additional_info = payload["user"]
+        name_user = additional_info["firstName"] + " " + additional_info["secondName"] + " " + additional_info["lastName"] + " " + additional_info["secondLastName"]
+        #print(name_user)
         id_user = payload.get("sub")
 
         # Obtener el tiempo de expiración (exp) del token
@@ -214,16 +217,17 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
     #Recoradr que es str
-    return id_user, expiration_time
+    #return id_user, expiration_time
+    return name_user, expiration_time
 
 def get_user_disable_current(current_user_info: Tuple[str, Optional[str]] = Depends(get_current_user)):
     # Obtener la fecha y hora actual
     current_time = datetime.utcnow().timestamp()
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # Validar si el token ha expirado
     if int(expiration_time) > int(current_time):
         print("El token no ha expirado aún.")
-        return id_user, expiration_time
+        return name_user, expiration_time
     else:
         print("El token ha expirado.")
         return (None, None)

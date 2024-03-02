@@ -1,6 +1,6 @@
 from models import user
 from models.user import Usuario
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends, status
 from sqlalchemy.orm import Session
 from database import get_db
@@ -21,7 +21,7 @@ from decouple import config
 
 
 router = APIRouter()
-user.Base.metadata.create_all(bind=engine)
+# user.Base.metadata.create_all(bind=engine)
 
 oauth2_scheme = OAuth2PasswordBearer("/token")
 
@@ -30,7 +30,7 @@ ALGORITHM = config('ALGORITHM')
 
 @router.get("/user/{id}")
 def get_user(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -42,7 +42,7 @@ def get_user(id: int, db: Session = Depends(get_db), current_user_info: Tuple[st
 
 @router.get('/users')
 def get_users(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -54,7 +54,7 @@ def get_users(db: Session = Depends(get_db), current_user_info: Tuple[str, str] 
 
 @router.get('/users/search')
 def search_users(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
@@ -64,8 +64,8 @@ def search_users(search: str, db: Session = Depends(get_db), current_user_info: 
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.post('/user')
-def create(request: UserSchema, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def create(request: UserSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -79,12 +79,12 @@ def create(request: UserSchema, db: Session = Depends(get_db), current_user_info
     patron = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     email = str(request.email)
     if(re.match(patron, email) is None):
-        return Response(code = "400", message = "Email invalido", result = [])
+        return Response(code = "400", message = "Correo inválido", result = [])
 
     #valida si el mail ya esta registrado
     existeEmail = get_user_email(db, email)
     if(existeEmail):
-        return Response(code="400", message="Email registrado", result=[])
+        return Response(code="400", message="Correo ya registrado", result=[])
 
     patron_rut = r'^\d{1,8}-[\dkK]$'
     rut = str(request.rut.replace(".", ""))
@@ -101,12 +101,12 @@ def create(request: UserSchema, db: Session = Depends(get_db), current_user_info
     if (not id_perfil):
         return Response(code="400", message="id perfil no valido", result=[])
 
-    _user = create_user(db, request, id_user)
+    _user = create_user(db, request)
     return Response(code = "201", message = f"Usuario {_user.firstName} creado", result = _user).model_dump()
 
 @router.put('/user/{id}')
-def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -120,12 +120,12 @@ def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), curr
     patron = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     email = str(request.email)
     if (re.match(patron, email) is None):
-        return Response(code="400", message="Email invalido", result=[])
+        return Response(code="400", message="Correo invalido", result=[])
 
     # valida si el mail ya esta registrado
     existeEmail = get_user_email(db, email)
     if (existeEmail and id != existeEmail.id):
-        return Response(code="400", message="Email registrado", result=[])
+        return Response(code="400", message="Correo ya registrado", result=[])
 
     if (request.company_id is not None):
         id_compania = get_company_by_id(db, request.company_id)
@@ -136,24 +136,24 @@ def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), curr
     if (not id_perfil):
         return Response(code="400", message="id perfil no valido", result=[])
 
-    _user = update_user(db, id, request, id_user)
+    _user = update_user(db, id, request)
     return Response(code = "201", message = f"Usuario {_user.firstName} editado", result = _user).model_dump()
 
 @router.delete('/user/{id}')
-def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[int, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    _user = delete_user(db, id, id_user)
+    _user = delete_user(db, id)
     return Response(code = "201", message = f"Usuario con id {id} eliminado", result = _user).model_dump()
 
 @router.post('/login')
 def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
     _user = authenticate_user(request.email, request.password, db)
     if(_user):
-        access_token_expires = timedelta(minutes=180)
+        access_token_expires = timedelta(minutes=300)
         user_id = str(_user.id)
 
         additional_info = {
@@ -192,7 +192,7 @@ def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
 def login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     _user = authenticate_user(form_data.username, form_data.password, db)
     if(_user):
-        access_token_expires = timedelta(minutes=60)
+        access_token_expires = timedelta(minutes=180)
         user_id = str(_user.id)
 
         additional_info = {

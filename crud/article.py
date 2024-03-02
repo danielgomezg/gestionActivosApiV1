@@ -8,6 +8,7 @@ from models.active import Active
 import uuid
 from urllib.parse import urlparse
 from pathlib import Path
+import hashlib
 
 #historial
 from schemas.historySchema import HistorySchema
@@ -16,7 +17,7 @@ from crud.history import create_history
 def get_article_all(db: Session, limit: int = 100, offset: int = 0):
     try:
         articles = (
-            db.query(Article, func.count(Active.id).label("count_active"))
+            db.query(Article, func.count(Active.id).label("count_actives"))
             .outerjoin(Active, and_(Active.article_id == Article.id, Active.removed == 0))
             .filter(Article.removed == 0)
             .group_by(Article.id)
@@ -43,9 +44,17 @@ def get_article_by_id(db: Session, article_id: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar articulo {e}")
 
+# reemplazada por get_article_by_code
 def get_article_by_company_and_code(db: Session, company_id: int, code: str, limit: int = 100, offset: int = 0):
     try:
         result = db.query(Article).filter(Article.company_id == company_id, Article.code == code, Article.removed == 0).offset(offset).limit(limit).first()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
+def get_article_by_code(db: Session, code: str, limit: int = 100, offset: int = 0):
+    try:
+        result = db.query(Article).filter(Article.code == code, Article.removed == 0).offset(offset).limit(limit).first()
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
@@ -112,9 +121,16 @@ def search_article_by_company(db: Session, search: str, company_id: int , limit:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar sucursales {e}")
 
+def generate_short_unique_id(data: str, length: int = 20) -> str:
+    hash_object = hashlib.sha256(data.encode())
+    hex_dig = hash_object.hexdigest()
+    return hex_dig[:length]
+
+
 def get_image_url(file: UploadFile, upload_folder: Path) -> str:
     try:
-        unique_id = uuid.uuid4().hex
+        #unique_id = uuid.uuid4().hex
+        unique_id = generate_short_unique_id(file.filename)
         # Concatena el UUID al nombre del archivo original
         filename_with_uuid = f"{unique_id}_{file.filename}"
         file_path = upload_folder / filename_with_uuid
@@ -127,13 +143,14 @@ def get_image_url(file: UploadFile, upload_folder: Path) -> str:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar la imagen: {e}")
 
 
-def create_article(db: Session, article: ArticleSchema, id_user: int):
+def create_article(db: Session, article: ArticleSchema, name_user: str):
     try:
         _article = Article(
             name=article.name,
             description=article.description,
             code=article.code,
             photo=article.photo,
+            #category_id=article.category_id,
             company_id=article.company_id
         )
 
@@ -146,7 +163,7 @@ def create_article(db: Session, article: ArticleSchema, id_user: int):
             "description": "create-article",
             "article_id": _article.id,
             "company_id": _article.company_id,
-            "user_id": id_user
+            "name_user": name_user
             #"current_session_user_id": id_user
         }
         create_history(db, HistorySchema(**history_params))
@@ -157,26 +174,47 @@ def create_article(db: Session, article: ArticleSchema, id_user: int):
 
 
 
-def update_article(db: Session, article_id: int, article: ArticleEditSchema, id_user: int):
+def update_article(db: Session, article_id: int, article: ArticleEditSchema, name_user: str):
     try:
         article_to_edit = db.query(Article).filter(Article.id == article_id).first()
         if article_to_edit:
             article_to_edit.name = article.name
             article_to_edit.description = article.description
             article_to_edit.code = article.code
+            #article_to_edit.category_id = article.category_id
 
             # Se elimina la foto reemplazada del servidor
             # Si la foto es nula, no se hace nada
             if len(article_to_edit.photo) > 0 and article_to_edit.photo != article.photo:
-                # Extraer el nombre del archivo de la URL
-                # parsed_url = urlparse(article_to_edit.photo)
-                # filename = Path(parsed_url.path).name
-                # Construir la ruta al archivo existente
-                existing_file_path = Path("files") / "images_article" / article_to_edit.photo
 
-                # Verificar si el archivo existe y eliminarlo
-                if existing_file_path.exists():
-                   existing_file_path.unlink()
+                photos_old = article_to_edit.photo.split(",")
+                photos_new = article.photo.split(",")
+                print(photos_old)
+                print(photos_new)
+
+                # Convierte las listas en conjuntos
+                photos_old_set = set(photos_old)
+                photos_new_set = set(photos_new)
+
+                photos_deletes = list(photos_old_set - photos_new_set)
+                print(photos_deletes)
+
+                for photo_to_delete in photos_deletes:
+                    # Construir la ruta al archivo existente
+                    existing_file_path = Path("files") / "images_article" / photo_to_delete
+
+                    # Verificar si el archivo existe y eliminarlo
+                    if existing_file_path.exists():
+                        existing_file_path.unlink()
+
+                    print(photo_to_delete)
+
+                # # Construir la ruta al archivo existente
+                # existing_file_path = Path("files") / "images_article" / article_to_edit.photo
+                #
+                # # Verificar si el archivo existe y eliminarlo
+                # if existing_file_path.exists():
+                #    existing_file_path.unlink()
 
             article_to_edit.photo = article.photo
 
@@ -187,7 +225,7 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema, id_
                 "description": "update-article",
                 "article_id": article_to_edit.id,
                 "company_id": article_to_edit.company_id,
-                "user_id": id_user
+                "name_user": name_user
                 #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
@@ -199,7 +237,7 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema, id_
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando articulo: {e}")
 
-def delete_article(db: Session, article_id: int, id_user: int):
+def delete_article(db: Session, article_id: int, name_user: str):
     try:
         article_to_delete = db.query(Article).filter(Article.id == article_id).first()
         if article_to_delete:
@@ -212,7 +250,7 @@ def delete_article(db: Session, article_id: int, id_user: int):
                 "description": "delete-article",
                 "article_id": article_to_delete.id,
                 "company_id": article_to_delete.company_id,
-                "user_id": id_user
+                "name_user": name_user
                 #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))

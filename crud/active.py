@@ -39,8 +39,6 @@ def get_active_all(db: Session, limit: int = 100, offset: int = 0):
 def get_active_by_article_and_barcode(db: Session, article_id: int, bar_code: str, limit: int = 100, offset: int = 0):
     try:
         result = db.query(Active).filter(Active.article_id == article_id, Active.bar_code == bar_code, Active.removed == 0).options(joinedload(Active.article)).offset(offset).limit(limit).first()
-        #count = db.query(Active).filter(Active.article_id == article_id, Active.removed == 0).count()
-        #print(result)
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
@@ -212,7 +210,7 @@ def get_file_url(file: UploadFile, upload_folder: Path) -> str:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar el documento de activo: {e}")
 
-def create_active(db: Session, active: ActiveSchema, id_user: int):
+def create_active(db: Session, active: ActiveSchema, name_user: str):
     try:
         _active = Active(
             bar_code=active.bar_code,
@@ -242,7 +240,7 @@ def create_active(db: Session, active: ActiveSchema, id_user: int):
             "active_id": _active.id,
             "article_id": _active.article_id,
             "office_id": _active.office_id,
-            "user_id": id_user,
+            "name_user": name_user,
             "company_id": id_company
             #"current_session_user_id": id_user
         }
@@ -253,7 +251,7 @@ def create_active(db: Session, active: ActiveSchema, id_user: int):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando activo {e}")
 
 
-def update_active(db: Session, active_id: int, active: ActiveEditSchema, id_user: int):
+def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_user: str):
     try:
         active_to_edit = db.query(Active).filter(Active.id == active_id).first()
         if active_to_edit:
@@ -269,7 +267,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, id_user
             active_to_edit.office_id = active.office_id
 
             #Se elimina el archivo reemplazado del servidor
-            if len(active_to_edit.accounting_document) > 0:
+            if len(active_to_edit.accounting_document) > 0 and active_to_edit.accounting_document != active.accounting_document:
                 existing_file_path = Path("files") / "files_active" / active_to_edit.accounting_document
 
                 # Verificar si el archivo existe y eliminarlo
@@ -289,7 +287,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, id_user
                 "active_id": active_to_edit.id,
                 "article_id": active_to_edit.article_id,
                 "office_id": active_to_edit.office_id,
-                "user_id": id_user,
+                "name_user": name_user,
                 "company_id": id_company
                 #"current_session_user_id": id_user
             }
@@ -301,7 +299,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, id_user
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando activo: {e}")
 
-def delete_active(db: Session, active_id: int, id_user: int):
+def delete_active(db: Session, active_id: int, name_user: str):
     try:
         active_to_delete = db.query(Active).filter(Active.id == active_id).first()
         if active_to_delete:
@@ -317,7 +315,7 @@ def delete_active(db: Session, active_id: int, id_user: int):
                 "active_id": active_to_delete.id,
                 "article_id": active_to_delete.article_id,
                 "office_id": active_to_delete.office_id,
-                "user_id": id_user,
+                "name_user": name_user,
                 "company_id": id_company
                 #"current_session_user_id": id_user
             }

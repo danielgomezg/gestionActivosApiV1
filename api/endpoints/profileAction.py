@@ -1,6 +1,6 @@
 from models import profile_action
 from models.profile_action import ProfileAction
-from database import engine
+# from database import engine
 from fastapi import APIRouter, HTTPException, Path, Depends
 from sqlalchemy.orm import Session
 from database import get_db
@@ -17,11 +17,11 @@ from crud.action import get_action_by_id
 
 
 router = APIRouter()
-profile_action.Base.metadata.create_all(bind=engine)
+# profile_action.Base.metadata.create_all(bind=engine)
 
 @router.get('/profileActions')
 def get_profile_sctions(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     #print("ID del usuario: ", id_user)
     #print("Tiempo de expiración: ", expiration_time)
     result = get_profile_action_all(db)
@@ -38,7 +38,7 @@ def get_profile_action(id: int, db: Session = Depends(get_db), current_user: str
 
 @router.post('/profileAction')
 def create(request: ProfileActionSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
-    id_user, expiration_time = current_user_info
+    name_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
     if expiration_time is None:

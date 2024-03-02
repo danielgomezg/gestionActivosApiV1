@@ -22,7 +22,7 @@ def draw_multiline_text(pdf, x, y_position, text):
 
 def portada_catalogo(pdf, company):
     pdf.setFont("Helvetica-Bold", 32)
-    pdf.drawCentredString(300, 450, f"{company.name}")
+    pdf.drawCentredString(300, 450, f"{company.name.upper()}")
 
     # Intentamos cargar la imagen desde una ruta específica
     image_path = "images-sca/sca-1.jpeg"
@@ -37,7 +37,7 @@ def portada_catalogo(pdf, company):
 
 def generate_barcode(value, filename):
     code = Code128(value, writer=ImageWriter())
-    code.save(filename, options={'write_text': False, 'module_height': 14.0, 'module_width': 0.5})
+    code.save(filename, options={'write_text': False, 'module_height': 14.0, 'module_width': 0.7})
 
 def draw_table(pdf, table_data, eje_y_table, i):
     table_style = TableStyle([
@@ -48,7 +48,7 @@ def draw_table(pdf, table_data, eje_y_table, i):
         ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
         # ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
-        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
         ('FONTSIZE', (0, 1), (-1, -1), 9),
         ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.black),
     ])
@@ -56,7 +56,7 @@ def draw_table(pdf, table_data, eje_y_table, i):
     table.setStyle(table_style)
 
     table.wrapOn(pdf, 0, 0)
-    table.drawOn(pdf, 30, eje_y_table - table._height)
+    table.drawOn(pdf, 40, eje_y_table - table._height)
 
 
 
