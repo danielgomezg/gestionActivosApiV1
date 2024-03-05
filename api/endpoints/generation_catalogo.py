@@ -1,8 +1,8 @@
-from fastapi import Depends, File, HTTPException, Header
+from fastapi import Depends, HTTPException, Header
 from fastapi.responses import FileResponse
 from fastapi import APIRouter
 from typing import Tuple
-from reportlab.lib.pagesizes import letter, landscape
+from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from schemas.schemaGenerico import Response
@@ -13,13 +13,13 @@ import os
 from datetime import datetime
 import xlsxwriter
 import pytz
-
-from crud.generation_catalogo import draw_multiline_text, portada_catalogo, generate_barcode, draw_table
-from crud.article import get_article_by_id_company, count_article_by_company
-from crud.company import get_company_by_id#, get_company_by_sucursal
-from crud.active import get_active_by_sucursal, get_active_by_offices
-
 import copy
+
+from crud.generation_catalogo import (draw_multiline_text, portada_catalogo, generate_barcode, draw_table,
+                                      calculator_space_article, next_page)
+from crud.article import get_article_by_id_company
+from crud.company import get_company_by_id
+from crud.active import get_active_by_sucursal, get_active_by_offices
 
 router = APIRouter()
 
@@ -39,15 +39,13 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
         articles, count = get_article_by_id_company(db, id_company, adjust_limit=True)
         company = get_company_by_id(db, id_company)
 
-        while len(articles) < 10:
-            articles.extend(copy.deepcopy(articles))
+        #while len(articles) < 15:
+            #articles.extend(copy.deepcopy(articles))
 
         #Fecha y hora
         chile_timezone = pytz.timezone('Chile/Continental')
         now = datetime.now(chile_timezone)
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
-        #now = datetime.now()
-        #date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
 
         # Lógica para generar el catálogo PDF con ReportLab
@@ -61,7 +59,7 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
             pdf = canvas.Canvas(f, pagesize=letter)
 
             width, height = pdf._pagesize
-            print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
+            #print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
 
             #Portada
             portada_catalogo(pdf,company)
@@ -82,28 +80,55 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
                 y_position -= y_line
                 y_line = 0
 
-                pdf.setFont("Helvetica", 12)
+                pdf.setFont("Helvetica", 11)
 
                 draw_lines = draw_multiline_text(pdf, 50, y_position, f"Nombre: {article.name}")
                 y_line += (20 * draw_lines)
+                #print(y_line)
 
                 draw_lines = draw_multiline_text(pdf, 50, (y_position - y_line), f"Código: {article.code}")
-                #x_space = len(f"Código: {article.code}")
-                x_position_end = 50 + pdf.stringWidth(f"Código: {article.code}", "Helvetica", 12)
+                #x_position_end = 50 + pdf.stringWidth(f"Código: {article.code}", "Helvetica", 12)
 
                 # Generar y agregar el código de barras
                 ruta_imagen = os.path.join(ruta_barcodes, f"barcode_{article.code}")
                 ruta_imagen_png = ruta_imagen + ".png"
                 generate_barcode(str(article.code), ruta_imagen)
-                #pdf.drawImage(ruta_imagen_png, x=x_position_end + 10, y=(y_position - (y_line + 15)), width=40, height=40, preserveAspectRatio=True)
-                pdf.drawImage(ruta_imagen_png, x=380, y=(y_position - (y_line + 60)), width=100, height=100, preserveAspectRatio=True)
+                pdf.drawImage(ruta_imagen_png, x=420, y=(y_position - (y_line + 60)), width=100, height=100, preserveAspectRatio=True)
                 y_line += (20 * draw_lines)
 
+                #Se verifica si la descripcion no sobrepasa los limites del pdf
+                num_lines = calculator_space_article(article.description)
+                if ((y_position - (y_line + ((15 * (num_lines - 1)) + 20)) ) < 50):
+                    next_page(pdf, page_number, date_time)
+                    # siguiente página
+                    y_position = 790
+                    y_line = 50
+                    page_number += 1
+
                 draw_lines = draw_multiline_text(pdf, 50, (y_position - y_line), f"Descripción: {article.description}")
-                y_line += (20 * draw_lines)
-                draw_lines = draw_multiline_text(pdf, 50, y_position - y_line, f"Fecha de Creación: {article.creation_date}")
+                y_line += (15 * (draw_lines - 1))
+                y_line += 20
+
+                # Se verifica si la fecha no sobrepasa los limites del pdf
+                if(y_position - ( y_line + 15) < 50):
+                    next_page(pdf, page_number, date_time)
+                    # siguiente página
+                    y_position = 790
+                    y_line = 50
+                    page_number += 1
+                draw_lines = draw_multiline_text(pdf, 50, y_position - y_line,
+                                                 f"Fecha de Creación: {article.creation_date}")
                 y_line += (15 * draw_lines)
+
+                # Se verifica si la imagenes no sobrepasan los limites del pdf
                 #Se carga las imagenes de articulo
+                if(y_position - (y_line + 70) < 50):
+                    next_page(pdf, page_number, date_time)
+                    # siguiente página
+                    y_position = 790
+                    y_line = 50
+                    page_number += 1
+
                 if (len(article.photo) > 0):
                     photos_article = article.photo.split(",")
 
@@ -111,40 +136,31 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
                     y_line = y_line + 65
                     for photo_article in photos_article:
 
-                    # Intentamos cargar la imagen desde una ruta específica x=400  y = y_position - (y_line - 10)
-                    #if (len(article.photo) > 0):
+                    # Intentamos cargar la imagen desde una ruta específica
                         image_path = f"files/images_article/{photo_article}"
-                        # try:
-                        image = ImageReader(image_path)
-                        pdf.drawImage(image, x=eje_x, y=y_position - y_line, width=70, height=70,
-                                      preserveAspectRatio=True)
-                        eje_x = eje_x + 100
-                        # except Exception as e:
-                        # print(f"No se pudo cargar la imagen para el artículo {article.name}: {e}")
+                        try:
+                            image = ImageReader(image_path)
+                            pdf.drawImage(image, x=eje_x, y=y_position - y_line, width=70, height=70,
+                                          preserveAspectRatio=True)
+                            eje_x = eje_x + 100
+                        except Exception as e:
+                         print(f"No se pudo cargar la imagen para el artículo {article.name}: {e}")
 
                     y_line = y_line + 5
 
-
-                # Agregamos un separador entre cada artículo
+                # Separador entre cada artículo
                 pdf.line(50, y_position - y_line, 550, y_position - y_line)
-                print(y_line)
                 y_line += 15
 
                 #elimina el codigo de barra generado
                 os.remove(ruta_imagen_png)
 
                 # Verificamos si hay espacio suficiente en la página actual
-                if y_position - y_line <= 180 and i < len(articles):
-                    pdf.setFont("Helvetica", 8)
-                    #numero pagina
-                    pdf.drawRightString(550, 30, f"Página {page_number}")
-
-                    #Fexha y hora
-                    pdf.drawString(50, 30, f"{date_time}")
-
-                    pdf.showPage()
+                if (y_position - y_line <= 100 and i < len(articles)):
+                    next_page(pdf, page_number, date_time)
                     # siguiente página
-                    y_position = 870
+                    y_position = 790
+                    y_line = 50
                     page_number += 1
 
 
@@ -176,16 +192,13 @@ def articles_catalog_2(id_company: int, db: Session = Depends(get_db), current_u
         articles, count = get_article_by_id_company(db, id_company, adjust_limit=True)
         company = get_company_by_id(db, id_company)
 
-        while len(articles) < 10:
-            articles.extend(copy.deepcopy(articles))
+        # while len(articles) < 10:
+        #     articles.extend(copy.deepcopy(articles))
 
         #Fecha y hora
         chile_timezone = pytz.timezone('Chile/Continental')
         now = datetime.now(chile_timezone)
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
-        #now = datetime.now()
-        #date_time = now.strftime("%Y-%m-%d %H:%M:%S")
-
 
         # Lógica para generar el catálogo PDF con ReportLab
         ruta_temporal = os.path.abspath("Generations_files/catalogo_reportlab.pdf")
@@ -226,8 +239,6 @@ def articles_catalog_2(id_company: int, db: Session = Depends(get_db), current_u
                 y_line += (20 * draw_lines)
 
                 draw_lines = draw_multiline_text(pdf, 260, (y_position - y_line), f"Código: {article.code}")
-                #x_space = len(f"Código: {article.code}")
-                #x_position_end = 50 + pdf.stringWidth(f"Código: {article.code}", "Helvetica", 12)
                 y_line += (20 * draw_lines)
 
                 draw_lines = draw_multiline_text(pdf, 260, (y_position - y_line), f"Descripción: {article.description}")
@@ -239,9 +250,7 @@ def articles_catalog_2(id_company: int, db: Session = Depends(get_db), current_u
                 ruta_imagen = os.path.join(ruta_barcodes, f"barcode_{article.code}")
                 ruta_imagen_png = ruta_imagen + ".png"
                 generate_barcode(str(article.code), ruta_imagen)
-                # pdf.drawImage(ruta_imagen_png, x=x_position_end + 10, y=(y_position - (y_line + 15)), width=40, height=40, preserveAspectRatio=True)
                 pdf.drawImage(ruta_imagen_png, x=280, y=y_position - (y_line + 80 ), width=100, height=100, preserveAspectRatio=True)
-                #y_line += (15 * draw_lines)
 
                 #Se carga las imagenes de articulo
                 y_line = y_line + 65
@@ -336,7 +345,7 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
             pdf = canvas.Canvas(f, pagesize=custom_page_size)
 
             width, height = pdf._pagesize
-            print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
+            #print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
 
             pdf.setTitle(f"Catálogo de Activos de {company.name.upper()}")
 
@@ -436,8 +445,8 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
         company = actives[0].office.sucursal.company
 
         #Creando mas datos para test
-        while len(actives) < 80:
-            actives.extend(copy.deepcopy(actives))
+        # while len(actives) < 80:
+        #     actives.extend(copy.deepcopy(actives))
 
         #Fecha y hora
         chile_timezone = pytz.timezone('Chile/Continental')
@@ -452,11 +461,10 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
         custom_page_size = (816, 1056)
 
         with open(ruta_temporal, 'wb') as f:
-            #pdf = canvas.Canvas(f, pagesize=landscape(letter))
             pdf = canvas.Canvas(f, pagesize=custom_page_size)
 
             width, height = pdf._pagesize
-            print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
+            #print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
 
             pdf.setTitle(f"Catálogo de Activos de {company.name.upper()}")
 
@@ -489,13 +497,10 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
             table_data = [["Cod. de barra", "Modelo", "Serie", "F. Adquisición", "Num. de registro", "Estado",
                            "Encargado", "Rut encargado", "Cod. articulo", "Oficina"]]
 
-            # y_position = 700
             page_number = 1
             cant_items = 0
             # Iteramos sobre los artículos y los agregamos al PDF
-            # y_line = 90
             eje_y_table = eje_y - 40
-            #pdf.drawString(70, eje_y_table, f"Comienzo")
             for i, active in enumerate(actives, start=1):
                 if (active.state == "new"):
                     state_active = "nuevo"
@@ -531,7 +536,6 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
                     str(active.office.floor) + " - " + active.office.description
                 ])
 
-            #print(i)
             draw_table(pdf, table_data, eje_y_table, i - cant_items)
 
             pdf.setFont("Helvetica", 8)
@@ -593,8 +597,8 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
             'bold': True,
             'align': 'center',
             'valign': 'vcenter',
-            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
-            'font_size': 18,  # Cambiar el tamaño de la fuente para el título
+            'font_name': 'Helvetica',
+            'font_size': 18,
         })
 
         worksheet.set_row(1, 25)
@@ -605,16 +609,16 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
             'align': 'left',
             'indent': 1,
             'valign': 'vcenter',
-            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
-            'font_size': 13,  # Cambiar el tamaño de la fuente para el título
+            'font_name': 'Helvetica',
+            'font_size': 13,
         })
 
         formato_sub_titulo_2 = workbook.add_format({
             'align': 'right',
             'indent': 1,
             'valign': 'vcenter',
-            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
-            'font_size': 13,  # Cambiar el tamaño de la fuente para el título
+            'font_name': 'Helvetica',
+            'font_size': 13,
         })
 
         #worksheet.write('C3', 'Cliente', formato_sub_titulo)
@@ -636,7 +640,7 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
             'align': 'center',
             'valign': 'vcenter',
             'bg_color': '#D3D3D3',
-            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
+            'font_name': 'Helvetica',
             'font_size': 11,
             'border': 1
         })
@@ -649,8 +653,8 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
         formato_datos = workbook.add_format({
             'align': 'center',
             'valign': 'vcenter',
-            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
-            'font_size': 9  # Cambiar el tamaño de la fuente
+            'font_name': 'Helvetica',
+            'font_size': 9
         })
 
         # Escribir los datos en el resto de las filas
@@ -697,7 +701,6 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
         # Lógica para obtener los detalles de los artículos (por ejemplo, desde una base de datos)
         id_offices_list = id_offices.split(",")
         id_offices_int = [int(id_office) for id_office in id_offices_list]
-        print(len(id_offices_int))
         actives, count = get_active_by_offices(db, id_offices_int, adjust_limit=True)
         sucursal = actives[0].office.sucursal
         company = actives[0].office.sucursal.company
@@ -733,8 +736,8 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
             'bold': True,
             'align': 'center',
             'valign': 'vcenter',
-            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
-            'font_size': 18,  # Cambiar el tamaño de la fuente para el título
+            'font_name': 'Helvetica',
+            'font_size': 18,
         })
 
         worksheet.set_row(1, 25)
@@ -745,16 +748,16 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
             'align': 'left',
             'indent': 1,
             'valign': 'vcenter',
-            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
-            'font_size': 13,  # Cambiar el tamaño de la fuente para el título
+            'font_name': 'Helvetica',
+            'font_size': 13,
         })
 
         formato_sub_titulo_2 = workbook.add_format({
             'align': 'right',
             'indent': 1,
             'valign': 'vcenter',
-            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
-            'font_size': 13,  # Cambiar el tamaño de la fuente para el título
+            'font_name': 'Helvetica',
+            'font_size': 13,
         })
 
         worksheet.merge_range('B3:C3', 'Cliente', formato_sub_titulo_2)
@@ -775,7 +778,7 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
             'align': 'center',
             'valign': 'vcenter',
             'bg_color': '#D3D3D3',
-            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
+            'font_name': 'Helvetica',
             'font_size': 11,
             'border': 1
         })
@@ -788,8 +791,8 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
         formato_datos = workbook.add_format({
             'align': 'center',
             'valign': 'vcenter',
-            'font_name': 'Helvetica',  # Cambiar la fuente a Helvetica
-            'font_size': 9  # Cambiar el tamaño de la fuente
+            'font_name': 'Helvetica',
+            'font_size': 9
         })
 
         # Escribir los datos en el resto de las filas
