@@ -6,10 +6,10 @@ from database import Base
 class Category(Base):
     __tablename__ = 'categoria'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    level = Column(String, nullable=False)
+    #level = Column(String, nullable=False)
     description = Column(String, nullable=False)
-    father_id = Column(Integer, nullable=False)
-    client_code = Column(String, nullable=True)
+    parent_id = Column(Integer, nullable=False)
+    #client_code = Column(String, nullable=True)
     removed = Column(Integer, default=0, nullable=False)
 
     #Relacion con sucursales
