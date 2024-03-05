@@ -6,19 +6,40 @@ from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
 
 def draw_multiline_text(pdf, x, y_position, text):
-    pdf.setFont("Helvetica", 12)
+    pdf.setFont("Helvetica", 11)
     if len(text) > 50:
         #pdf.drawString(50, y_position, text)
-        lines = textwrap.wrap(text, width=50)
+        lines = textwrap.wrap(text, width=70)
         i = 0
         for line in lines:
             pdf.drawString(x, y_position, line)
-            y_position -= 20
+            y_position -= 15
             i+= 1
         return i
     else:
         pdf.drawString(x, y_position, text)
         return 1
+
+def calculator_space_article(text):
+    if len(text) > 50:
+        lines = textwrap.wrap(text, width=70)
+        i = 0
+        for line in lines:
+            i+= 1
+        return i
+    else:
+        return 1
+
+def next_page(pdf, page_number, date):
+    pdf.setFont("Helvetica", 8)
+    # numero pagina
+    pdf.drawRightString(550, 30, f"Página {page_number}")
+
+    # Fexha y hora
+    pdf.drawString(50, 30, f"{date}")
+
+    pdf.showPage()
+
 
 def portada_catalogo(pdf, company):
     pdf.setFont("Helvetica-Bold", 32)
