@@ -1,15 +1,8 @@
-from sqlalchemy.orm import Session, joinedload, join
+from sqlalchemy.orm import Session
 from schemas.categorySchema import CategorySchema, CategoryEditSchema
-from sqlalchemy import desc, func, and_
+from sqlalchemy import desc
 from models.category import Category
-# from models.company import Company
-# from models.sucursal import Sucursal
-# from models.office import Office
 from fastapi import HTTPException, status
-#historial
-# from schemas.historySchema import HistorySchema
-# from crud.history import create_history
-
 
 def get_category_all(db: Session, limit: int = 100, offset: int = 0):
     try:
@@ -22,10 +15,6 @@ def get_category_all(db: Session, limit: int = 100, offset: int = 0):
             .limit(limit)
             .all()
         )
-        # result = []
-        # for company in companies:
-        #     company[0].count_sucursal = company[1]
-        #     result.append(company[0])
 
         return categories
     except Exception as e:
@@ -47,24 +36,14 @@ def get_category_by_id(db: Session, category_id: int):
 def create_category(db: Session, category: CategorySchema):
     try:
         _category = Category(
-            level=category.level,
+            #level=category.level,
             description=category.description,
-            father_id=category.father_id,
-            client_code=category.client_code
+            parent_id=category.father_id
         )
 
         db.add(_category)
         db.commit()
         db.refresh(_category)
-        #_company.count_sucursal = 0
-
-        # creacion del historial
-        # history_params = {
-        #     "description": "create-company",
-        #     "company_id": _company.id,
-        #     "user_id": id_user
-        # }
-        #create_history(db, HistorySchema(**history_params))
 
         return _category
     except Exception as e:
@@ -76,19 +55,10 @@ def update_category(db: Session, category_id: int, category: CategoryEditSchema)
         category_to_edit = db.query(Category).filter(Category.id == category_id).first()
         if category_to_edit:
             category_to_edit.description = category.description
-            category_to_edit.client_code = category.client_code
+            #category_to_edit.client_code = category.client_code
 
             db.commit()
             db.refresh(category_to_edit)
-
-            # creacion del historial
-            # history_params = {
-            #     "description": "update-company",
-            #     "company_id": company_to_edit.id,
-            #     "user_id": id_user
-            #     #"current_session_user_id": id_user
-            # }
-            # create_history(db, HistorySchema(**history_params))
 
             return category_to_edit
         else:
@@ -102,15 +72,6 @@ def delete_category(db: Session, category_id: int):
         if category_to_delete:
             category_to_delete.removed = 1
             db.commit()
-
-            # creacion del historial
-            # history_params = {
-            #     "description": "delete-company",
-            #     "company_id": company_id,
-            #     "user_id": id_user
-            #     #"current_session_user_id": id_user
-            # }
-            # create_history(db, HistorySchema(**history_params))
 
             return category_id
         else:
