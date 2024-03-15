@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 from database import get_db, conexion
 from crud.active import (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
                          get_active_by_office, get_active_by_offices, count_active, get_active_by_article_and_barcode, search_active_sucursal, search_active_offices)
-from schemas.activeSchema import ActiveSchema, ActiveEditSchema
+from schemas.activeSchema import ActiveSchema, ActiveEditSchema, ActiveUploadSchema
 from schemas.schemaGenerico import Response, ResponseGet
 from crud.office import get_office_by_id
-from crud.article import get_article_by_id
+from crud.article import get_article_by_id, get_article_by_code, create_article
 from pathlib import Path
 import re
 from fastapi.responses import FileResponse
@@ -16,6 +16,8 @@ from dateutil import parser as date_parser
 
 from crud.user import  get_user_disable_current, get_user_by_id
 from typing import Tuple, List
+from datetime import datetime
+import pandas as pd
 
 router = APIRouter()
 # active.Base.metadata.create_all(bind=engine)
@@ -344,3 +346,92 @@ async def get_image(file_path: str):
     if not image.exists():
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(image)
+
+
+@router.post("/active/upload")
+def active_file(office_id: int, db: Session = Depends(get_db), file: UploadFile = File(...), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
+    try:
+        name_user, expiration_time = current_user_info
+        db = next(conexion(db, companyId))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
+        
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+
+        # Leer el archivo Excel en un DataFrame de pandas
+        df = pd.read_csv(file.file)
+
+        # Iterar sobre las filas del DataFrame
+        for index, row in df.iterrows():
+            # Aquí puedes acceder a los datos de cada fila
+            codigo = str(row.iloc[0])
+            serie = str(row.iloc[1])
+            model = str(row.iloc[2])
+            date = row.iloc[3]
+            date = datetime.strptime(date, '%d-%m-%Y')
+            # Convertir el objeto datetime de nuevo a una cadena, pero en el formato 'yyyy-mm-dd'
+            date = date.strftime('%Y-%m-%d')
+
+            state = str(row.iloc[4])
+            comment = '' if pd.isna(row.iloc[5]) else row.iloc[5]
+            name_charge = str(row.iloc[6])
+            rut_charge = str(row.iloc[7])
+            num_register = str(row.iloc[8])
+            article_name = str(row.iloc[9])
+            article_code = row.iloc[10]
+            article_description = str(row.iloc[11])
+
+            print(f"codigo: {codigo}, serie: {serie}, model: {model}, date: {date}, state: {state}, comment: {comment}, name_charge: {name_charge}, rut_charge: {rut_charge}, num_register: {num_register}, article_name: {article_name}, article_code: {article_code}, article_description: {article_description}")
+            # 0. SI ARTICLE CODE NO EXISTE, NO HACER NADA. INDICAR EN CSV QUE NRO DE ARTICULO NO EXISTE.
+            if pd.isna(article_code):
+                print("No existe código de artículo")
+                continue
+
+            # 1. BUSCAR SI EXISTE ARTICULO.
+            article = get_article_by_code(db, str(int(article_code)))
+            print(f"article found: {article}")
+
+            # 1.1 SI NO EXISTE ARTICULO, CREARLO
+            if not article:
+                print("Creando artículo")
+                new_article = {
+                    "name": article_name,
+                    "code": str(int(article_code)),
+                    "description": article_description
+                }   
+                print(f"")
+                article = create_article(db, new_article, name_user)
+                print(f"Article created: {article}")
+
+            # 2. BUSCAR SI EXISTE ACTIVO.
+            active = get_active_by_article_and_barcode(db, article.id, str(int(codigo)))
+
+            # 2.1 CREAR EL ACTIVO. INDICAR SI YA ESTABA CREADO.
+            print("Creando activo")
+            new_active = {
+                "bar_code": str(int(codigo)),
+                "serie": serie,
+                "model": model,
+                "acquisition_date": date,
+                "state": state,
+                "comment": comment,
+                "name_in_charge_active": name_charge,
+                "rut_in_charge_active": rut_charge,
+                "accounting_record_number": num_register,
+                "article_id": article.id,
+                "office_id": office_id,
+            }
+            print(f"new active: {new_active}")
+            active = create_active(db, ActiveSchema(**new_active), name_user)
+            print(f"Activo creado: {active}")
+
+
+
+
+            # print(f"{index}: {row}")
+
+
+        return Response(code="201", message="Archivo guardado con éxito", result=[]).model_dump()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {e}")
