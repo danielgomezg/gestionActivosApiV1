@@ -5,12 +5,14 @@ from sqlalchemy.orm import Session
 from database import get_db, conexion
 from crud.active import (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
                          get_active_by_office, get_active_by_offices, count_active, get_active_by_article_and_barcode, search_active_sucursal, search_active_offices)
-from schemas.activeSchema import ActiveSchema, ActiveEditSchema, ActiveUploadSchema
+from schemas.activeSchema import ActiveSchema, ActiveEditSchema
+from schemas.articleSchema import ArticleSchema
 from schemas.schemaGenerico import Response, ResponseGet
 from crud.office import get_office_by_id
 from crud.article import get_article_by_id, get_article_by_code, create_article
 from pathlib import Path
 import re
+import os
 from fastapi.responses import FileResponse
 from dateutil import parser as date_parser
 
@@ -382,33 +384,37 @@ def active_file(office_id: int, db: Session = Depends(get_db), file: UploadFile 
             article_code = row.iloc[10]
             article_description = str(row.iloc[11])
 
-            print(f"codigo: {codigo}, serie: {serie}, model: {model}, date: {date}, state: {state}, comment: {comment}, name_charge: {name_charge}, rut_charge: {rut_charge}, num_register: {num_register}, article_name: {article_name}, article_code: {article_code}, article_description: {article_description}")
+            #print(f"codigo: {codigo}, serie: {serie}, model: {model}, date: {date}, state: {state}, comment: {comment}, name_charge: {name_charge}, rut_charge: {rut_charge}, num_register: {num_register}, article_name: {article_name}, article_code: {article_code}, article_description: {article_description}")
             # 0. SI ARTICLE CODE NO EXISTE, NO HACER NADA. INDICAR EN CSV QUE NRO DE ARTICULO NO EXISTE.
             if pd.isna(article_code):
                 print("No existe código de artículo")
+                df.at[index, 'Guardado']= "no"
                 continue
 
             # 1. BUSCAR SI EXISTE ARTICULO.
             article = get_article_by_code(db, str(int(article_code)))
-            print(f"article found: {article}")
 
             # 1.1 SI NO EXISTE ARTICULO, CREARLO
             if not article:
-                print("Creando artículo")
                 new_article = {
                     "name": article_name,
                     "code": str(int(article_code)),
-                    "description": article_description
-                }   
-                print(f"")
-                article = create_article(db, new_article, name_user)
+                    "photo":"",
+                    "description": article_description,
+                    "company_id": companyId
+                }
+                article = create_article(db, ArticleSchema(**new_article), name_user)
                 print(f"Article created: {article}")
 
             # 2. BUSCAR SI EXISTE ACTIVO.
             active = get_active_by_article_and_barcode(db, article.id, str(int(codigo)))
 
+            if(active):
+                print("existe el activo")
+                df.at[index, 'Guardado'] = "ya registrado"
+                continue
+
             # 2.1 CREAR EL ACTIVO. INDICAR SI YA ESTABA CREADO.
-            print("Creando activo")
             new_active = {
                 "bar_code": str(int(codigo)),
                 "serie": serie,
@@ -418,20 +424,26 @@ def active_file(office_id: int, db: Session = Depends(get_db), file: UploadFile 
                 "comment": comment,
                 "name_in_charge_active": name_charge,
                 "rut_in_charge_active": rut_charge,
+                "accounting_document": "",
                 "accounting_record_number": num_register,
                 "article_id": article.id,
-                "office_id": office_id,
+                "office_id": office_id
             }
-            print(f"new active: {new_active}")
             active = create_active(db, ActiveSchema(**new_active), name_user)
             print(f"Activo creado: {active}")
 
+            # Agregar la columna 'Completado' al DataFrame
+            df.at[index, 'Guardado'] = 'Sí'
+
+            # Sobrescribir el archivo original con los datos actualizados
+            #df.to_excel(file.file, index=False)
+
+        # Guardar el DataFrame actualizado en un nuevo archivo Excel
+        new_file_path = os.path.join("files", f"{file.filename}_guardados.xlsx")
+        df.to_excel(new_file_path, index=False)
 
 
-
-            # print(f"{index}: {row}")
-
-
-        return Response(code="201", message="Archivo guardado con éxito", result=[]).model_dump()
+        #return Response(code="201", message="Archivo guardado con éxito", result=[]).model_dump()
+        return FileResponse(new_file_path, filename=f"{file.filename}_guardados.xlsx")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {e}")
