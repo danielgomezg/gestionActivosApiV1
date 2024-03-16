@@ -226,7 +226,6 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
             office_id=active.office_id,
             article_id=active.article_id
         )
-
         db.add(_active)
         db.commit()
         db.refresh(_active)
@@ -244,8 +243,8 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
             "company_id": id_company
             #"current_session_user_id": id_user
         }
-        create_history(db, HistorySchema(**history_params))
 
+        create_history(db, HistorySchema(**history_params))
         return _active
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando activo {e}")
