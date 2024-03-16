@@ -1,3 +1,4 @@
+import sqlalchemy
 from models import company
 from models.company import Company
 # from database import engine
@@ -166,10 +167,11 @@ def update(request: CompanyEditSchema, id: int, db: Session = Depends(get_db), c
     if (re.match(patron, request.contact_email) is None):
         return Response(code="400", message="Email del responsable inválido", result=[])
 
+    # Actualiza la empresa en la bd principal y en su bd
     _company = update_company(db, id, request, name_user)
     _company_db_own = update_company(db_company, id, request, name_user)
-
-    return Response(code = "201", message = f"La Empresa {request.name} editada", result = _company).model_dump()
+   
+    return Response(code = "201", message = f"La Empresa {_company.name} editada", result = _company).model_dump()
 
 @router.delete('/company/{id}')
 def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):

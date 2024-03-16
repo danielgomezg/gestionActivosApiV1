@@ -1,5 +1,5 @@
 import shutil
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from schemas.articleSchema import ArticleSchema, ArticleEditSchema
 from models.article import Article
 from fastapi import HTTPException, status, UploadFile
@@ -74,22 +74,22 @@ def get_article_by_id_company(db: Session, company_id: int, limit: int = 100, of
                 limit = count_articles
 
         articles = (
-            db.query(Article, func.count(Active.id).label("count_actives"))
+            db.query(Article)
             .outerjoin(Active, and_(Active.article_id == Article.id, Active.removed == 0))
             .filter(Article.company_id == company_id, Article.removed == 0)
-            .group_by(Article.id)
+            .options(joinedload(Article.category))
             .order_by(desc(Article.id))
             .offset(offset)
             .limit(limit)
             .all()
         )
-        result = []
-        for article in articles:
-            article[0].count_actives = article[1]
-            result.append(article[0])
+        # result = []
+        # for article in articles:
+        #     article[0].count_actives = article[1]
+        #     result.append(article[0])
 
         count = db.query(Article).filter(Article.company_id == company_id, Article.removed == 0).count()
-        return result, count
+        return articles, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener Articulo {e}")
 
@@ -150,7 +150,7 @@ def create_article(db: Session, article: ArticleSchema, name_user: str):
             description=article.description,
             code=article.code,
             photo=article.photo,
-            #category_id=article.category_id,
+            category_id=article.category_id,
             company_id=article.company_id
         )
 
@@ -181,7 +181,7 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema, nam
             article_to_edit.name = article.name
             article_to_edit.description = article.description
             article_to_edit.code = article.code
-            #article_to_edit.category_id = article.category_id
+            article_to_edit.category_id = article.category_id
 
             # Se elimina la foto reemplazada del servidor
             # Si la foto es nula, no se hace nada
