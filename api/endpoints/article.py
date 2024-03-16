@@ -129,9 +129,9 @@ def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_i
     if article_code:
         return Response(code="400", message="Código del artículo ya ingresado", result=[])
 
-    # id_category = get_category_by_id(db, request.category_id)
-    # if not id_category:
-    #     return Response(code="400", message="id categoria no valido", result=[])
+    id_category = get_category_by_id(db, request.category_id)
+    if not id_category:
+        return Response(code="400", message="id categoria no valido", result=[])
 
     _article = create_article(db, request, name_user)
     #_article = create_article(db, request, name_user)
@@ -160,11 +160,10 @@ def update(request: ArticleEditSchema, id: int, db: Session = Depends(get_db), c
     if article_code and id is not article_code.id:
         return Response(code="400", message="Código del artículo ya ingresado", result=[])
 
-    # id_category = get_category_by_id(db, request.category_id)
-    # if not id_category:
-    #     return Response(code="400", message="id categoria no valido", result=[])
+    id_category = get_category_by_id(db, request.category_id)
+    if not id_category:
+        return Response(code="400", message="id categoria no valido", result=[])
 
-    #_article = update_article(db, id,  request, name_user)
     _article = update_article(db, id, request, name_user)
     return Response(code = "201", message = f"Articulo {_article.name} editado", result = _article).model_dump()
 

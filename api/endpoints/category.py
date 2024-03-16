@@ -4,7 +4,7 @@ from models.category import Category
 from fastapi import APIRouter, Depends, Header
 from sqlalchemy.orm import Session
 from database import get_db, conexion
-from crud.category import get_category_all, count_category, get_category_by_id, create_category, update_category, delete_category
+from crud.category import get_category_all, count_category, get_category_by_parent_id, create_category, update_category, delete_category, count_category_children
 from schemas.categorySchema import CategorySchema, CategoryEditSchema
 from schemas.schemaGenerico import ResponseGet, Response
 
@@ -33,8 +33,8 @@ def get_categories(db: Session = Depends(get_db), current_user_info: Tuple[str, 
     result = get_category_all(db, limit, offset)
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
-@router.get("/category/{id}")
-def get_category(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
+@router.get("/category/{parent_id}")
+def get_category(parent_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -45,10 +45,11 @@ def get_category(id: int, db: Session = Depends(get_db), current_user_info: Tupl
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    result = get_category_by_id(db, id)
+    count, result = get_category_by_parent_id(db, parent_id, limit, offset)
     if result is None:
         return Response(code= "404", result = [], message="Not found").model_dump()
-    return Response(code= "200", result = result, message="Category found").model_dump()
+    
+    return ResponseGet(code= "200", result = result, limit=limit, offset = offset, count = count).model_dump()
 
 @router.post('/category')
 def create(request: CategorySchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
@@ -68,9 +69,9 @@ def create(request: CategorySchema, db: Session = Depends(get_db), current_user_
     if (request.parent_id is None):
         return Response(code="400", message="La categoria no tiene padre", result=[])
 
-    category_parent = get_category_by_id(db, int(request.parent_id))
-    if(category_parent is None):
-        return Response(code="400", message="Id del padre de la categoria no existe", result=[])
+    # category_parent = get_category_by_id(db, int(request.parent_id))
+    # if(category_parent is None):
+    #     return Response(code="400", message="Id del padre de la categoria no existe", result=[])
 
     _category = create_category(db, request)
     return Response(code = "201", message = f"Categoria {_category.description} creada", result = _category).model_dump()
@@ -105,5 +106,11 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
+    count_childs = count_category_children(db, id)
+
+    if(count_childs > 0):
+        return Response(code = "400", message = f"La Categoria con id {id} tiene hijos", result = []).model_dump()
+
     _category = delete_category(db, id)
+
     return Response(code = "201", message = f"Cateogria con id {id} eliminada", result = _category).model_dump()

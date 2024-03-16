@@ -32,13 +32,34 @@ def get_category_by_id(db: Session, category_id: int):
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania {e}")
+    
+def get_category_by_parent_id(db: Session, parent_id: int, limit: int = 100, offset: int = 0):
+    try:
+        count = db.query(Category).filter(Category.parent_id == parent_id, Category.removed == 0).count()
+
+        if count == 0:
+            return count, []
+
+        result = (
+            db.query(Category)
+            .filter(Category.parent_id == parent_id, Category.removed == 0)
+            .order_by(desc(Category.id))
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+        
+        return count, result
+    
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania {e}")
 
 def create_category(db: Session, category: CategorySchema):
     try:
         _category = Category(
             #level=category.level,
             description=category.description,
-            parent_id=category.father_id
+            parent_id=category.parent_id
         )
 
         db.add(_category)
@@ -78,3 +99,9 @@ def delete_category(db: Session, category_id: int):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Categoria con id {category_id} no encontrada")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando categria: {e}")
+    
+def count_category_children(db: Session, category_id: int):
+    try:
+        return db.query(Category).filter(Category.parent_id == category_id, Category.removed == 0).count()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al contar las categorias hijas {e}")
