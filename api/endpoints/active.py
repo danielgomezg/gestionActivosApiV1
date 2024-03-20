@@ -1,4 +1,5 @@
 from models.active import validateActiveFromFile
+from models.article import validateArticleFromFile
 # from database import engine
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query, Header
 from sqlalchemy.orm import Session
@@ -385,31 +386,39 @@ def active_file(office_id: int, db: Session = Depends(get_db), file: UploadFile 
             # name_charge = str(row.iloc[6]) # OBLIGATORIO
             # rut_charge = str(row.iloc[7])  # OBLIGATORIO
             # num_register = str(row.iloc[8]) # OBLIGATORIO
-            article_name = str(row.iloc[9]) # OBLIGATORIO
-            article_code = row.iloc[10] # OBLIGATORIO
-            article_description = str(row.iloc[11])
+            #article_name = str(row.iloc[9]) # OBLIGATORIO
+            #article_code = row.iloc[10] # OBLIGATORIO
+            #article_description = str(row.iloc[11])
 
             #print(f"codigo: {codigo}, serie: {serie}, model: {model}, date: {date}, state: {state}, comment: {comment}, name_charge: {name_charge}, rut_charge: {rut_charge}, num_register: {num_register}, article_name: {article_name}, article_code: {article_code}, article_description: {article_description}")
             # 0. SI ARTICLE CODE NO EXISTE, NO HACER NADA. INDICAR EN CSV QUE NRO DE ARTICULO NO EXISTE.
-            print(f"article_code: {article_code}")
-            if pd.isna(article_code):
-                print("No existe código de artículo")
-                df.at[index, 'Guardado']= "no"
+            #print(f"article_code: {article_code}")
+
+            # if pd.isna(article_code):
+            #     print("No existe código de artículo")
+            #     df.at[index, 'Guardado']= "no"
+            #     continue
+
+            article_Schema, msg = validateArticleFromFile(row, companyId)
+            if article_Schema is None:
+                print("Datos del articulo no válidos")
+                df.at[index, 'Guardado'] = "no"
+                failed += 1
                 continue
 
             # 1. BUSCAR SI EXISTE ARTICULO.
-            article = get_article_by_code(db, str(int(article_code)))
+            article = get_article_by_code(db, article_Schema.code)
 
             # 1.1 SI NO EXISTE ARTICULO, CREARLO
             if not article:
-                new_article = {
-                    "name": article_name,
-                    "code": str(int(article_code)),
-                    "photo":"",
-                    "description": article_description,
-                    "company_id": companyId
-                }
-                article = create_article(db, ArticleSchema(**new_article), name_user)
+                # new_article = {
+                #     "name": article_name,
+                #     "code": str(int(article_code)),
+                #     "photo":"",
+                #     "description": article_description,
+                #     "company_id": companyId
+                # }
+                article = create_article(db, article_Schema, name_user)
                 print(f"Article created: {article}")
 
             # 2.0 VALIDAR QUE LOS DATOS DEL ACTIVO SEAN CORRECTOS.
@@ -462,8 +471,6 @@ def active_file(office_id: int, db: Session = Depends(get_db), file: UploadFile 
         new_file_path = os.path.join("files", f"{file.filename}_guardados.xlsx")
         df.to_excel(new_file_path, index=False)
 
-        print()
-        print()
         print()
         print(f"Guardados: {success}, No guardados: {failed}")
 
