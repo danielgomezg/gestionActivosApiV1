@@ -1,4 +1,4 @@
-from models import active
+from models.active import validateActiveFromFile
 # from database import engine
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query, Header
 from sqlalchemy.orm import Session
@@ -363,29 +363,35 @@ def active_file(office_id: int, db: Session = Depends(get_db), file: UploadFile 
 
         # Leer el archivo Excel en un DataFrame de pandas
         df = pd.read_csv(file.file)
+        num_columns = len(df.columns)
+        print(f"Numero de columnas header: {num_columns}")
+
+        failed = 0
+        success = 0
 
         # Iterar sobre las filas del DataFrame
         for index, row in df.iterrows():
             # Aquí puedes acceder a los datos de cada fila
-            codigo = str(row.iloc[0])
-            serie = str(row.iloc[1])
-            model = str(row.iloc[2])
-            date = row.iloc[3]
-            date = datetime.strptime(date, '%d-%m-%Y')
-            # Convertir el objeto datetime de nuevo a una cadena, pero en el formato 'yyyy-mm-dd'
-            date = date.strftime('%Y-%m-%d')
+            # codigo = str(row.iloc[0]) # OBLIGATORIO
+            # serie = str(row.iloc[1]) # OBLIGATORIO 
+            # model = str(row.iloc[2]) # OBLIGATORIO
+            # date = row.iloc[3]
+            # date = datetime.strptime(date, '%d-%m-%Y')
+            # # Convertir el objeto datetime de nuevo a una cadena, pero en el formato 'yyyy-mm-dd'
+            # date = date.strftime('%Y-%m-%d') # OBLIGATORIO
 
-            state = str(row.iloc[4])
-            comment = '' if pd.isna(row.iloc[5]) else row.iloc[5]
-            name_charge = str(row.iloc[6])
-            rut_charge = str(row.iloc[7])
-            num_register = str(row.iloc[8])
-            article_name = str(row.iloc[9])
-            article_code = row.iloc[10]
+            # state = str(row.iloc[4]) # OBLIGATORIO	
+            # comment = '' if pd.isna(row.iloc[5]) else row.iloc[5]
+            # name_charge = str(row.iloc[6]) # OBLIGATORIO
+            # rut_charge = str(row.iloc[7])  # OBLIGATORIO
+            # num_register = str(row.iloc[8]) # OBLIGATORIO
+            article_name = str(row.iloc[9]) # OBLIGATORIO
+            article_code = row.iloc[10] # OBLIGATORIO
             article_description = str(row.iloc[11])
 
             #print(f"codigo: {codigo}, serie: {serie}, model: {model}, date: {date}, state: {state}, comment: {comment}, name_charge: {name_charge}, rut_charge: {rut_charge}, num_register: {num_register}, article_name: {article_name}, article_code: {article_code}, article_description: {article_description}")
             # 0. SI ARTICLE CODE NO EXISTE, NO HACER NADA. INDICAR EN CSV QUE NRO DE ARTICULO NO EXISTE.
+            print(f"article_code: {article_code}")
             if pd.isna(article_code):
                 print("No existe código de artículo")
                 df.at[index, 'Guardado']= "no"
@@ -406,31 +412,45 @@ def active_file(office_id: int, db: Session = Depends(get_db), file: UploadFile 
                 article = create_article(db, ArticleSchema(**new_article), name_user)
                 print(f"Article created: {article}")
 
+            # 2.0 VALIDAR QUE LOS DATOS DEL ACTIVO SEAN CORRECTOS.
+            activeSchema, msg = validateActiveFromFile(row, article.id, office_id)
+            if activeSchema is None:
+                print("Datos del activo no válidos")
+                # print(msg)
+                df.at[index, 'Guardado'] = "no"
+                failed += 1
+                continue
+
+            print('activeSchema', activeSchema)
+
             # 2. BUSCAR SI EXISTE ACTIVO.
-            active = get_active_by_article_and_barcode(db, article.id, str(int(codigo)))
+            active = get_active_by_article_and_barcode(db, article.id, str(int(activeSchema.bar_code)))
 
             if(active):
                 print("existe el activo")
                 df.at[index, 'Guardado'] = "ya registrado"
+                failed += 1
                 continue
 
             # 2.1 CREAR EL ACTIVO. INDICAR SI YA ESTABA CREADO.
-            new_active = {
-                "bar_code": str(int(codigo)),
-                "serie": serie,
-                "model": model,
-                "acquisition_date": date,
-                "state": state,
-                "comment": comment,
-                "name_in_charge_active": name_charge,
-                "rut_in_charge_active": rut_charge,
-                "accounting_document": "",
-                "accounting_record_number": num_register,
-                "article_id": article.id,
-                "office_id": office_id
-            }
-            active = create_active(db, ActiveSchema(**new_active), name_user)
+            # new_active = {
+            #     "bar_code": str(int(codigo)),
+            #     "serie": serie,
+            #     "model": model,
+            #     "acquisition_date": date,
+            #     "state": state,
+            #     "comment": comment,
+            #     "name_in_charge_active": name_charge,
+            #     "rut_in_charge_active": rut_charge,
+            #     "accounting_document": "",
+            #     "accounting_record_number": num_register,
+            #     "article_id": article.id,
+            #     "office_id": office_id
+            # }
+            
+            active = create_active(db, activeSchema, name_user)
             print(f"Activo creado: {active}")
+            success += 1
 
             # Agregar la columna 'Completado' al DataFrame
             df.at[index, 'Guardado'] = 'Sí'
@@ -442,6 +462,10 @@ def active_file(office_id: int, db: Session = Depends(get_db), file: UploadFile 
         new_file_path = os.path.join("files", f"{file.filename}_guardados.xlsx")
         df.to_excel(new_file_path, index=False)
 
+        print()
+        print()
+        print()
+        print(f"Guardados: {success}, No guardados: {failed}")
 
         #return Response(code="201", message="Archivo guardado con éxito", result=[]).model_dump()
         return FileResponse(new_file_path, filename=f"{file.filename}_guardados.xlsx")
