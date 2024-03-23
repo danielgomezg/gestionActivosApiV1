@@ -48,7 +48,7 @@ def validateArticleFromFile(article, companyID):
             "company_id": companyID
         }
 
-        if new_article["name"] == '' or new_article["description"] == '' or new_article["code"] == '':
+        if new_article["name"] == '' or new_article["code"] == '':
             return None, "Faltan campos obligatorios"
 
         print(f"Article : {new_article}")

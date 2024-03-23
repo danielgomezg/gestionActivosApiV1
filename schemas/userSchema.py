@@ -31,3 +31,8 @@ class UserEditSchema(BaseModel):
 class UserSchemaLogin(BaseModel):
     email: str
     password: str
+
+class UserSchemaLoginAndroid(BaseModel):
+    email: str
+    password: str
+    rutCompany: str

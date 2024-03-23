@@ -20,6 +20,9 @@ def get_category_all(db: Session, limit: int = 100, offset: int = 0):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar categorias {e}")
 
+def get_categories_all_android(db: Session):
+    return db.query(Category).filter(Category.removed == 0).all()
+
 def count_category(db: Session):
     try:
         return db.query(Category).filter(Category.removed == 0).count()

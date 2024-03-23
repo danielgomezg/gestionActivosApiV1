@@ -17,6 +17,9 @@ def get_offices_all(db: Session, limit: int = 100, offset: int = 0):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener oficinas {e}")
 
+def get_offices_all_android(db: Session):
+    return db.query(Office).filter(Office.removed == 0).all()
+
 
 def get_office_by_id_sucursal(db: Session, sucursal_id: int, limit: int = 100, offset: int = 0):
     try:

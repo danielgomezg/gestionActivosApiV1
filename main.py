@@ -19,6 +19,7 @@ from api.endpoints import active
 from api.endpoints import history
 from api.endpoints import generation_catalogo
 from api.endpoints import category
+from api.endpoints import data_android
 
 #cors
 from fastapi.middleware.cors import CORSMiddleware
@@ -142,6 +143,9 @@ def middleware_validacion_permisos( request: Request, call_next):
             elif (re.search(r'categor', path_peticion, flags=re.IGNORECASE)):
                 #nombre_accion = diccionario.get(request.method) + "-" + "historial"
                 return call_next(request)
+            elif (re.search(r'all', path_peticion, flags=re.IGNORECASE)):
+                #nombre_accion = diccionario.get(request.method) + "-" + "historial"
+                return call_next(request)
 
             else:
                 return JSONResponse(content={"detail": "La accion a realizar no existe"}, status_code=401)
@@ -185,4 +189,5 @@ app.include_router(article.router)
 app.include_router(active.router)
 app.include_router(history.router)
 app.include_router(generation_catalogo.router)
+app.include_router(data_android.router)
 
