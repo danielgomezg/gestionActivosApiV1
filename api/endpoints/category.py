@@ -4,7 +4,8 @@ from models.category import Category
 from fastapi import APIRouter, Depends, Header
 from sqlalchemy.orm import Session
 from database import get_db, conexion
-from crud.category import get_category_all, count_category, get_category_by_parent_id, create_category, update_category, delete_category, count_category_children
+from crud.category import (get_category_all, count_category, get_category_by_parent_id, create_category, update_category, delete_category, count_category_children,
+                           get_category_by_description)
 from schemas.categorySchema import CategorySchema, CategoryEditSchema
 from schemas.schemaGenerico import ResponseGet, Response
 
@@ -66,6 +67,10 @@ def create(request: CategorySchema, db: Session = Depends(get_db), current_user_
     if (len(request.description) == 0):
         return Response(code="400", message="Descripcion de la categoria esta vacío", result=[])
 
+    cat_description = get_category_by_description(db, request.description)
+    if cat_description:
+        return Response(code="400", message="Descripcion de categoria ya ingresado", result=[])
+
     if (request.parent_id is None):
         return Response(code="400", message="La categoria no tiene padre", result=[])
 
@@ -90,6 +95,10 @@ def update(request: CategoryEditSchema, id: int, db: Session = Depends(get_db), 
 
     if (len(request.description) == 0):
         return Response(code="400", message="Descripcion de la categoria esta vacío", result=[])
+
+    cat_description = get_category_by_description(db, request.description)
+    if cat_description:
+        return Response(code="400", message="Descripcion de categoria ya ingresado", result=[])
 
     _category = update_category(db, id, request)
     return Response(code = "201", message = f"La Categoria {_category.description} editada", result = _category).model_dump()

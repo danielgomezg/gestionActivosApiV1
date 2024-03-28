@@ -10,10 +10,14 @@ from crud.article import (get_article_all, get_article_by_id, create_article, up
 from schemas.articleSchema import ArticleSchema, ArticleEditSchema
 from schemas.schemaGenerico import Response, ResponseGet
 from crud.company import get_company_by_id
-from crud.category import get_category_by_id
+from crud.category import get_category_by_id, get_category_by_description, create_category
 from fastapi.responses import FileResponse
 from crud.user import  get_user_disable_current
 from typing import Tuple
+import pandas as pd
+import os
+from models.article import validateArticleFromFile
+from models.category import validateCategoryFromFile
 
 router = APIRouter()
 #article.Base.metadata.create_all(bind=engine)
@@ -189,3 +193,77 @@ async def get_image(image_path: str):
     if not image.exists():
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(image)
+
+
+@router.post("/article/upload")
+def article_file(db: Session = Depends(get_db), file: UploadFile = File(...), current_user_info: Tuple[str, str] = Depends(get_user_disable_current),
+                 companyId: int = Header(None)):
+    try:
+        name_user, expiration_time = current_user_info
+        db = next(conexion(db, companyId))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+
+        # Leer el archivo Excel en un DataFrame de pandas
+        df = pd.read_csv(file.file)
+        num_columns = len(df.columns)
+        print(f"Numero de columnas header: {num_columns}")
+
+        failed = 0
+        success = 0
+
+        # Iterar sobre las filas del DataFrame
+        for index, row in df.iterrows():
+
+            category_schema, msg = validateCategoryFromFile(row)
+            if category_schema is None:
+                print("Datos de la categoria no válidos")
+                df.at[index, 'Guardado'] = "no"
+                failed += 1
+                continue
+
+            # 1. BUSCAR SI EXISTE CATEGORIA.
+            print(row.iloc[3])
+            category = get_category_by_description(db, row.iloc[3])
+
+            # 1.1 SI NO EXISTE LA CATEGORIA, CREARLA
+            if not category:
+                category = create_category(db, category_schema)
+                print(f"Category created: {category}")
+
+            article_Schema, msg = validateArticleFromFile(row, companyId, category.id)
+            if article_Schema is None:
+                print("Datos del articulo no válidos")
+                df.at[index, 'Guardado'] = "no"
+                failed += 1
+                continue
+
+            # 1. BUSCAR SI EXISTE ARTICULO.
+            article = get_article_by_code(db, article_Schema.code)
+
+            # 1.1 SI NO EXISTE ARTICULO, CREARLO
+            if not article:
+                article = create_article(db, article_Schema, name_user)
+                print(f"Article created: {article}")
+
+            # Agregar la columna 'Completado' al DataFrame
+            success += 1
+            df.at[index, 'Guardado'] = 'Sí'
+
+            # Sobrescribir el archivo original con los datos actualizados
+            # df.to_excel(file.file, index=False)
+
+        # Guardar el DataFrame actualizado en un nuevo archivo Excel
+        new_file_path = os.path.join("files", f"{file.filename}_guardados.xlsx")
+        df.to_excel(new_file_path, index=False)
+
+        print()
+        print(f"Guardados: {success}, No guardados: {failed}")
+
+        # return Response(code="201", message="Archivo guardado con éxito", result=[]).model_dump()
+        return FileResponse(new_file_path, filename=f"{file.filename}_guardados.xlsx")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {e}")

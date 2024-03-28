@@ -65,7 +65,7 @@ def all_data(db: Session = Depends(get_db), current_user_info: Tuple[str, str] =
 @router.post('/login/app/android')
 def login_access_android(request: UserSchemaLoginAndroid, db: Session = Depends(get_db)):
     _user = authenticate_user(request.email, request.password, db)
-    if (_user):
+    if (_user and _user.profile_id != 2):
         _company = get_company_by_rut(db, request.rutCompany)
         if(_company):
             access_token_expires = timedelta(minutes=300)
