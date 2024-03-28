@@ -20,6 +20,7 @@ from api.endpoints import history
 from api.endpoints import generation_catalogo
 from api.endpoints import category
 from api.endpoints import data_android
+from api.endpoints import active_teorico
 
 #cors
 from fastapi.middleware.cors import CORSMiddleware
@@ -190,4 +191,4 @@ app.include_router(active.router)
 app.include_router(history.router)
 app.include_router(generation_catalogo.router)
 app.include_router(data_android.router)
-
+app.include_router(active_teorico.router)
