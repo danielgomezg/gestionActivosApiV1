@@ -175,7 +175,7 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al generar el catálogo de {company.name}: {e}")
 
-
+# no se ocupa
 @router.get("/report/article/test/{id_company}")
 def articles_catalog_2(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     try:
