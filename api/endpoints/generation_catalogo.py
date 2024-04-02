@@ -386,9 +386,9 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
 
                 if ((eje_y_table - (20 * len(table_data))) < 80 and i < len(actives)):
                     if (page_number == 1):
-                        draw_table(pdf, table_data, eje_y_table, i)
+                        draw_table(pdf, table_data, eje_y_table)
                     else:
-                        draw_table(pdf, table_data, eje_y, i - cant_items)
+                        draw_table(pdf, table_data, eje_y)
                     cant_items = i
                     pdf.setFont("Helvetica", 8)
                     pdf.drawRightString(755, 30, f"Página {page_number}")
@@ -411,7 +411,7 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
                     str(active.office.floor) + " - " + active.office.description
                 ])
 
-            draw_table(pdf, table_data, eje_y_table, i - cant_items)
+            draw_table(pdf, table_data, eje_y_table)
 
             pdf.setFont("Helvetica", 8)
             pdf.drawRightString(755, 30, f"Página {page_number}")
@@ -502,18 +502,12 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
             # Iteramos sobre los artículos y los agregamos al PDF
             eje_y_table = eje_y - 40
             for i, active in enumerate(actives, start=1):
-                if (active.state == "new"):
-                    state_active = "nuevo"
-                elif (active.state == "damage"):
-                    state_active = "dañado"
-                else:
-                    state_active = active.state
 
                 if ((eje_y_table - (20 * len(table_data))) < 80 and i < len(actives)):
                     if (page_number == 1):
-                        draw_table(pdf, table_data, eje_y_table, i)
+                        draw_table(pdf, table_data, eje_y_table)
                     else:
-                        draw_table(pdf, table_data, eje_y, i - cant_items)
+                        draw_table(pdf, table_data, eje_y)
                     cant_items = i
                     pdf.setFont("Helvetica", 8)
                     pdf.drawRightString(755, 30, f"Página {page_number}")
@@ -529,14 +523,14 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
                     active.serie,
                     str(active.acquisition_date),
                     active.accounting_record_number,
-                    state_active,
+                    active.state,
                     active.name_in_charge_active,
                     active.rut_in_charge_active,
                     active.article.code,
                     str(active.office.floor) + " - " + active.office.description
                 ])
 
-            draw_table(pdf, table_data, eje_y_table, i - cant_items)
+            draw_table(pdf, table_data, eje_y_table)
 
             pdf.setFont("Helvetica", 8)
             pdf.drawRightString(755, 30, f"Página {page_number}")
