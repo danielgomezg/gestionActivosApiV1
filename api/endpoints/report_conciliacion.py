@@ -7,8 +7,11 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from schemas.schemaGenerico import Response
 from crud.report_conciliacion import get_actives_equals, get_actives_missing, get_actives_surplus
 from crud.company import get_company_by_id
+from reportlab.lib.utils import ImageReader
 import xlsxwriter
 import os
+import pytz
+from datetime import datetime
 from reportlab.pdfgen import canvas
 from crud.generation_catalogo import draw_table
 #para prueba de datos
@@ -30,6 +33,10 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
         company = get_company_by_id(db, companyId)
         actives = get_actives_equals(db)
 
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
+        date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
         # Verificar si la carpeta existe, de lo contrario, crearla
         folder_path = 'Generations_files/report_conciliacion/iguales_excel'
         if not os.path.exists(folder_path):
@@ -43,6 +50,18 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
         workbook = xlsxwriter.Workbook(excel_path)
         worksheet = workbook.add_worksheet()
 
+        # Configurar la ruta de la imagen
+        imagen_path = "images-sca/sca-2.jpeg"
+        factor_x = 0.3
+        factor_y = 0.3
+
+        try:
+            # Insertar la imagen en la hoja de trabajo
+            worksheet.insert_image('G3', imagen_path,
+                                   {'x_offset': 15, 'y_offset': 10, 'x_scale': factor_x, 'y_scale': factor_y})
+        except Exception as e:
+            print(f"No se pudo cargar la imagen para la portada: {e}")
+
         # ancho por defecto de las filas
         worksheet.set_default_row(18)
 
@@ -52,18 +71,39 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
             'align': 'center',
             'valign': 'vcenter',
             'font_name': 'Helvetica',
-            'font_size': 16,
+            'font_size': 18,
         })
 
         worksheet.set_row(0, 25)
         # Escribir el título en una celda específica
         worksheet.merge_range('C1:H1', f' Reporte de conciliación iguales ', formato_titulo)
 
+        formato_sub_titulo = workbook.add_format({
+            'align': 'left',
+            'indent': 1,
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',
+            'font_size': 13,
+        })
+
+        formato_sub_titulo_2 = workbook.add_format({
+            'align': 'right',
+            'indent': 1,
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',
+            'font_size': 13,
+        })
+
+        worksheet.write('C4', 'Cliente', formato_sub_titulo_2)
+        worksheet.merge_range('D4:E4', f'{company.name.upper()}', formato_sub_titulo)
+        worksheet.write('C5', 'Fecha', formato_sub_titulo_2)
+        worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
+
         # Datos a escribir en el archivo Excel
         datos = ["Código", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado",
                  "Rut encargado", "Cod. articulo", "Oficina"]
 
-        start_table = 1
+        start_table = 7
 
         # Configurar un formato para los encabezados
         formato_encabezado = workbook.add_format({
@@ -130,6 +170,11 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
         company = get_company_by_id(db, companyId)
         actives = get_actives_equals(db)
 
+        # Fecha y hora
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
+        date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
         # Creando mas datos para test
         #while len(actives) < 80:
             #actives.extend(copy.deepcopy(actives))
@@ -148,19 +193,39 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
 
             pdf.setTitle(f"Reporte de conciliación iguales")
 
+            # Dibujar un rectángulo
+            ancho_rect = width - 100
+            alto_rect = 100
+            eje_y = height - (alto_rect + 16)
+            pdf.setLineWidth(1.5)
+            pdf.rect(50, eje_y, ancho_rect, alto_rect)
+
             # Agregamos el título al PDF
             pdf.setFont("Helvetica-Bold", 20)
-            pdf.drawString((width/2) - 150, height - 40, f"Reporte de conciliación iguales")
+            pdf.drawString(70,  eje_y + 75, f"Reporte de conciliación iguales")
+
+            pdf.setFont("Helvetica", 12)
+            pdf.drawString(70, eje_y + 55, f"Cliente")
+            pdf.drawString(145, eje_y + 55, f"{company.name.upper()}")
+
+            pdf.drawString(70, eje_y + 35, f"Fecha")
+            pdf.drawString(145, eje_y + 35, f"{date_time}")
+
+            image_path = "images-sca/sca-2.jpeg"
+            try:
+                image = ImageReader(image_path)
+                pdf.drawImage(image, x=606, y=eje_y - 10, width=140, height=140, preserveAspectRatio=True)
+            except Exception as e:
+                print(f"No se pudo cargar la imagen para la portada: {e}")
 
             # Crear y configurar la tabla
             table_data = [
                 ["Código", "Modelo", "Serie", "F. Adquisición", "Num. de registro", "Estado", "Encargado",
                  "Rut encargado", "Cod. articulo", "Oficina"]]
 
-            cant_items = 0
             page_number = 1
             #comienzo primera pag
-            eje_y_table = height - 90
+            eje_y_table = eje_y - 40
             # comienzo demas pag
             eje_y = height - 70
             for i, active in enumerate(actives, start=1):
@@ -217,6 +282,10 @@ def report_conciliacion_missing_excel(db: Session = Depends(get_db), current_use
         company = get_company_by_id(db, companyId)
         actives_teoricos = get_actives_missing(db)
 
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
+        date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
         # Verificar si la carpeta existe, de lo contrario, crearla
         folder_path = 'Generations_files/report_conciliacion/faltantes_excel'
         if not os.path.exists(folder_path):
@@ -230,6 +299,18 @@ def report_conciliacion_missing_excel(db: Session = Depends(get_db), current_use
         workbook = xlsxwriter.Workbook(excel_path)
         worksheet = workbook.add_worksheet()
 
+        # Configurar la ruta de la imagen
+        imagen_path = "images-sca/sca-2.jpeg"
+        factor_x = 0.3
+        factor_y = 0.3
+
+        try:
+            # Insertar la imagen en la hoja de trabajo
+            worksheet.insert_image('D3', imagen_path,
+                                   {'x_offset': 15, 'y_offset': 10, 'x_scale': factor_x, 'y_scale': factor_y})
+        except Exception as e:
+            print(f"No se pudo cargar la imagen para la portada: {e}")
+
         # ancho por defecto de las filas
         worksheet.set_default_row(18)
 
@@ -239,17 +320,38 @@ def report_conciliacion_missing_excel(db: Session = Depends(get_db), current_use
             'align': 'center',
             'valign': 'vcenter',
             'font_name': 'Helvetica',
-            'font_size': 16,
+            'font_size': 18,
         })
 
         worksheet.set_row(0, 25)
         # Escribir el título en una celda específica
         worksheet.merge_range('B1:D1', ' Reporte de conciliación faltantes ', formato_titulo)
 
+        formato_sub_titulo = workbook.add_format({
+            'align': 'left',
+            'indent': 1,
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',
+            'font_size': 13,
+        })
+
+        formato_sub_titulo_2 = workbook.add_format({
+            'align': 'right',
+            'indent': 1,
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',
+            'font_size': 13,
+        })
+
+        worksheet.write('B4', 'Cliente', formato_sub_titulo_2)
+        worksheet.write('C4', f'{company.name.upper()}', formato_sub_titulo)
+        worksheet.write('B5', 'Fecha', formato_sub_titulo_2)
+        worksheet.write('C5', f'{date_time}', formato_sub_titulo)
+
         # Datos a escribir en el archivo Excel
         datos = ["Código de activo", "Fecha de compra", "Denominación del activo fijo", "Valor de adquisición", "Valor contable"]
 
-        start_table = 1
+        start_table = 7
 
         # Configurar un formato para los encabezados
         formato_encabezado = workbook.add_format({
@@ -314,6 +416,11 @@ def report_conciliacion_missing_pdf(db: Session = Depends(get_db), current_user_
         company = get_company_by_id(db, companyId)
         actives = get_actives_missing(db)
 
+        # Fecha y hora
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
+        date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
         # Creando mas datos para test
         #while len(actives) < 80:
             #actives.extend(copy.deepcopy(actives))
@@ -332,9 +439,30 @@ def report_conciliacion_missing_pdf(db: Session = Depends(get_db), current_user_
 
             pdf.setTitle(f"Reporte de conciliación faltantes")
 
+            # Dibujar un rectángulo
+            ancho_rect = width - 100
+            alto_rect = 100
+            eje_y = height - (alto_rect + 16)
+            pdf.setLineWidth(1.5)
+            pdf.rect(50, eje_y, ancho_rect, alto_rect)
+
             # Agregamos el título al PDF
             pdf.setFont("Helvetica-Bold", 20)
-            pdf.drawString((width/2) - 150, height - 40, f"Reporte de conciliación faltantes")
+            pdf.drawString(70, eje_y + 75, f"Reporte de conciliación faltantes")
+
+            pdf.setFont("Helvetica", 12)
+            pdf.drawString(70, eje_y + 55, f"Cliente")
+            pdf.drawString(145, eje_y + 55, f"{company.name.upper()}")
+
+            pdf.drawString(70, eje_y + 35, f"Fecha")
+            pdf.drawString(145, eje_y + 35, f"{date_time}")
+
+            image_path = "images-sca/sca-2.jpeg"
+            try:
+                image = ImageReader(image_path)
+                pdf.drawImage(image, x=606, y=eje_y - 10, width=140, height=140, preserveAspectRatio=True)
+            except Exception as e:
+                print(f"No se pudo cargar la imagen para la portada: {e}")
 
             # Crear y configurar la tabla
             table_data = [["Código de activo", "Fecha de compra", "Denominación del activo fijo", "Valor de adquisición", "Valor contable"]]
@@ -342,7 +470,7 @@ def report_conciliacion_missing_pdf(db: Session = Depends(get_db), current_user_
             #cant_items = 0
             page_number = 1
             #comienzo primera pag
-            eje_y_table = height - 90
+            eje_y_table = eje_y - 40
             # comienzo demas pag
             eje_y = height - 70
             for i, active in enumerate(actives, start=1):
@@ -394,6 +522,10 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
         company = get_company_by_id(db, companyId)
         actives = get_actives_surplus(db)
 
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
+        date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
         # Verificar si la carpeta existe, de lo contrario, crearla
         folder_path = 'Generations_files/report_conciliacion/sobrantes_excel'
         if not os.path.exists(folder_path):
@@ -407,6 +539,18 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
         workbook = xlsxwriter.Workbook(excel_path)
         worksheet = workbook.add_worksheet()
 
+        # Configurar la ruta de la imagen
+        imagen_path = "images-sca/sca-2.jpeg"
+        factor_x = 0.3
+        factor_y = 0.3
+
+        try:
+            # Insertar la imagen en la hoja de trabajo
+            worksheet.insert_image('G3', imagen_path,
+                                   {'x_offset': 15, 'y_offset': 10, 'x_scale': factor_x, 'y_scale': factor_y})
+        except Exception as e:
+            print(f"No se pudo cargar la imagen para la portada: {e}")
+
         # ancho por defecto de las filas
         worksheet.set_default_row(18)
 
@@ -416,18 +560,39 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
             'align': 'center',
             'valign': 'vcenter',
             'font_name': 'Helvetica',
-            'font_size': 16,
+            'font_size': 18,
         })
 
         worksheet.set_row(0, 25)
         # Escribir el título en una celda específica
         worksheet.merge_range('C1:H1', ' Reporte de conciliación sobrantes ', formato_titulo)
 
+        formato_sub_titulo = workbook.add_format({
+            'align': 'left',
+            'indent': 1,
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',
+            'font_size': 13,
+        })
+
+        formato_sub_titulo_2 = workbook.add_format({
+            'align': 'right',
+            'indent': 1,
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',
+            'font_size': 13,
+        })
+
+        worksheet.write('C4', 'Cliente', formato_sub_titulo_2)
+        worksheet.merge_range('D4:E4', f'{company.name.upper()}', formato_sub_titulo)
+        worksheet.write('C5', 'Fecha', formato_sub_titulo_2)
+        worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
+
         # Datos a escribir en el archivo Excel
         datos = ["Código", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado",
                  "Rut encargado", "Cod. articulo", "Oficina"]
 
-        start_table = 1
+        start_table = 7
 
         # Configurar un formato para los encabezados
         formato_encabezado = workbook.add_format({
@@ -494,6 +659,11 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
         company = get_company_by_id(db, companyId)
         actives = get_actives_surplus(db)
 
+        # Fecha y hora
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
+        date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
         # Creando mas datos para test
         #while len(actives) < 80:
             #actives.extend(copy.deepcopy(actives))
@@ -510,11 +680,32 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
 
             width, height = pdf._pagesize
 
+            # Dibujar un rectángulo
+            ancho_rect = width - 100
+            alto_rect = 100
+            eje_y = height - (alto_rect + 16)
+            pdf.setLineWidth(1.5)
+            pdf.rect(50, eje_y, ancho_rect, alto_rect)
+
             pdf.setTitle(f"Reporte de conciliación sobrantes")
 
             # Agregamos el título al PDF
             pdf.setFont("Helvetica-Bold", 20)
-            pdf.drawString((width/2) - 150, height - 40, f"Reporte de conciliación sobrantes")
+            pdf.drawString(70, eje_y + 75, f"Reporte de conciliación sobrantes")
+
+            pdf.setFont("Helvetica", 12)
+            pdf.drawString(70, eje_y + 55, f"Cliente")
+            pdf.drawString(145, eje_y + 55, f"{company.name.upper()}")
+
+            pdf.drawString(70, eje_y + 35, f"Fecha")
+            pdf.drawString(145, eje_y + 35, f"{date_time}")
+
+            image_path = "images-sca/sca-2.jpeg"
+            try:
+                image = ImageReader(image_path)
+                pdf.drawImage(image, x=606, y=eje_y - 10, width=140, height=140, preserveAspectRatio=True)
+            except Exception as e:
+                print(f"No se pudo cargar la imagen para la portada: {e}")
 
             # Crear y configurar la tabla
             table_data = [
@@ -523,7 +714,7 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
 
             page_number = 1
             #comienzo primera pag
-            eje_y_table = height - 90
+            eje_y_table = eje_y - 40
             # comienzo demas pag
             eje_y = height - 70
             for i, active in enumerate(actives, start=1):
