@@ -37,7 +37,11 @@ def get_active_all(db: Session, limit: int = 100, offset: int = 0):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activo {e}")
 
 def get_actives_all_android(db: Session):
-    return db.query(Active).filter(Active.removed == 0).all()
+    try:
+        return db.query(Active).filter(Active.removed == 0).all()
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activo {e}")
 
 def get_active_by_article_and_barcode(db: Session, article_id: int, bar_code: str, limit: int = 100, offset: int = 0):
     try:
