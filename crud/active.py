@@ -133,7 +133,8 @@ def search_active_sucursal(db: Session, search: str, sucursal_id: int, limit: in
                     func.lower(Active.bar_code).like(f"%{search}%") |
                     func.lower(Active.model).like(f"%{search}%") |
                     func.lower(Active.serie).like(f"%{search}%") |
-                    func.lower(Active.accounting_record_number).like(f"%{search}%")
+                    func.lower(Active.accounting_record_number).like(f"%{search}%") |
+                    func.lower(Active.brand).like(f"%{search}%")
             )).count()
         
         if count == 0:
@@ -148,7 +149,8 @@ def search_active_sucursal(db: Session, search: str, sucursal_id: int, limit: in
                     func.lower(Active.bar_code).like(f"%{search}%") |
                     func.lower(Active.model).like(f"%{search}%") |
                     func.lower(Active.serie).like(f"%{search}%") |
-                    func.lower(Active.accounting_record_number).like(f"%{search}%")
+                    func.lower(Active.accounting_record_number).like(f"%{search}%") |
+                    func.lower(Active.brand).like(f"%{search}%")
             )
             ).options(joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)
             ).order_by(Active.office_id).offset(offset).limit(limit)
@@ -171,7 +173,8 @@ def search_active_offices(db: Session, search: str, office_ids: List[int], limit
                     func.lower(Active.bar_code).like(f"%{search}%") |
                     func.lower(Active.model).like(f"%{search}%") |
                     func.lower(Active.serie).like(f"%{search}%") |
-                    func.lower(Active.accounting_record_number).like(f"%{search}%")
+                    func.lower(Active.accounting_record_number).like(f"%{search}%") |
+                    func.lower(Active.brand).like(f"%{search}%")
             )
             ).count()
     
@@ -186,7 +189,8 @@ def search_active_offices(db: Session, search: str, office_ids: List[int], limit
                     func.lower(Active.bar_code).like(f"%{search}%") |
                     func.lower(Active.model).like(f"%{search}%") |
                     func.lower(Active.serie).like(f"%{search}%") |
-                    func.lower(Active.accounting_record_number).like(f"%{search}%")
+                    func.lower(Active.accounting_record_number).like(f"%{search}%") |
+                    func.lower(Active.brand).like(f"%{search}%")
             )
             ).options(joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)
             ).order_by(Active.office_id).offset(offset).limit(limit)
@@ -226,6 +230,7 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
             serie=active.serie,
             model=active.model,
             state=active.state,
+            brand=active.brand,
             office_id=active.office_id,
             article_id=active.article_id
         )
@@ -266,6 +271,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
             active_to_edit.serie = active.serie
             active_to_edit.model = active.model
             active_to_edit.state = active.state
+            active_to_edit.brand = active.brand
             active_to_edit.office_id = active.office_id
 
             #Se elimina el archivo reemplazado del servidor

@@ -19,6 +19,7 @@ class Active(Base):
     serie = Column(String, nullable=False)
     model = Column(String, nullable=False)
     state = Column(String, nullable=False)
+    brand = Column(String, nullable=False)
     creation_date = Column(Date, default=date.today, nullable=False)
     removed = Column(Integer, default=0, nullable=False)
 
@@ -47,7 +48,7 @@ def validateActiveFromFile(active, articleId, officeId):
         # Convertir el objeto datetime de nuevo a una cadena, pero en el formato 'yyyy-mm-dd'
         date = date.strftime('%Y-%m-%d') # OBLIGATORIO
 
-        state = '' if pd.isna(active.iloc[4]) else active.iloc[4] # OBLIGATORIO	
+        state = '' if pd.isna(active.iloc[4]) else active.iloc[4] # OBLIGATORIO
         comment = '' if pd.isna(active.iloc[5]) else active.iloc[5]
         name_charge = '' if pd.isna(active.iloc[6]) else active.iloc[6] # OBLIGATORIO
         rut_charge = '' if pd.isna(active.iloc[7]) else active.iloc[7]  # OBLIGATORIO

@@ -15,7 +15,7 @@ from crud.article import get_articles_all_android
 from crud.category import get_categories_all_android
 from crud.user import create_access_token, authenticate_user
 
-from schemas.userSchema import UserSchemaLoginAndroid
+from schemas.userSchema import UserSchemaLoginAndroid, UserSchemaLogin
 
 router = APIRouter()
 
@@ -53,7 +53,7 @@ def all_data(db: Session = Depends(get_db), current_user_info: Tuple[str, str] =
     actives_data =[{"id": active.id, "bar_code": active.bar_code, "comment": active.comment, "acquisition_date": active.acquisition_date,
                     "accounting_document": active.accounting_document, "accounting_record_number": active.accounting_record_number,
                     "name_in_charge_active": active.name_in_charge_active, "rut_in_charge_active": active.rut_in_charge_active, "serie": active.serie,
-                    "model":active.model, "state": active.state, "creation_date": active.creation_date, "removed": active.removed,
+                    "model":active.model, "state": active.state, "brand": active.brand, "creation_date": active.creation_date, "removed": active.removed,
                     "office_id": active.office_id, "article_id": active.article_id} for active in actives]
     categories_data = [{"id": category.id, "description": category.description, "parent_id": category.parent_id, "removed": category.removed} for category in categories]
 
@@ -63,47 +63,86 @@ def all_data(db: Session = Depends(get_db), current_user_info: Tuple[str, str] =
     return Response(code="200", message="", result=data).model_dump()
 
 @router.post('/login/app/android')
-def login_access_android(request: UserSchemaLoginAndroid, db: Session = Depends(get_db)):
+def login_access_android(request: UserSchemaLogin, db: Session = Depends(get_db)):
     _user = authenticate_user(request.email, request.password, db)
-    if (_user and _user.profile_id != 2):
-        _company = get_company_by_rut(db, request.rutCompany)
-        if(_company):
-            access_token_expires = timedelta(minutes=300)
-            user_id = str(_user.id)
+    if (_user):
+        access_token_expires = timedelta(minutes=300)
+        user_id = str(_user.id)
 
-            additional_info = {
-                "email": _user.email,
-                "firstName": _user.firstName,
-                "lastName": _user.lastName,
-                "secondName": _user.secondName,
-                "secondLastName": _user.secondLastName,
-                "rut": _user.rut,
-                "profile_id": _user.profile_id,
-                "company_id": _user.company_id,
-                "id": _user.id
-            }
+        additional_info = {
+            "email": _user.email,
+            "firstName": _user.firstName,
+            "lastName": _user.lastName,
+            "secondName": _user.secondName,
+            "secondLastName": _user.secondLastName,
+            "rut": _user.rut,
+            "profile_id": _user.profile_id,
+            "company_id": _user.company_id,
+            "id": _user.id
+        }
 
-            access_token = create_access_token(data={"sub": user_id, "profile": _user.profile_id, "company": _company.id, "user": additional_info},
-                                               expires_delta=access_token_expires)
+        access_token = create_access_token(data={"sub": user_id, "profile": _user.profile_id, "user": additional_info},
+                                           expires_delta=access_token_expires)
 
-            expire_seconds = access_token_expires.total_seconds()
+        expire_seconds = access_token_expires.total_seconds()
 
-            return JSONResponse(
-                content=Response(
-                    code="201",
-                    message="Usuario loggeado correctamente",
-                    result={
-                        "access_token": access_token,
-                        "token_type": "bearer",
-                        "expire_token": expire_seconds,
-                        "user": additional_info,
-                        "company_id": _company.id
-                    },
-                ).model_dump(),
-                status_code=201,
-            )
-        else:
-            return Response(code="401", message="No existe la compañia", result=[])
+        return JSONResponse(
+            content=Response(
+                code="201",
+                message="Usuario loggeado correctamente",
+                result={
+                    "access_token": access_token,
+                    "token_type": "bearer",
+                    "expire_token": expire_seconds,
+                    "user": additional_info
+                },
+            ).model_dump(),
+            status_code=201,
+        )
     else:
         return Response(code="401", message="Usuario incorrecto", result=[])
+
+# def login_access_android(request: UserSchemaLoginAndroid, db: Session = Depends(get_db)):
+#     _user = authenticate_user(request.email, request.password, db)
+#     if (_user and _user.profile_id != 2):
+#         _company = get_company_by_rut(db, request.rutCompany)
+#         if(_company):
+#             access_token_expires = timedelta(minutes=300)
+#             user_id = str(_user.id)
+#
+#             additional_info = {
+#                 "email": _user.email,
+#                 "firstName": _user.firstName,
+#                 "lastName": _user.lastName,
+#                 "secondName": _user.secondName,
+#                 "secondLastName": _user.secondLastName,
+#                 "rut": _user.rut,
+#                 "profile_id": _user.profile_id,
+#                 "company_id": _user.company_id,
+#                 "id": _user.id
+#             }
+#
+#             access_token = create_access_token(data={"sub": user_id, "profile": _user.profile_id, "company": _company.id, "user": additional_info},
+#                                                expires_delta=access_token_expires)
+#
+#             expire_seconds = access_token_expires.total_seconds()
+#
+#             return JSONResponse(
+#                 content=Response(
+#                     code="201",
+#                     message="Usuario loggeado correctamente",
+#                     result={
+#                         "access_token": access_token,
+#                         "token_type": "bearer",
+#                         "expire_token": expire_seconds,
+#                         "user": additional_info,
+#                         "company_id": _company.id
+#                     },
+#                 ).model_dump(),
+#                 status_code=201,
+#             )
+#         else:
+#             return Response(code="401", message="No existe la compañia", result=[])
+#     else:
+#         return Response(code="401", message="Usuario incorrecto", result=[])
 

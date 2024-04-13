@@ -199,7 +199,6 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
         return  Response(code = "400", message = "código de barra no valido", result = [])
 
     # valida si existe un codigo de barra con el mismo numero dentro de los articulos
-    #active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
     print(request.bar_code)
     active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
     if active_barcode:
@@ -239,17 +238,17 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
     if (len(request.state) == 0):
         return Response(code="400", message="Estado no valido", result=[])
 
-    #id_office = get_office_by_id(db, request.office_id)
+    if (len(request.brand) == 0):
+        return Response(code="400", message="Marca no valida", result=[])
+
     id_office = get_office_by_id(db, request.office_id)
     if(not id_office):
         return Response(code="400", message="id oficina no valido", result=[])
 
-    #id_article = get_article_by_id(db, request.article_id)
     id_article = get_article_by_id(db, request.article_id)
     if (not id_article):
         return Response(code="400", message="id articulo no valido", result=[])
 
-    #_active = create_active(db, request, name_user)
     _active = create_active(db, request, name_user)
     return Response(code = "201", message = f"Activo {_active.bar_code} creado", result = _active).model_dump()
 
@@ -273,11 +272,6 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
     if active_barcode and id is not active_barcode.id:
         return Response(code="400", message="Codigo de barra ya ingresado", result=[])
-
-    #activos_por_id_articles, count = get_active_by_id_article(db, request.article_id)
-    #for active_por_article in activos_por_id_articles:
-        #if (active_por_article.bar_code == request.bar_code and id is not active_por_article.id):
-            #return Response(code="400", message="Codigo de barra ya ingresado", result=[])
 
     try:
         # Intenta convertir la fecha a un objeto date
@@ -313,7 +307,9 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     if (len(request.state) == 0):
         return Response(code="400", message="Esatdo no valido", result=[])
 
-    #id_office = get_office_by_id(db, request.office_id)
+    if (len(request.brand) == 0):
+        return Response(code="400", message="Marca no valida", result=[])
+
     id_office = get_office_by_id(db, request.office_id)
     if (not id_office):
         return Response(code="400", message="id oficina no valido", result=[])
@@ -322,7 +318,6 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     if (not id_article):
         return Response(code="400", message="id articulo no valido", result=[])
 
-    #_active = update_active(db, id,  request, name_user)
     _active = update_active(db, id, request, name_user)
     return Response(code = "201", message = f"Activo {_active.bar_code} editado", result = _active).model_dump()
 

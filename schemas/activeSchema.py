@@ -16,6 +16,7 @@ class ActiveSchema(BaseModel):
     serie: str
     model: str
     state: str
+    brand: str
     #creation_date: date
     office_id: int
     article_id: int
@@ -31,6 +32,7 @@ class ActiveEditSchema(BaseModel):
     serie: str
     model: str
     state: str
+    brand: str
     #creation_date: datetime
     office_id: int
     article_id: int

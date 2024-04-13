@@ -100,7 +100,7 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
         worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Código", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado",
+        datos = ["Código activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado",
                  "Rut encargado", "Cod. articulo", "Oficina"]
 
         start_table = 7
@@ -135,7 +135,7 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
 
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
-            for col, value in enumerate([active.bar_code, active.model, active.serie, str(active.acquisition_date),
+            for col, value in enumerate([active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active,
                                          active.rut_in_charge_active, str(active.article.code),
                                          str(active.office.floor) + " - " + active.office.description]):
@@ -220,7 +220,7 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
 
             # Crear y configurar la tabla
             table_data = [
-                ["Código", "Modelo", "Serie", "F. Adquisición", "Num. de registro", "Estado", "Encargado",
+                ["Cod. activo", "Marca", "Modelo", "Serie", "F. Adquisición", "N. de registro", "Estado", "Encargado",
                  "Rut encargado", "Cod. articulo", "Oficina"]]
 
             page_number = 1
@@ -245,6 +245,7 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
 
                 table_data.append([
                     active.bar_code,
+                    active.brand,
                     active.model,
                     active.serie,
                     str(active.acquisition_date),
@@ -256,7 +257,7 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
                     str(active.office.floor) + " - " + active.office.description
                 ])
 
-            draw_table(pdf, table_data, eje_y_table)
+            draw_table(pdf, table_data, eje_y_table, 35)
             pdf.setFont("Helvetica", 8)
             pdf.drawRightString(755, 30, f"Página {page_number}")
 
@@ -589,7 +590,7 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
         worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Código", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado",
+        datos = ["Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "N. de registro", "Estado", "Encargado",
                  "Rut encargado", "Cod. articulo", "Oficina"]
 
         start_table = 7
@@ -624,7 +625,7 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
 
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
-            for col, value in enumerate([active.bar_code, active.model, active.serie, str(active.acquisition_date),
+            for col, value in enumerate([active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active,
                                          active.rut_in_charge_active, str(active.article.code),
                                          str(active.office.floor) + " - " + active.office.description]):
@@ -709,7 +710,7 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
 
             # Crear y configurar la tabla
             table_data = [
-                ["Código", "Modelo", "Serie", "F. Adquisición", "Num. de registro", "Estado", "Encargado",
+                ["Cod. activo", "Marca", "Modelo", "Serie", "F. Adquisición", "N. de registro", "Estado", "Encargado",
                  "Rut encargado", "Cod. articulo", "Oficina"]]
 
             page_number = 1
@@ -733,6 +734,7 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
 
                 table_data.append([
                     active.bar_code,
+                    active.brand,
                     active.model,
                     active.serie,
                     str(active.acquisition_date),
@@ -744,7 +746,7 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
                     str(active.office.floor) + " - " + active.office.description
                 ])
 
-            draw_table(pdf, table_data, eje_y_table)
+            draw_table(pdf, table_data, eje_y_table, 35)
             pdf.setFont("Helvetica", 8)
             pdf.drawRightString(755, 30, f"Página {page_number}")
 
