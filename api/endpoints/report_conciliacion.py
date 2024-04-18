@@ -52,12 +52,12 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
 
         # Configurar la ruta de la imagen
         imagen_path = "images-sca/sca-2.jpeg"
-        factor_x = 0.3
-        factor_y = 0.3
+        factor_x = 0.15
+        factor_y = 0.14
 
         try:
             # Insertar la imagen en la hoja de trabajo
-            worksheet.insert_image('G3', imagen_path,
+            worksheet.insert_image('G4', imagen_path,
                                    {'x_offset': 15, 'y_offset': 10, 'x_scale': factor_x, 'y_scale': factor_y})
         except Exception as e:
             print(f"No se pudo cargar la imagen para la portada: {e}")
@@ -302,12 +302,12 @@ def report_conciliacion_missing_excel(db: Session = Depends(get_db), current_use
 
         # Configurar la ruta de la imagen
         imagen_path = "images-sca/sca-2.jpeg"
-        factor_x = 0.3
-        factor_y = 0.3
+        factor_x = 0.15
+        factor_y = 0.14
 
         try:
             # Insertar la imagen en la hoja de trabajo
-            worksheet.insert_image('D3', imagen_path,
+            worksheet.insert_image('D4', imagen_path,
                                    {'x_offset': 15, 'y_offset': 10, 'x_scale': factor_x, 'y_scale': factor_y})
         except Exception as e:
             print(f"No se pudo cargar la imagen para la portada: {e}")
@@ -542,12 +542,12 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
 
         # Configurar la ruta de la imagen
         imagen_path = "images-sca/sca-2.jpeg"
-        factor_x = 0.3
-        factor_y = 0.3
+        factor_x = 0.15
+        factor_y = 0.14
 
         try:
             # Insertar la imagen en la hoja de trabajo
-            worksheet.insert_image('G3', imagen_path,
+            worksheet.insert_image('G4', imagen_path,
                                    {'x_offset': 15, 'y_offset': 10, 'x_scale': factor_x, 'y_scale': factor_y})
         except Exception as e:
             print(f"No se pudo cargar la imagen para la portada: {e}")

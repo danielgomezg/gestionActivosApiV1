@@ -218,16 +218,16 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
     #if(len(request.accounting_document) == 0):
         #return  Response(code = "400", message = "Documento de adquisición no valido", result = [])
 
-    if (len(request.accounting_record_number) == 0):
-        return Response(code="400", message="Numero registro contable no valido", result=[])
+    #if (len(request.accounting_record_number) == 0):
+        #return Response(code="400", message="Numero registro contable no valido", result=[])
 
-    if (len(request.name_in_charge_active) == 0):
-        return Response(code="400", message="Nombre del responsable no valido", result=[])
+    #if (len(request.name_in_charge_active) == 0):
+        #return Response(code="400", message="Nombre del responsable no valido", result=[])
 
-    patron_rut = r'^\d{1,8}-[\dkK]$'
-    rut = str(request.rut_in_charge_active.replace(".", ""))
-    if not re.match(patron_rut, rut):
-        return Response(code="400", message="Rut del encargado inválido", result=[])
+    #patron_rut = r'^\d{1,8}-[\dkK]$'
+    #rut = str(request.rut_in_charge_active.replace(".", ""))
+    #if not re.match(patron_rut, rut):
+        #return Response(code="400", message="Rut del encargado inválido", result=[])
 
     if (len(request.serie) == 0):
         return Response(code="400", message="Número de serie no valido", result=[])
@@ -287,16 +287,16 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     #if (len(request.accounting_document) == 0):
         #return Response(code="400", message="Documento de adquisición no valido", result=[])
 
-    if (len(request.accounting_record_number) == 0):
-        return Response(code="400", message="Numero registro contable no valido", result=[])
+    #if (len(request.accounting_record_number) == 0):
+        #return Response(code="400", message="Numero registro contable no valido", result=[])
 
-    if (len(request.name_in_charge_active) == 0):
-        return Response(code="400", message="Nombre del responsable no valido", result=[])
+    #if (len(request.name_in_charge_active) == 0):
+        #return Response(code="400", message="Nombre del responsable no valido", result=[])
 
-    patron_rut = r'^\d{1,8}-[\dkK]$'
-    rut = str(request.rut_in_charge_active.replace(".", ""))
-    if not re.match(patron_rut, rut):
-        return Response(code="400", message="Rut del responsable inválido", result=[])
+    #patron_rut = r'^\d{1,8}-[\dkK]$'
+    #rut = str(request.rut_in_charge_active.replace(".", ""))
+    #if not re.match(patron_rut, rut):
+        #return Response(code="400", message="Rut del responsable inválido", result=[])
 
     if (len(request.serie) == 0):
         return Response(code="400", message="Número de serie no valido", result=[])
