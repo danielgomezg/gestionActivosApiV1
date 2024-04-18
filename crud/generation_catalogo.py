@@ -60,7 +60,7 @@ def generate_barcode(value, filename):
     code = Code128(value, writer=ImageWriter())
     code.save(filename, options={'write_text': False, 'module_height': 14.0, 'module_width': 0.7})
 
-def draw_table(pdf, table_data, eje_y_table, i):
+def draw_table(pdf, table_data, eje_y_table, eje_x = 50):
     table_style = TableStyle([
         # ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         # ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -77,7 +77,7 @@ def draw_table(pdf, table_data, eje_y_table, i):
     table.setStyle(table_style)
 
     table.wrapOn(pdf, 0, 0)
-    table.drawOn(pdf, 40, eje_y_table - table._height)
+    table.drawOn(pdf, eje_x, eje_y_table - table._height)
 
 
 

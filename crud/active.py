@@ -36,6 +36,13 @@ def get_active_all(db: Session, limit: int = 100, offset: int = 0):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activo {e}")
 
+def get_actives_all_android(db: Session):
+    try:
+        return db.query(Active).filter(Active.removed == 0).all()
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activo {e}")
+
 def get_active_by_article_and_barcode(db: Session, article_id: int, bar_code: str, limit: int = 100, offset: int = 0):
     try:
         result = db.query(Active).filter(Active.article_id == article_id, Active.bar_code == bar_code, Active.removed == 0).options(joinedload(Active.article)).offset(offset).limit(limit).first()
@@ -130,7 +137,8 @@ def search_active_sucursal(db: Session, search: str, sucursal_id: int, limit: in
                     func.lower(Active.bar_code).like(f"%{search}%") |
                     func.lower(Active.model).like(f"%{search}%") |
                     func.lower(Active.serie).like(f"%{search}%") |
-                    func.lower(Active.accounting_record_number).like(f"%{search}%")
+                    func.lower(Active.accounting_record_number).like(f"%{search}%") |
+                    func.lower(Active.brand).like(f"%{search}%")
             )).count()
         
         if count == 0:
@@ -145,7 +153,8 @@ def search_active_sucursal(db: Session, search: str, sucursal_id: int, limit: in
                     func.lower(Active.bar_code).like(f"%{search}%") |
                     func.lower(Active.model).like(f"%{search}%") |
                     func.lower(Active.serie).like(f"%{search}%") |
-                    func.lower(Active.accounting_record_number).like(f"%{search}%")
+                    func.lower(Active.accounting_record_number).like(f"%{search}%") |
+                    func.lower(Active.brand).like(f"%{search}%")
             )
             ).options(joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)
             ).order_by(Active.office_id).offset(offset).limit(limit)
@@ -168,7 +177,8 @@ def search_active_offices(db: Session, search: str, office_ids: List[int], limit
                     func.lower(Active.bar_code).like(f"%{search}%") |
                     func.lower(Active.model).like(f"%{search}%") |
                     func.lower(Active.serie).like(f"%{search}%") |
-                    func.lower(Active.accounting_record_number).like(f"%{search}%")
+                    func.lower(Active.accounting_record_number).like(f"%{search}%") |
+                    func.lower(Active.brand).like(f"%{search}%")
             )
             ).count()
     
@@ -183,7 +193,8 @@ def search_active_offices(db: Session, search: str, office_ids: List[int], limit
                     func.lower(Active.bar_code).like(f"%{search}%") |
                     func.lower(Active.model).like(f"%{search}%") |
                     func.lower(Active.serie).like(f"%{search}%") |
-                    func.lower(Active.accounting_record_number).like(f"%{search}%")
+                    func.lower(Active.accounting_record_number).like(f"%{search}%") |
+                    func.lower(Active.brand).like(f"%{search}%")
             )
             ).options(joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)
             ).order_by(Active.office_id).offset(offset).limit(limit)
@@ -223,6 +234,7 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
             serie=active.serie,
             model=active.model,
             state=active.state,
+            brand=active.brand,
             office_id=active.office_id,
             article_id=active.article_id
         )
@@ -263,6 +275,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
             active_to_edit.serie = active.serie
             active_to_edit.model = active.model
             active_to_edit.state = active.state
+            active_to_edit.brand = active.brand
             active_to_edit.office_id = active.office_id
 
             #Se elimina el archivo reemplazado del servidor

@@ -10,12 +10,13 @@ class ActiveSchema(BaseModel):
     comment: Optional[str] = None
     acquisition_date: date
     accounting_document: Optional[str] = None
-    accounting_record_number: str
-    name_in_charge_active: str
-    rut_in_charge_active: str
+    accounting_record_number: Optional[str] = None
+    name_in_charge_active: Optional[str] = None
+    rut_in_charge_active: Optional[str] = None
     serie: str
     model: str
     state: str
+    brand: str
     #creation_date: date
     office_id: int
     article_id: int
@@ -25,12 +26,13 @@ class ActiveEditSchema(BaseModel):
     comment: Optional[str] = None
     acquisition_date: date
     accounting_document: Optional[str] = None
-    accounting_record_number: str
-    name_in_charge_active: str
-    rut_in_charge_active: str
+    accounting_record_number: Optional[str] = None
+    name_in_charge_active: Optional[str] = None
+    rut_in_charge_active: Optional[str] = None
     serie: str
     model: str
     state: str
+    brand: str
     #creation_date: datetime
     office_id: int
     article_id: int

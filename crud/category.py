@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from schemas.categorySchema import CategorySchema, CategoryEditSchema
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from models.category import Category
 from fastapi import HTTPException, status
 
@@ -19,6 +19,9 @@ def get_category_all(db: Session, limit: int = 100, offset: int = 0):
         return categories
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar categorias {e}")
+
+def get_categories_all_android(db: Session):
+    return db.query(Category).filter(Category.removed == 0).all()
 
 def count_category(db: Session):
     try:
@@ -53,6 +56,14 @@ def get_category_by_parent_id(db: Session, parent_id: int, limit: int = 100, off
     
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania {e}")
+
+def get_category_by_description(db: Session, description: str):
+    try:
+        description_lower = description.lower()
+        result = db.query(Category).filter(func.lower(Category.description) == description_lower, Category.removed == 0).first()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar categoria {e}")
 
 def create_category(db: Session, category: CategorySchema):
     try:

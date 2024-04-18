@@ -31,6 +31,10 @@ def get_sucursal_all(db: Session, limit: int = 100, offset: int = 0):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener sucursal sucursal {e}")
     #return db.query(Sucursal).offset(skip).limit(limit).all()
 
+def get_sucursales_all_android(db: Session):
+    return db.query(Sucursal).filter(Sucursal.removed == 0).all()
+
+
 def count_sucursal(db: Session):
     try:
         return db.query(Sucursal).filter(Sucursal.removed == 0).count()

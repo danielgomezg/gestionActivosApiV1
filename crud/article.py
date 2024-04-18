@@ -37,6 +37,9 @@ def get_article_all(db: Session, limit: int = 100, offset: int = 0):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener articulo {e}")
 
+def get_articles_all_android(db: Session):
+    return db.query(Article).filter(Article.removed == 0).all()
+
 def get_article_by_id(db: Session, article_id: int):
     try:
         result = db.query(Article).filter(Article.id == article_id).first()

@@ -1,4 +1,5 @@
-from models import active
+from models.active import validateActiveFromFile
+from models.article import validateArticleFromFile2
 # from database import engine
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query, Header
 from sqlalchemy.orm import Session
@@ -17,9 +18,9 @@ from fastapi.responses import FileResponse
 from dateutil import parser as date_parser
 
 from crud.user import  get_user_disable_current, get_user_by_id
-from typing import Tuple, List
-from datetime import datetime
+from typing import Tuple
 import pandas as pd
+from datetime import datetime
 
 router = APIRouter()
 # active.Base.metadata.create_all(bind=engine)
@@ -199,7 +200,6 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
         return  Response(code = "400", message = "código de barra no valido", result = [])
 
     # valida si existe un codigo de barra con el mismo numero dentro de los articulos
-    #active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
     print(request.bar_code)
     active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
     if active_barcode:
@@ -219,16 +219,16 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
     #if(len(request.accounting_document) == 0):
         #return  Response(code = "400", message = "Documento de adquisición no valido", result = [])
 
-    if (len(request.accounting_record_number) == 0):
-        return Response(code="400", message="Numero registro contable no valido", result=[])
+    #if (len(request.accounting_record_number) == 0):
+        #return Response(code="400", message="Numero registro contable no valido", result=[])
 
-    if (len(request.name_in_charge_active) == 0):
-        return Response(code="400", message="Nombre del responsable no valido", result=[])
+    #if (len(request.name_in_charge_active) == 0):
+        #return Response(code="400", message="Nombre del responsable no valido", result=[])
 
-    patron_rut = r'^\d{1,8}-[\dkK]$'
-    rut = str(request.rut_in_charge_active.replace(".", ""))
-    if not re.match(patron_rut, rut):
-        return Response(code="400", message="Rut del encargado inválido", result=[])
+    #patron_rut = r'^\d{1,8}-[\dkK]$'
+    #rut = str(request.rut_in_charge_active.replace(".", ""))
+    #if not re.match(patron_rut, rut):
+        #return Response(code="400", message="Rut del encargado inválido", result=[])
 
     if (len(request.serie) == 0):
         return Response(code="400", message="Número de serie no valido", result=[])
@@ -239,17 +239,17 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
     if (len(request.state) == 0):
         return Response(code="400", message="Estado no valido", result=[])
 
-    #id_office = get_office_by_id(db, request.office_id)
+    if (len(request.brand) == 0):
+        return Response(code="400", message="Marca no valida", result=[])
+
     id_office = get_office_by_id(db, request.office_id)
     if(not id_office):
         return Response(code="400", message="id oficina no valido", result=[])
 
-    #id_article = get_article_by_id(db, request.article_id)
     id_article = get_article_by_id(db, request.article_id)
     if (not id_article):
         return Response(code="400", message="id articulo no valido", result=[])
 
-    #_active = create_active(db, request, name_user)
     _active = create_active(db, request, name_user)
     return Response(code = "201", message = f"Activo {_active.bar_code} creado", result = _active).model_dump()
 
@@ -274,11 +274,6 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     if active_barcode and id is not active_barcode.id:
         return Response(code="400", message="Codigo de barra ya ingresado", result=[])
 
-    #activos_por_id_articles, count = get_active_by_id_article(db, request.article_id)
-    #for active_por_article in activos_por_id_articles:
-        #if (active_por_article.bar_code == request.bar_code and id is not active_por_article.id):
-            #return Response(code="400", message="Codigo de barra ya ingresado", result=[])
-
     try:
         # Intenta convertir la fecha a un objeto date
         acquisition_date = date_parser.parse(str(request.acquisition_date)).date()
@@ -293,16 +288,16 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     #if (len(request.accounting_document) == 0):
         #return Response(code="400", message="Documento de adquisición no valido", result=[])
 
-    if (len(request.accounting_record_number) == 0):
-        return Response(code="400", message="Numero registro contable no valido", result=[])
+    #if (len(request.accounting_record_number) == 0):
+        #return Response(code="400", message="Numero registro contable no valido", result=[])
 
-    if (len(request.name_in_charge_active) == 0):
-        return Response(code="400", message="Nombre del responsable no valido", result=[])
+    #if (len(request.name_in_charge_active) == 0):
+        #return Response(code="400", message="Nombre del responsable no valido", result=[])
 
-    patron_rut = r'^\d{1,8}-[\dkK]$'
-    rut = str(request.rut_in_charge_active.replace(".", ""))
-    if not re.match(patron_rut, rut):
-        return Response(code="400", message="Rut del responsable inválido", result=[])
+    #patron_rut = r'^\d{1,8}-[\dkK]$'
+    #rut = str(request.rut_in_charge_active.replace(".", ""))
+    #if not re.match(patron_rut, rut):
+        #return Response(code="400", message="Rut del responsable inválido", result=[])
 
     if (len(request.serie) == 0):
         return Response(code="400", message="Número de serie no valido", result=[])
@@ -313,7 +308,9 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     if (len(request.state) == 0):
         return Response(code="400", message="Esatdo no valido", result=[])
 
-    #id_office = get_office_by_id(db, request.office_id)
+    if (len(request.brand) == 0):
+        return Response(code="400", message="Marca no valida", result=[])
+
     id_office = get_office_by_id(db, request.office_id)
     if (not id_office):
         return Response(code="400", message="id oficina no valido", result=[])
@@ -322,7 +319,6 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
     if (not id_article):
         return Response(code="400", message="id articulo no valido", result=[])
 
-    #_active = update_active(db, id,  request, name_user)
     _active = update_active(db, id, request, name_user)
     return Response(code = "201", message = f"Activo {_active.bar_code} editado", result = _active).model_dump()
 
@@ -363,74 +359,53 @@ def active_file(office_id: int, db: Session = Depends(get_db), file: UploadFile 
 
         # Leer el archivo Excel en un DataFrame de pandas
         df = pd.read_csv(file.file)
+        num_columns = len(df.columns)
+        print(f"Numero de columnas header: {num_columns}")
+
+        failed = 0
+        success = 0
 
         # Iterar sobre las filas del DataFrame
         for index, row in df.iterrows():
-            # Aquí puedes acceder a los datos de cada fila
-            codigo = str(row.iloc[0])
-            serie = str(row.iloc[1])
-            model = str(row.iloc[2])
-            date = row.iloc[3]
-            date = datetime.strptime(date, '%d-%m-%Y')
-            # Convertir el objeto datetime de nuevo a una cadena, pero en el formato 'yyyy-mm-dd'
-            date = date.strftime('%Y-%m-%d')
 
-            state = str(row.iloc[4])
-            comment = '' if pd.isna(row.iloc[5]) else row.iloc[5]
-            name_charge = str(row.iloc[6])
-            rut_charge = str(row.iloc[7])
-            num_register = str(row.iloc[8])
-            article_name = str(row.iloc[9])
-            article_code = row.iloc[10]
-            article_description = str(row.iloc[11])
-
-            #print(f"codigo: {codigo}, serie: {serie}, model: {model}, date: {date}, state: {state}, comment: {comment}, name_charge: {name_charge}, rut_charge: {rut_charge}, num_register: {num_register}, article_name: {article_name}, article_code: {article_code}, article_description: {article_description}")
-            # 0. SI ARTICLE CODE NO EXISTE, NO HACER NADA. INDICAR EN CSV QUE NRO DE ARTICULO NO EXISTE.
-            if pd.isna(article_code):
-                print("No existe código de artículo")
-                df.at[index, 'Guardado']= "no"
+            article_Schema, msg = validateArticleFromFile2(row, companyId)
+            if article_Schema is None:
+                print("Datos del articulo no válidos")
+                df.at[index, 'Guardado'] = "no"
+                failed += 1
                 continue
 
             # 1. BUSCAR SI EXISTE ARTICULO.
-            article = get_article_by_code(db, str(int(article_code)))
+            article = get_article_by_code(db, article_Schema.code)
 
             # 1.1 SI NO EXISTE ARTICULO, CREARLO
             if not article:
-                new_article = {
-                    "name": article_name,
-                    "code": str(int(article_code)),
-                    "photo":"",
-                    "description": article_description,
-                    "company_id": companyId
-                }
-                article = create_article(db, ArticleSchema(**new_article), name_user)
+                article = create_article(db, article_Schema, name_user)
                 print(f"Article created: {article}")
 
+            # 2.0 VALIDAR QUE LOS DATOS DEL ACTIVO SEAN CORRECTOS.
+            activeSchema, msg = validateActiveFromFile(row, article.id, office_id)
+            if activeSchema is None:
+                print("Datos del activo no válidos")
+                # print(msg)
+                df.at[index, 'Guardado'] = "no"
+                failed += 1
+                continue
+
+            print('activeSchema', activeSchema)
+
             # 2. BUSCAR SI EXISTE ACTIVO.
-            active = get_active_by_article_and_barcode(db, article.id, str(int(codigo)))
+            active = get_active_by_article_and_barcode(db, article.id, str(int(activeSchema.bar_code)))
 
             if(active):
                 print("existe el activo")
                 df.at[index, 'Guardado'] = "ya registrado"
+                failed += 1
                 continue
-
-            # 2.1 CREAR EL ACTIVO. INDICAR SI YA ESTABA CREADO.
-            new_active = {
-                "bar_code": str(int(codigo)),
-                "serie": serie,
-                "model": model,
-                "acquisition_date": date,
-                "state": state,
-                "comment": comment,
-                "name_in_charge_active": name_charge,
-                "rut_in_charge_active": rut_charge,
-                "accounting_document": "",
-                "accounting_record_number": num_register,
-                "article_id": article.id,
-                "office_id": office_id
-            }
-            active = create_active(db, ActiveSchema(**new_active), name_user)
+            
+            active = create_active(db, activeSchema, name_user)
             print(f"Activo creado: {active}")
+            success += 1
 
             # Agregar la columna 'Completado' al DataFrame
             df.at[index, 'Guardado'] = 'Sí'
@@ -442,6 +417,8 @@ def active_file(office_id: int, db: Session = Depends(get_db), file: UploadFile 
         new_file_path = os.path.join("files", f"{file.filename}_guardados.xlsx")
         df.to_excel(new_file_path, index=False)
 
+        print()
+        print(f"Guardados: {success}, No guardados: {failed}")
 
         #return Response(code="201", message="Archivo guardado con éxito", result=[]).model_dump()
         return FileResponse(new_file_path, filename=f"{file.filename}_guardados.xlsx")
