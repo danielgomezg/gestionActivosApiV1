@@ -5,12 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, AsyncEngin
 import psycopg2
 from psycopg2 import sql
 
-
-credentials = "postgresql://postgres:admin@localhost:5432/"
+credentials = "postgresql://postgres:postgres@localhost:5432/"
+# credentials = "postgresql://postgres:gactivos@gbd-c:5432/"
 
 # engine = create_engine("postgresql://postgres:gactivos@gbd-c:5432/gestion_activos")
-engine = create_engine("postgresql://postgres:admin@localhost:5432/gestion_activos") #Dany
-#engine = create_engine("postgresql://postgres:postgres@localhost:5432/gestion_activos")
+# engine = create_engine("postgresql://postgres:admin@localhost:5432/gestion_activos") #Dany
+engine = create_engine(credentials + "gestion_activos")
 
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
@@ -27,8 +27,9 @@ def get_db():
 def create_database(db_name):
     print("Creando base de datos")
     print(db_name)
-    # conn = psycopg2.connect(user='postgres', password='postgres', host='localhost', port='5432')
-    conn = psycopg2.connect(user='postgres', password='admin', host='localhost', port='5432') #dany
+    # conn = psycopg2.connect(user='postgres', password='gactivos', host='gbd-c', port='5432')
+    conn = psycopg2.connect(user='postgres', password='postgres', host='localhost', port='5432')
+    # conn = psycopg2.connect(user='postgres', password='admin', host='localhost', port='5432') #dany
     conn.autocommit = True
 
     cursor = conn.cursor()
@@ -36,8 +37,8 @@ def create_database(db_name):
     cursor.execute(sql.SQL("CREATE DATABASE {} TEMPLATE template0").format(sql.Identifier(db_name)))
 
     # conexion(db_name)
-    #engine = create_engine("postgresql://postgres:postgres@localhost:5432/" + db_name)
-    engine = create_engine("postgresql://postgres:admin@localhost:5432/" + db_name)
+    engine = create_engine(credentials + db_name)
+    # engine = create_engine("postgresql://postgres:admin@localhost:5432/" + db_name)
 
     Base.metadata.create_all(bind=engine)
 
@@ -45,7 +46,8 @@ def create_database(db_name):
     conn.close()
 
     # Conexión a la nueva base de datos
-    conn_new = psycopg2.connect(user='postgres', password='admin', host='localhost', port='5432', dbname=db_name)
+    conn_new = psycopg2.connect(user='postgres', password='postgres', host='localhost', port='5432', dbname=db_name)
+    # conn_new = psycopg2.connect(user='postgres', password='postgres', host='localhost', port='5432', dbname=db_name)
     conn_new.autocommit = True
     cursor_new = conn_new.cursor()
 

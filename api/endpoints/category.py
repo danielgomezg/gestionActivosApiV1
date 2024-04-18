@@ -122,4 +122,5 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
 
     _category = delete_category(db, id)
 
+
     return Response(code = "201", message = f"Cateogria con id {id} eliminada", result = _category).model_dump()
