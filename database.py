@@ -46,7 +46,7 @@ def create_database(db_name):
     conn.close()
 
     # Conexión a la nueva base de datos
-    conn_new = psycopg2.connect(user='postgres', password='gactivos', host='gbd-c', port='5432')
+    conn_new = psycopg2.connect(user='postgres', password='gactivos', host='gbd-c', port='5432', dbname=db_name)
     # conn_new = psycopg2.connect(user='postgres', password='postgres', host='localhost', port='5432', dbname=db_name)
     # conn_new = psycopg2.connect(user='postgres', password='postgres', host='localhost', port='5432', dbname=db_name)
     conn_new.autocommit = True
