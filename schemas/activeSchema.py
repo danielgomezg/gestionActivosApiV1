@@ -17,6 +17,10 @@ class ActiveSchema(BaseModel):
     model: str
     state: str
     brand: str
+    photo1: Optional[str] = None
+    photo2: Optional[str] = None
+    photo3: Optional[str] = None
+    photo4: Optional[str] = None
     #creation_date: date
     office_id: int
     article_id: int
@@ -33,6 +37,10 @@ class ActiveEditSchema(BaseModel):
     model: str
     state: str
     brand: str
+    photo1: Optional[str] = None
+    photo2: Optional[str] = None
+    photo3: Optional[str] = None
+    photo4: Optional[str] = None
     #creation_date: datetime
     office_id: int
     article_id: int

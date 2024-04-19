@@ -6,7 +6,7 @@ from fastapi import HTTPException, status, UploadFile
 from sqlalchemy import desc
 import uuid
 import shutil
-from urllib.parse import urlparse
+import hashlib
 from pathlib import Path
 from models.office import Office
 from models.sucursal import Sucursal
@@ -206,6 +206,10 @@ def search_active_offices(db: Session, search: str, office_ids: List[int], limit
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar activos por oficinas por nombre {e}")
 
+def generate_short_unique_id(data: str, length: int = 20) -> str:
+    hash_object = hashlib.sha256(data.encode())
+    hex_dig = hash_object.hexdigest()
+    return hex_dig[:length]
 
 def get_file_url(file: UploadFile, upload_folder: Path) -> str:
     try:
@@ -221,6 +225,19 @@ def get_file_url(file: UploadFile, upload_folder: Path) -> str:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar el documento de activo: {e}")
 
+def get_image_url(file: UploadFile, upload_folder: Path) -> str:
+    try:
+        unique_id = generate_short_unique_id(file.filename)
+        # Concatena el UUID al nombre del archivo original
+        filename_with_uuid = f"{unique_id}_{file.filename}"
+        file_path = upload_folder / filename_with_uuid
+        with open(file_path, "wb") as image_file:
+            shutil.copyfileobj(file.file, image_file)
+        # photo_url = f"http://127.0.0.1:9000/files/images_article/{filename_with_uuid}"
+        return filename_with_uuid
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar la imagen: {e}")
+
 def create_active(db: Session, active: ActiveSchema, name_user: str):
     try:
         _active = Active(
@@ -235,6 +252,10 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
             model=active.model,
             state=active.state,
             brand=active.brand,
+            photo1=active.photo1,
+            photo2=active.photo2,
+            photo3=active.photo3,
+            photo4=active.photo4,
             office_id=active.office_id,
             article_id=active.article_id
         )
@@ -287,6 +308,44 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
                     existing_file_path.unlink()
 
             active_to_edit.accounting_document = active.accounting_document
+
+            # Se elimina la foto reemplazada del servidor
+            # Si la foto es nula, no se hace nada
+            if len(active_to_edit.photo1) > 0 and active_to_edit.photo1 != active.photo1:
+                existing_file_path = Path("files") / "images_active" / active_to_edit.photo1
+
+                # Verificar si el archivo existe y eliminarlo
+                if existing_file_path.exists():
+                    existing_file_path.unlink()
+
+            active_to_edit.photo1 = active.photo1
+
+            if len(active_to_edit.photo2) > 0 and active_to_edit.photo2 != active.photo2:
+                existing_file_path = Path("files") / "images_active" / active_to_edit.photo2
+
+                # Verificar si el archivo existe y eliminarlo
+                if existing_file_path.exists():
+                    existing_file_path.unlink()
+
+            active_to_edit.photo2 = active.photo2
+
+            if len(active_to_edit.photo3) > 0 and active_to_edit.photo3 != active.photo3:
+                existing_file_path = Path("files") / "images_active" / active_to_edit.photo3
+
+                # Verificar si el archivo existe y eliminarlo
+                if existing_file_path.exists():
+                    existing_file_path.unlink()
+
+            active_to_edit.photo3 = active.photo3
+
+            if len(active_to_edit.photo4) > 0 and active_to_edit.photo4 != active.photo4:
+                existing_file_path = Path("files") / "images_active" / active_to_edit.photo4
+
+                # Verificar si el archivo existe y eliminarlo
+                if existing_file_path.exists():
+                    existing_file_path.unlink()
+
+            active_to_edit.photo4 = active.photo4
 
             db.commit()
 

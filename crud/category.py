@@ -20,6 +20,35 @@ def get_category_all(db: Session, limit: int = 100, offset: int = 0):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar categorias {e}")
 
+def get_category_without_son(db: Session, limit: int = 100, offset: int = 0):
+    try:
+        # Subconsulta para obtener categorías que tienen hijos (no son finales)
+        subquery = db.query(Category.parent_id).filter(Category.removed == 0).group_by(Category.parent_id).all()
+
+        # Extraer los parent_id de la subconsulta para usar en la consulta principal
+        parent_ids_with_subcategories = [result[0] for result in subquery]
+
+        # Consulta principal para obtener las categorías que no están en la subconsulta
+        categories = (
+            db.query(Category)
+            .filter(Category.id.notin_(parent_ids_with_subcategories), Category.removed == 0)
+            .order_by(desc(Category.id))
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+        # Consulta para obtener el recuento de categorías finales (que no están en parent_ids_with_children)
+        count = (
+            db.query(Category)
+            .filter(~Category.id.notin_(parent_ids_with_subcategories), Category.removed == 0)
+            .count()
+        )
+
+        return count, categories
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar categorías: {e}")
+
 def get_categories_all_android(db: Session):
     return db.query(Category).filter(Category.removed == 0).all()
 

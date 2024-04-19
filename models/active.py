@@ -20,6 +20,10 @@ class Active(Base):
     model = Column(String, nullable=False)
     state = Column(String, nullable=False)
     brand = Column(String, nullable=False)
+    photo1 = Column(String, nullable=True)
+    photo2 = Column(String, nullable=True)
+    photo3 = Column(String, nullable=True)
+    photo4 = Column(String, nullable=True)
     creation_date = Column(Date, default=date.today, nullable=False)
     removed = Column(Integer, default=0, nullable=False)
 
@@ -65,6 +69,10 @@ def validateActiveFromFile(active, articleId, officeId):
             "rut_in_charge_active": str(rut_charge),
             "accounting_document": "",
             "accounting_record_number": str(num_register),
+            "photo1": "",
+            "photo2": "",
+            "photo3": "",
+            "photo4": "",
             "article_id": articleId,
             "office_id": officeId
         }

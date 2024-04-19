@@ -5,7 +5,8 @@ from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query, 
 from sqlalchemy.orm import Session
 from database import get_db, conexion
 from crud.active import (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
-                         get_active_by_office, get_active_by_offices, count_active, get_active_by_article_and_barcode, search_active_sucursal, search_active_offices)
+                         get_active_by_office, get_active_by_offices, count_active, get_active_by_article_and_barcode, search_active_sucursal, search_active_offices,
+                         get_image_url)
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from schemas.articleSchema import ArticleSchema
 from schemas.schemaGenerico import Response, ResponseGet
@@ -184,6 +185,22 @@ def upload_file(file: UploadFile = File(...), current_user_info: Tuple[str, str]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {e}")
 
+@router.post("/image_active")
+def upload_image(file: UploadFile = File(...), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    try:
+        id_user, expiration_time = current_user_info
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+
+        upload_folder = Path("files") / "images_active"
+        upload_folder.mkdir(parents=True, exist_ok=True)
+        photo_url = get_image_url(file, upload_folder)
+        return Response(code="201", message="Foto guardada con éxito", result=photo_url).model_dump()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al procesar la imagen: {e}")
+
+
 @router.post('/active')
 def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
@@ -200,7 +217,6 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
         return  Response(code = "400", message = "código de barra no valido", result = [])
 
     # valida si existe un codigo de barra con el mismo numero dentro de los articulos
-    print(request.bar_code)
     active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
     if active_barcode:
         return Response(code="400", message="Código de barra ya ingresado", result=[])
@@ -269,7 +285,6 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
         return Response(code="400", message="codigo de barra no valido", result=[])
 
     # valida si existe un codigo de barra con el mismo numero dentro de los articulos
-    #active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
     active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
     if active_barcode and id is not active_barcode.id:
         return Response(code="400", message="Codigo de barra ya ingresado", result=[])
@@ -334,13 +349,19 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    #_active = delete_active(db, id, name_user)
     _active = delete_active(db, id, name_user)
     return Response(code = "201", message = f"Activo con id {id} eliminado", result = _active).model_dump()
 
 @router.get("/file_active/{file_path}")
-async def get_image(file_path: str):
+async def get_file(file_path: str):
     image = Path("files") / "files_active" / file_path
+    if not image.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(image)
+
+@router.get("/image_active/{image_path}")
+async def get_image(image_path: str):
+    image = Path("files") / "images_active" / image_path
     if not image.exists():
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(image)
