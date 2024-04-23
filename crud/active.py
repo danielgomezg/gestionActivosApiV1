@@ -10,7 +10,7 @@ import hashlib
 from pathlib import Path
 from models.office import Office
 from models.sucursal import Sucursal
-
+import traceback
 from typing import List
 
 #historial
@@ -286,6 +286,12 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
 def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_user: str):
     try:
         active_to_edit = db.query(Active).filter(Active.id == active_id).first()
+        print("active_to_edit")
+        print(active_to_edit.photo1)
+        print(active_to_edit.photo2)
+        print(active_to_edit.photo3)
+        print(active_to_edit.photo4)
+
         if active_to_edit:
             active_to_edit.bar_code = active.bar_code
             active_to_edit.comment = active.comment
@@ -311,7 +317,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
 
             # Se elimina la foto reemplazada del servidor
             # Si la foto es nula, no se hace nada
-            if len(active_to_edit.photo1) > 0 and active_to_edit.photo1 != active.photo1:
+            if active_to_edit.photo1 is not None and active_to_edit.photo1 != "" and active_to_edit.photo1 != active.photo1:
                 existing_file_path = Path("files") / "images_active" / active_to_edit.photo1
 
                 # Verificar si el archivo existe y eliminarlo
@@ -320,7 +326,8 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
 
             active_to_edit.photo1 = active.photo1
 
-            if len(active_to_edit.photo2) > 0 and active_to_edit.photo2 != active.photo2:
+
+            if active_to_edit.photo2 is not None and active_to_edit.photo2 != "" and active_to_edit.photo2 != active.photo2:
                 existing_file_path = Path("files") / "images_active" / active_to_edit.photo2
 
                 # Verificar si el archivo existe y eliminarlo
@@ -329,7 +336,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
 
             active_to_edit.photo2 = active.photo2
 
-            if len(active_to_edit.photo3) > 0 and active_to_edit.photo3 != active.photo3:
+            if active_to_edit.photo3 is not None and active_to_edit.photo3 != "" and active_to_edit.photo3 != active.photo3:
                 existing_file_path = Path("files") / "images_active" / active_to_edit.photo3
 
                 # Verificar si el archivo existe y eliminarlo
@@ -338,7 +345,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
 
             active_to_edit.photo3 = active.photo3
 
-            if len(active_to_edit.photo4) > 0 and active_to_edit.photo4 != active.photo4:
+            if active_to_edit.photo4 is not None and active_to_edit.photo4 != "" and active_to_edit.photo4 != active.photo4:
                 existing_file_path = Path("files") / "images_active" / active_to_edit.photo4
 
                 # Verificar si el archivo existe y eliminarlo
@@ -368,6 +375,8 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activo no encontrado")
     except Exception as e:
+        print(e)
+        traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando activo: {e}")
 
 def delete_active(db: Session, active_id: int, name_user: str):

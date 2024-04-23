@@ -22,6 +22,7 @@ from crud.user import  get_user_disable_current, get_user_by_id
 from typing import Tuple
 import pandas as pd
 from datetime import datetime
+import traceback
 
 router = APIRouter()
 # active.Base.metadata.create_all(bind=engine)
@@ -273,23 +274,24 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
 def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
-    db = next(conexion(db, companyId))
-    if db is None:
-        return Response(code="404", result=[], message="BD no encontrada").model_dump()
-
-    # Se valida la expiracion del token
-    if expiration_time is None:
-        return Response(code="401", message="token-exp", result=[])
-
-    if (len(request.bar_code) == 0):
-        return Response(code="400", message="codigo de barra no valido", result=[])
-
-    # valida si existe un codigo de barra con el mismo numero dentro de los articulos
-    active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
-    if active_barcode and id is not active_barcode.id:
-        return Response(code="400", message="Codigo de barra ya ingresado", result=[])
-
     try:
+        db = next(conexion(db, companyId))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+
+        if (len(request.bar_code) == 0):
+            return Response(code="400", message="codigo de barra no valido", result=[])
+
+        # valida si existe un codigo de barra con el mismo numero dentro de los articulos
+        active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+        if active_barcode and id is not active_barcode.id:
+            return Response(code="400", message="Codigo de barra ya ingresado", result=[])
+
+   
         # Intenta convertir la fecha a un objeto date
         acquisition_date = date_parser.parse(str(request.acquisition_date)).date()
 
@@ -297,45 +299,47 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
         if acquisition_date.strftime('%Y-%m-%d') != str(request.acquisition_date):
             return Response(code="400", message="Formato de fecha de adquisición no válido (debe ser YYYY-MM-DD)", result=[])
 
+        #if (len(request.accounting_document) == 0):
+            #return Response(code="400", message="Documento de adquisición no valido", result=[])
+
+        #if (len(request.accounting_record_number) == 0):
+            #return Response(code="400", message="Numero registro contable no valido", result=[])
+
+        #if (len(request.name_in_charge_active) == 0):
+            #return Response(code="400", message="Nombre del responsable no valido", result=[])
+
+        #patron_rut = r'^\d{1,8}-[\dkK]$'
+        #rut = str(request.rut_in_charge_active.replace(".", ""))
+        #if not re.match(patron_rut, rut):
+            #return Response(code="400", message="Rut del responsable inválido", result=[])
+
+        if (len(request.serie) == 0):
+            return Response(code="400", message="Número de serie no valido", result=[])
+
+        if (len(request.model) == 0):
+            return Response(code="400", message="Modelo no valido", result=[])
+
+        if (len(request.state) == 0):
+            return Response(code="400", message="Esatdo no valido", result=[])
+
+        if (len(request.brand) == 0):
+            return Response(code="400", message="Marca no valida", result=[])
+
+        id_office = get_office_by_id(db, request.office_id)
+        if (not id_office):
+            return Response(code="400", message="id oficina no valido", result=[])
+
+        id_article = get_article_by_id(db, request.article_id)
+        if (not id_article):
+            return Response(code="400", message="id articulo no valido", result=[])
+
+        _active = update_active(db, id, request, name_user)
+        return Response(code = "201", message = f"Activo {_active.bar_code} editado", result = _active).model_dump()
+
     except ValueError as e:
+        print(e)
+        traceback.print_exc()
         return Response(code="400", message=str(e), result=[])
-
-    #if (len(request.accounting_document) == 0):
-        #return Response(code="400", message="Documento de adquisición no valido", result=[])
-
-    #if (len(request.accounting_record_number) == 0):
-        #return Response(code="400", message="Numero registro contable no valido", result=[])
-
-    #if (len(request.name_in_charge_active) == 0):
-        #return Response(code="400", message="Nombre del responsable no valido", result=[])
-
-    #patron_rut = r'^\d{1,8}-[\dkK]$'
-    #rut = str(request.rut_in_charge_active.replace(".", ""))
-    #if not re.match(patron_rut, rut):
-        #return Response(code="400", message="Rut del responsable inválido", result=[])
-
-    if (len(request.serie) == 0):
-        return Response(code="400", message="Número de serie no valido", result=[])
-
-    if (len(request.model) == 0):
-        return Response(code="400", message="Modelo no valido", result=[])
-
-    if (len(request.state) == 0):
-        return Response(code="400", message="Esatdo no valido", result=[])
-
-    if (len(request.brand) == 0):
-        return Response(code="400", message="Marca no valida", result=[])
-
-    id_office = get_office_by_id(db, request.office_id)
-    if (not id_office):
-        return Response(code="400", message="id oficina no valido", result=[])
-
-    id_article = get_article_by_id(db, request.article_id)
-    if (not id_article):
-        return Response(code="400", message="id articulo no valido", result=[])
-
-    _active = update_active(db, id, request, name_user)
-    return Response(code = "201", message = f"Activo {_active.bar_code} editado", result = _active).model_dump()
 
 @router.delete('/active/{id}')
 def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
