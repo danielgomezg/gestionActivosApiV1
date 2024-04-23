@@ -129,7 +129,7 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
                     y_line = 50
                     page_number += 1
 
-                if (len(article.photo) > 0):
+                if (article.photo):
                     photos_article = article.photo.split(",")
 
                     eje_x = 100
