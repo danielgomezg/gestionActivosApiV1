@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException, Header
 from fastapi.responses import FileResponse
 from fastapi import APIRouter
 from typing import Tuple
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter,landscape
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from schemas.schemaGenerico import Response
@@ -87,7 +87,9 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
                 #print(y_line)
 
                 draw_lines = draw_multiline_text(pdf, 50, (y_position - y_line), f"Código: {article.code}")
-                #x_position_end = 50 + pdf.stringWidth(f"Código: {article.code}", "Helvetica", 12)
+                y_line += (20 * draw_lines)
+
+                draw_lines = draw_multiline_text(pdf, 50, (y_position - y_line), f"Categoría: {article.category.description}")
 
                 # Generar y agregar el código de barras
                 ruta_imagen = os.path.join(ruta_barcodes, f"barcode_{article.code}")
@@ -329,6 +331,9 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
         sucursal = actives[0].office.sucursal
         company = actives[0].office.sucursal.company
 
+        while len(actives) < 55:
+            actives.extend(copy.deepcopy(actives))
+
         #Fecha y hora
         chile_timezone = pytz.timezone('Chile/Continental')
         now = datetime.now(chile_timezone)
@@ -342,10 +347,10 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
         custom_page_size = (816, 1056)
 
         with (open(ruta_temporal, 'wb') as f):
-            pdf = canvas.Canvas(f, pagesize=custom_page_size)
+            pdf = canvas.Canvas(f, pagesize=landscape(letter))
 
             width, height = pdf._pagesize
-            #print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
+            print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
 
             pdf.setTitle(f"Catálogo de Activos de {company.name.upper()}")
 
@@ -370,12 +375,12 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
             image_path = "images-sca/sca-2.jpeg"
             try:
                 image = ImageReader(image_path)
-                pdf.drawImage(image, x=606, y=eje_y - 10, width=140, height=140, preserveAspectRatio=True)
+                pdf.drawImage(image, x=592, y=eje_y - 10, width=140, height=140, preserveAspectRatio=True)
             except Exception as e:
                 print(f"No se pudo cargar la imagen para la portada: {e}")
 
             # Crear y configurar la tabla
-            table_data = [["Cod. activo","Marca", "Modelo", "Serie", "F. Adquisición", "N. de registro","Estado", "Encargado", "Rut encargado", "Cod. articulo", "Oficina"]]
+            table_data = [["C. activo","Marca", "Modelo", "Serie", "F. adquisición", "N. registro","Estado", "Encargado", "C. articulo", "Categoría", "Oficina"]]
 
             #y_position = 700
             page_number = 1
@@ -386,9 +391,9 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
 
                 if ((eje_y_table - (20 * len(table_data))) < 80 and i < len(actives)):
                     if (page_number == 1):
-                        draw_table(pdf, table_data, eje_y_table)
+                        draw_table(pdf, table_data, eje_y_table, 35)
                     else:
-                        draw_table(pdf, table_data, eje_y)
+                        draw_table(pdf, table_data, height - 50, 35)
                     cant_items = i
                     pdf.setFont("Helvetica", 8)
                     pdf.drawRightString(755, 30, f"Página {page_number}")
@@ -407,11 +412,15 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
                     active.accounting_record_number,
                     active.state,
                     active.name_in_charge_active,
-                    active.rut_in_charge_active,
+                    #active.rut_in_charge_active,
                     active.article.code,
+                    active.article.category.description,
                     str(active.office.floor) + " - " + active.office.description
                 ])
 
+            # CAmbia eje y si no es la primera pag
+            if (page_number > 1):
+                eje_y_table = height - 50
             draw_table(pdf, table_data, eje_y_table, 35)
 
             pdf.setFont("Helvetica", 8)
@@ -440,14 +449,13 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
         # Lógica para obtener los detalles de los artículos (por ejemplo, desde una base de datos)
         id_offices_list = id_offices.split(",")
         id_offices_int = [int(id_office) for id_office in id_offices_list]
-        #print(len(id_offices_int))
         actives, count = get_active_by_offices(db, id_offices_int, adjust_limit=True)
         sucursal = actives[0].office.sucursal
         company = actives[0].office.sucursal.company
 
         #Creando mas datos para test
-        # while len(actives) < 80:
-        #     actives.extend(copy.deepcopy(actives))
+        #while len(actives) < 55:
+            #actives.extend(copy.deepcopy(actives))
 
         #Fecha y hora
         chile_timezone = pytz.timezone('Chile/Continental')
@@ -462,7 +470,7 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
         custom_page_size = (816, 1056)
 
         with open(ruta_temporal, 'wb') as f:
-            pdf = canvas.Canvas(f, pagesize=custom_page_size)
+            pdf = canvas.Canvas(f, pagesize=landscape(letter))
 
             width, height = pdf._pagesize
             #print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
@@ -490,13 +498,13 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
             image_path = "images-sca/sca-2.jpeg"
             try:
                 image = ImageReader(image_path)
-                pdf.drawImage(image, x=606, y=eje_y - 10, width=140, height=140, preserveAspectRatio=True)
+                pdf.drawImage(image, x=592, y=eje_y - 10, width=140, height=140, preserveAspectRatio=True)
             except Exception as e:
                 print(f"No se pudo cargar la imagen para la portada: {e}")
 
             # Crear y configurar la tabla
-            table_data = [["Cod. activo", "Marca", "Modelo", "Serie", "F. Adquisición", "N. de registro", "Estado",
-                           "Encargado", "Rut encargado", "Cod. articulo", "Oficina"]]
+            table_data = [["C. activo", "Marca", "Modelo", "Serie", "F. adquisición", "N. registro", "Estado",
+                           "Encargado", "Cod. articulo", "Categoría", "Oficina"]]
 
             page_number = 1
             cant_items = 0
@@ -506,9 +514,9 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
 
                 if ((eje_y_table - (20 * len(table_data))) < 80 and i < len(actives)):
                     if (page_number == 1):
-                        draw_table(pdf, table_data, eje_y_table)
+                        draw_table(pdf, table_data, eje_y_table, 35)
                     else:
-                        draw_table(pdf, table_data, eje_y)
+                        draw_table(pdf, table_data, eje_y, 35)
                     cant_items = i
                     pdf.setFont("Helvetica", 8)
                     pdf.drawRightString(755, 30, f"Página {page_number}")
@@ -527,11 +535,15 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
                     active.accounting_record_number,
                     active.state,
                     active.name_in_charge_active,
-                    active.rut_in_charge_active,
+                    #active.rut_in_charge_active,
                     active.article.code,
+                    active.article.category.description,
                     str(active.office.floor) + " - " + active.office.description
                 ])
 
+            # CAmbia eje y si no es la primera pag
+            if (page_number > 1):
+                eje_y_table = height - 50
             draw_table(pdf, table_data, eje_y_table, 35)
 
             pdf.setFont("Helvetica", 8)
@@ -626,7 +638,7 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
         worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Rut encargado", "Cod. articulo", "Oficina"]
+        datos = ["Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Cod. articulo", "Categoría", "Oficina"]
 
         start_table = 7
 
@@ -661,9 +673,8 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
             for col, value in enumerate([active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
-                                         active.accounting_record_number, active.state, active.name_in_charge_active,
-                                         active.rut_in_charge_active, str(active.article.code),
-                                         str(active.office.floor) + " - " + active.office.description]):
+                                         active.accounting_record_number, active.state, active.name_in_charge_active, str(active.article.code),
+                                         active.article.category.description, str(active.office.floor) + " - " + active.office.description]):
 
                 width_column[col] = max(width_column[col], len(value))
                 worksheet.write(row + start_table, col, value, formato_datos)
@@ -764,7 +775,7 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
         worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Rut encargado", "Cod. articulo", "Oficina"]
+        datos = ["Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Cod. articulo", "Categoría", "Oficina"]
 
         start_table = 7
 
@@ -799,9 +810,8 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
             for col, value in enumerate([active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
-                                         active.accounting_record_number, active.state, active.name_in_charge_active,
-                                         active.rut_in_charge_active, str(active.article.code),
-                                         str(active.office.floor) + " - " + active.office.description]):
+                                         active.accounting_record_number, active.state, active.name_in_charge_active, str(active.article.code),
+                                         active.article.category.description, str(active.office.floor) + " - " + active.office.description]):
 
                 width_column[col] = max(width_column[col], len(value))
                 worksheet.write(row + start_table, col, value, formato_datos)

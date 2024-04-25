@@ -8,6 +8,8 @@ from schemas.schemaGenerico import Response
 from crud.report_conciliacion import get_actives_equals, get_actives_missing, get_actives_surplus
 from crud.company import get_company_by_id
 from reportlab.lib.utils import ImageReader
+from reportlab.lib.pagesizes import letter,landscape
+from reportlab.pdfbase import pdfmetrics
 import xlsxwriter
 import os
 import pytz
@@ -43,7 +45,7 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
             os.makedirs(folder_path)
 
         # Lógica para generar el catálogo Excel
-        excel_filename = f'Reporte_conciliacion_iguales_{company.name}.xlsx'
+        excel_filename = f'Reporte_conciliacion_activos_conciliados_{company.name}.xlsx'
         excel_path = os.path.join(folder_path, excel_filename)
 
         # Crear un libro de trabajo y una hoja de trabajo
@@ -73,10 +75,19 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
             'font_name': 'Helvetica',
             'font_size': 18,
         })
+        # Configurar un formato para el título con la fuente Helvetica
+        formato_titulo_2 = workbook.add_format({
+            'bold': True,
+            'align': 'left',
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',
+            'font_size': 14,
+        })
 
         worksheet.set_row(0, 25)
         # Escribir el título en una celda específica
-        worksheet.merge_range('C1:H1', f' Reporte de conciliación iguales ', formato_titulo)
+        worksheet.merge_range('C1:H1', f' Reporte de conciliación', formato_titulo)
+        worksheet.merge_range('C3:E3', f' Activos conciliados', formato_titulo_2)
 
         formato_sub_titulo = workbook.add_format({
             'align': 'left',
@@ -87,7 +98,7 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
         })
 
         formato_sub_titulo_2 = workbook.add_format({
-            'align': 'right',
+            'align': 'left',
             'indent': 1,
             'valign': 'vcenter',
             'font_name': 'Helvetica',
@@ -101,7 +112,7 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
 
         # Datos a escribir en el archivo Excel
         datos = ["Código activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado",
-                 "Rut encargado", "Cod. articulo", "Oficina"]
+                 "Rut encargado", "Cod. articulo", "Categoría", "Oficina"]
 
         start_table = 7
 
@@ -137,7 +148,7 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
         for row, active in enumerate(actives, start=1):
             for col, value in enumerate([active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active,
-                                         active.rut_in_charge_active, str(active.article.code),
+                                         active.rut_in_charge_active, str(active.article.code), active.article.category.description,
                                          str(active.office.floor) + " - " + active.office.description]):
                 width_column[col] = max(width_column[col], len(value))
                 worksheet.write(row + start_table, col, value, formato_datos)
@@ -187,7 +198,7 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
 
         with (open(ruta_temporal, 'wb') as f):
 
-            pdf = canvas.Canvas(f, pagesize=custom_page_size)
+            pdf = canvas.Canvas(f, pagesize=landscape(letter))
 
             width, height = pdf._pagesize
 
@@ -202,26 +213,32 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
 
             # Agregamos el título al PDF
             pdf.setFont("Helvetica-Bold", 20)
-            pdf.drawString(70,  eje_y + 75, f"Reporte de conciliación iguales")
+            title_text = "Reporte de conciliación"
+            title_width = pdfmetrics.stringWidth(title_text, "Helvetica-Bold", 20)
+            pdf.drawString((width - title_width) / 2,  eje_y + 75, title_text)
+
+            # Agregamos el subtítulo al PDF
+            pdf.setFont("Helvetica-Bold", 15)
+            pdf.drawString(70, eje_y + 55, f"Activos conciliados")
+
 
             pdf.setFont("Helvetica", 12)
-            pdf.drawString(70, eje_y + 55, f"Cliente")
-            pdf.drawString(145, eje_y + 55, f"{company.name.upper()}")
+            pdf.drawString(70, eje_y + 35, f"Cliente")
+            pdf.drawString(145, eje_y + 35, f"{company.name.upper()}")
 
-            pdf.drawString(70, eje_y + 35, f"Fecha")
-            pdf.drawString(145, eje_y + 35, f"{date_time}")
+            pdf.drawString(70, eje_y + 15, f"Fecha")
+            pdf.drawString(145, eje_y + 15, f"{date_time}")
 
             image_path = "images-sca/sca-2.jpeg"
             try:
                 image = ImageReader(image_path)
-                pdf.drawImage(image, x=606, y=eje_y - 10, width=140, height=140, preserveAspectRatio=True)
+                pdf.drawImage(image, x=592, y=eje_y - 20, width=140, height=140, preserveAspectRatio=True)
             except Exception as e:
                 print(f"No se pudo cargar la imagen para la portada: {e}")
 
             # Crear y configurar la tabla
             table_data = [
-                ["Cod. activo", "Marca", "Modelo", "Serie", "F. Adquisición", "N. de registro", "Estado", "Encargado",
-                 "Rut encargado", "Cod. articulo", "Oficina"]]
+                ["Cod. activo", "Marca", "Modelo", "Serie", "F. Adquisición", "N. registro", "Estado", "Encargado", "Cod. articulo", "Categoría", "Oficina"]]
 
             page_number = 1
             #comienzo primera pag
@@ -232,9 +249,9 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
 
                 if ((eje_y_table - (20 * len(table_data))) < 60 and i < len(actives)):
                     if (page_number == 1):
-                        draw_table(pdf, table_data, eje_y_table)
+                        draw_table(pdf, table_data, eje_y_table, 35)
                     else:
-                        draw_table(pdf, table_data, eje_y)
+                        draw_table(pdf, table_data, height - 50, 35)
                     cant_items = i
                     pdf.setFont("Helvetica", 8)
                     pdf.drawRightString(755, 30, f"Página {page_number}")
@@ -252,11 +269,14 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
                     active.accounting_record_number,
                     active.state,
                     active.name_in_charge_active,
-                    active.rut_in_charge_active,
                     active.article.code,
+                    active.article.category.description,
                     str(active.office.floor) + " - " + active.office.description
                 ])
 
+            # CAmbia eje y si no es la primera pag
+            if (page_number > 1):
+                eje_y_table = height - 50
             draw_table(pdf, table_data, eje_y_table, 35)
             pdf.setFont("Helvetica", 8)
             pdf.drawRightString(755, 30, f"Página {page_number}")
@@ -324,9 +344,18 @@ def report_conciliacion_missing_excel(db: Session = Depends(get_db), current_use
             'font_size': 18,
         })
 
+        formato_titulo_2 = workbook.add_format({
+            'bold': True,
+            'align': 'left',
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',
+            'font_size': 14,
+        })
+
         worksheet.set_row(0, 25)
         # Escribir el título en una celda específica
-        worksheet.merge_range('B1:D1', ' Reporte de conciliación faltantes ', formato_titulo)
+        worksheet.merge_range('B1:D1', ' Reporte de conciliación ', formato_titulo)
+        worksheet.merge_range('B3:C3', ' Activos faltantes ', formato_titulo_2)
 
         formato_sub_titulo = workbook.add_format({
             'align': 'left',
@@ -337,7 +366,7 @@ def report_conciliacion_missing_excel(db: Session = Depends(get_db), current_use
         })
 
         formato_sub_titulo_2 = workbook.add_format({
-            'align': 'right',
+            'align': 'left',
             'indent': 1,
             'valign': 'vcenter',
             'font_name': 'Helvetica',
@@ -434,7 +463,7 @@ def report_conciliacion_missing_pdf(db: Session = Depends(get_db), current_user_
 
         with (open(ruta_temporal, 'wb') as f):
 
-            pdf = canvas.Canvas(f, pagesize=custom_page_size)
+            pdf = canvas.Canvas(f, pagesize=landscape(letter))
 
             width, height = pdf._pagesize
 
@@ -448,20 +477,26 @@ def report_conciliacion_missing_pdf(db: Session = Depends(get_db), current_user_
             pdf.rect(50, eje_y, ancho_rect, alto_rect)
 
             # Agregamos el título al PDF
+            title_text = "Reporte de conciliación"
+            title_width = pdfmetrics.stringWidth(title_text, "Helvetica-Bold", 20)
             pdf.setFont("Helvetica-Bold", 20)
-            pdf.drawString(70, eje_y + 75, f"Reporte de conciliación faltantes")
+            pdf.drawString((width - title_width) / 2, eje_y + 75, title_text)
+
+            # Agregamos el subtítulo al PDF
+            pdf.setFont("Helvetica-Bold", 15)
+            pdf.drawString(70, eje_y + 55, f"Activos faltantes")
 
             pdf.setFont("Helvetica", 12)
-            pdf.drawString(70, eje_y + 55, f"Cliente")
-            pdf.drawString(145, eje_y + 55, f"{company.name.upper()}")
+            pdf.drawString(70, eje_y + 35, f"Cliente")
+            pdf.drawString(145, eje_y + 35, f"{company.name.upper()}")
 
-            pdf.drawString(70, eje_y + 35, f"Fecha")
-            pdf.drawString(145, eje_y + 35, f"{date_time}")
+            pdf.drawString(70, eje_y + 15, f"Fecha")
+            pdf.drawString(145, eje_y + 15, f"{date_time}")
 
             image_path = "images-sca/sca-2.jpeg"
             try:
                 image = ImageReader(image_path)
-                pdf.drawImage(image, x=606, y=eje_y - 10, width=140, height=140, preserveAspectRatio=True)
+                pdf.drawImage(image, x=592, y=eje_y - 20, width=140, height=140, preserveAspectRatio=True)
             except Exception as e:
                 print(f"No se pudo cargar la imagen para la portada: {e}")
 
@@ -496,6 +531,10 @@ def report_conciliacion_missing_pdf(db: Session = Depends(get_db), current_user_
                     active.valor_adq,
                     active.valor_cont
                 ])
+
+            #CAmbia eje y si no es la primera pag
+            if (page_number > 1):
+                eje_y_table = height - 50
 
             draw_table(pdf, table_data, eje_y_table, 100)
             pdf.setFont("Helvetica", 8)
@@ -564,9 +603,18 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
             'font_size': 18,
         })
 
+        formato_titulo_2 = workbook.add_format({
+            'bold': True,
+            'align': 'left',
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',
+            'font_size': 14,
+        })
+
         worksheet.set_row(0, 25)
         # Escribir el título en una celda específica
-        worksheet.merge_range('C1:H1', ' Reporte de conciliación sobrantes ', formato_titulo)
+        worksheet.merge_range('C1:H1', ' Reporte de conciliación ', formato_titulo)
+        worksheet.merge_range('C3:E3', ' Activos sobrantes ', formato_titulo_2)
 
         formato_sub_titulo = workbook.add_format({
             'align': 'left',
@@ -577,7 +625,7 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
         })
 
         formato_sub_titulo_2 = workbook.add_format({
-            'align': 'right',
+            'align': 'left',
             'indent': 1,
             'valign': 'vcenter',
             'font_name': 'Helvetica',
@@ -591,7 +639,7 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
 
         # Datos a escribir en el archivo Excel
         datos = ["Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "N. de registro", "Estado", "Encargado",
-                 "Rut encargado", "Cod. articulo", "Oficina"]
+                 "Rut encargado", "Cod. articulo", "Categoría", "Oficina"]
 
         start_table = 7
 
@@ -627,7 +675,7 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
         for row, active in enumerate(actives, start=1):
             for col, value in enumerate([active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active,
-                                         active.rut_in_charge_active, str(active.article.code),
+                                         active.rut_in_charge_active, str(active.article.code), active.article.category.description,
                                          str(active.office.floor) + " - " + active.office.description]):
                 width_column[col] = max(width_column[col], len(value))
                 worksheet.write(row + start_table, col, value, formato_datos)
@@ -677,7 +725,7 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
 
         with (open(ruta_temporal, 'wb') as f):
 
-            pdf = canvas.Canvas(f, pagesize=custom_page_size)
+            pdf = canvas.Canvas(f, pagesize=landscape(letter))
 
             width, height = pdf._pagesize
 
@@ -692,26 +740,31 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
 
             # Agregamos el título al PDF
             pdf.setFont("Helvetica-Bold", 20)
-            pdf.drawString(70, eje_y + 75, f"Reporte de conciliación sobrantes")
+            title_text = "Reporte de conciliación"
+            title_width = pdfmetrics.stringWidth(title_text, "Helvetica-Bold", 20)
+            pdf.drawString((width - title_width) / 2, eje_y + 75, title_text)
+
+            # Agregamos el subtítulo al PDF
+            pdf.setFont("Helvetica-Bold", 15)
+            pdf.drawString(70, eje_y + 55, f"Activos sobrantes")
 
             pdf.setFont("Helvetica", 12)
-            pdf.drawString(70, eje_y + 55, f"Cliente")
-            pdf.drawString(145, eje_y + 55, f"{company.name.upper()}")
+            pdf.drawString(70, eje_y + 35, f"Cliente")
+            pdf.drawString(145, eje_y + 35, f"{company.name.upper()}")
 
-            pdf.drawString(70, eje_y + 35, f"Fecha")
-            pdf.drawString(145, eje_y + 35, f"{date_time}")
+            pdf.drawString(70, eje_y + 15, f"Fecha")
+            pdf.drawString(145, eje_y + 15, f"{date_time}")
 
             image_path = "images-sca/sca-2.jpeg"
             try:
                 image = ImageReader(image_path)
-                pdf.drawImage(image, x=606, y=eje_y - 10, width=140, height=140, preserveAspectRatio=True)
+                pdf.drawImage(image, x=592, y=eje_y - 20, width=140, height=140, preserveAspectRatio=True)
             except Exception as e:
                 print(f"No se pudo cargar la imagen para la portada: {e}")
 
             # Crear y configurar la tabla
             table_data = [
-                ["Cod. activo", "Marca", "Modelo", "Serie", "F. Adquisición", "N. de registro", "Estado", "Encargado",
-                 "Rut encargado", "Cod. articulo", "Oficina"]]
+                ["C. activo", "Marca", "Modelo", "Serie", "F. Adquisición", "N. registro", "Estado", "Encargado", "C. articulo", "Categoría", "Oficina"]]
 
             page_number = 1
             #comienzo primera pag
@@ -722,9 +775,9 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
 
                 if ((eje_y_table - (20 * len(table_data))) < 60 and i < len(actives)):
                     if (page_number == 1):
-                        draw_table(pdf, table_data, eje_y_table)
+                        draw_table(pdf, table_data, eje_y_table, 35)
                     else:
-                        draw_table(pdf, table_data, eje_y)
+                        draw_table(pdf, table_data, height - 50, 35)
                     pdf.setFont("Helvetica", 8)
                     pdf.drawRightString(755, 30, f"Página {page_number}")
                     pdf.showPage()
@@ -741,10 +794,14 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
                     active.accounting_record_number,
                     active.state,
                     active.name_in_charge_active,
-                    active.rut_in_charge_active,
                     active.article.code,
+                    active.article.category.description,
                     str(active.office.floor) + " - " + active.office.description
                 ])
+
+            # CAmbia eje y si no es la primera pag
+            if (page_number > 1):
+                eje_y_table = height - 50
 
             draw_table(pdf, table_data, eje_y_table, 35)
             pdf.setFont("Helvetica", 8)

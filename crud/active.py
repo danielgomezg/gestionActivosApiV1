@@ -10,6 +10,7 @@ import hashlib
 from pathlib import Path
 from models.office import Office
 from models.sucursal import Sucursal
+from models.article import Article
 import traceback
 from typing import List
 
@@ -119,7 +120,7 @@ def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offs
         result = (db.query(Active).\
             join(Office).join(Sucursal).\
             filter(Sucursal.id == sucursal_id, Active.removed == 0).\
-            options(joinedload(Active.article), joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)).order_by(Active.office_id).offset(offset).limit(limit).all())
+            options(joinedload(Active.article).joinedload(Article.category), joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)).order_by(Active.office_id).offset(offset).limit(limit).all())
 
         count = db.query(Active).join(Office).join(Sucursal).filter(Sucursal.id == sucursal_id, Active.removed == 0).count()
         return result, count
