@@ -58,7 +58,7 @@ def portada_catalogo(pdf, company):
 
 def generate_barcode(value, filename):
     code = Code128(value, writer=ImageWriter())
-    code.save(filename, options={'write_text': False, 'module_height': 14.0, 'module_width': 0.7})
+    code.save(filename, options={'write_text': False, 'module_height': 20.0, 'module_width': 0.7})
 
 def draw_table(pdf, table_data, eje_y_table, eje_x = 50):
     table_style = TableStyle([

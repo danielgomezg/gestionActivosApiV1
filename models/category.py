@@ -13,6 +13,7 @@ class Category(Base):
     parent_id = Column(Integer, nullable=False)
     #client_code = Column(String, nullable=True)
     removed = Column(Integer, default=0, nullable=False)
+    code = Column(String, nullable=False)
 
     #Relacion con sucursales
     #sucursales = relationship('Sucursal', back_populates='company')

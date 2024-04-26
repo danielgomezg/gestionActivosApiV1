@@ -42,7 +42,7 @@ def get_articles_all_android(db: Session):
 
 def get_article_by_id(db: Session, article_id: int):
     try:
-        result = db.query(Article).filter(Article.id == article_id).first()
+        result = db.query(Article).filter(Article.id == article_id).options(joinedload(Article.category)).first()
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar articulo {e}")
@@ -86,10 +86,6 @@ def get_article_by_id_company(db: Session, company_id: int, limit: int = 100, of
             .limit(limit)
             .all()
         )
-        # result = []
-        # for article in articles:
-        #     article[0].count_actives = article[1]
-        #     result.append(article[0])
 
         count = db.query(Article).filter(Article.company_id == company_id, Article.removed == 0).count()
         return articles, count
@@ -233,7 +229,8 @@ def update_article(db: Session, article_id: int, article: ArticleEditSchema, nam
             }
             create_history(db, HistorySchema(**history_params))
 
-            return article_to_edit
+            return get_article_by_id(db, article_id)
+            #return article_to_edit
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Articulo no encontrado")
         

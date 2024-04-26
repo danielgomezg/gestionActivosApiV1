@@ -6,11 +6,12 @@ from fastapi import HTTPException, status, UploadFile
 from sqlalchemy import desc
 import uuid
 import shutil
-from urllib.parse import urlparse
+import hashlib
 from pathlib import Path
 from models.office import Office
 from models.sucursal import Sucursal
-
+from models.article import Article
+import traceback
 from typing import List
 
 #historial
@@ -46,6 +47,18 @@ def get_actives_all_android(db: Session):
 def get_active_by_article_and_barcode(db: Session, article_id: int, bar_code: str, limit: int = 100, offset: int = 0):
     try:
         result = db.query(Active).filter(Active.article_id == article_id, Active.bar_code == bar_code, Active.removed == 0).options(joinedload(Active.article)).offset(offset).limit(limit).first()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
+def generate_short_unique_id(data: str, length: int = 20) -> str:
+    hash_object = hashlib.sha256(data.encode())
+    hex_dig = hash_object.hexdigest()
+    return hex_dig[:length]
+
+def get_active_by_virtual_code(db: Session, virtual_code: str):
+    try:
+        result = db.query(Active).filter(Active.virtual_code == virtual_code, Active.removed == 0).first()
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
@@ -119,7 +132,7 @@ def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offs
         result = (db.query(Active).\
             join(Office).join(Sucursal).\
             filter(Sucursal.id == sucursal_id, Active.removed == 0).\
-            options(joinedload(Active.article), joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)).order_by(Active.office_id).offset(offset).limit(limit).all())
+            options(joinedload(Active.article).joinedload(Article.category), joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)).order_by(Active.office_id).offset(offset).limit(limit).all())
 
         count = db.query(Active).join(Office).join(Sucursal).filter(Sucursal.id == sucursal_id, Active.removed == 0).count()
         return result, count
@@ -206,6 +219,10 @@ def search_active_offices(db: Session, search: str, office_ids: List[int], limit
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar activos por oficinas por nombre {e}")
 
+def generate_short_unique_id(data: str, length: int = 20) -> str:
+    hash_object = hashlib.sha256(data.encode())
+    hex_dig = hash_object.hexdigest()
+    return hex_dig[:length]
 
 def get_file_url(file: UploadFile, upload_folder: Path) -> str:
     try:
@@ -221,10 +238,24 @@ def get_file_url(file: UploadFile, upload_folder: Path) -> str:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar el documento de activo: {e}")
 
+def get_image_url(file: UploadFile, upload_folder: Path) -> str:
+    try:
+        unique_id = generate_short_unique_id(file.filename)
+        # Concatena el UUID al nombre del archivo original
+        filename_with_uuid = f"{unique_id}_{file.filename}"
+        file_path = upload_folder / filename_with_uuid
+        with open(file_path, "wb") as image_file:
+            shutil.copyfileobj(file.file, image_file)
+        # photo_url = f"http://127.0.0.1:9000/files/images_article/{filename_with_uuid}"
+        return filename_with_uuid
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar la imagen: {e}")
+
 def create_active(db: Session, active: ActiveSchema, name_user: str):
     try:
         _active = Active(
             bar_code=active.bar_code,
+            virtual_code=active.virtual_code,
             comment=active.comment,
             acquisition_date=active.acquisition_date,
             accounting_document = active.accounting_document,
@@ -235,6 +266,10 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
             model=active.model,
             state=active.state,
             brand=active.brand,
+            photo1=active.photo1,
+            photo2=active.photo2,
+            photo3=active.photo3,
+            photo4=active.photo4,
             office_id=active.office_id,
             article_id=active.article_id
         )
@@ -265,6 +300,12 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
 def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_user: str):
     try:
         active_to_edit = db.query(Active).filter(Active.id == active_id).first()
+        print("active_to_edit")
+        print(active_to_edit.photo1)
+        print(active_to_edit.photo2)
+        print(active_to_edit.photo3)
+        print(active_to_edit.photo4)
+
         if active_to_edit:
             active_to_edit.bar_code = active.bar_code
             active_to_edit.comment = active.comment
@@ -288,6 +329,45 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
 
             active_to_edit.accounting_document = active.accounting_document
 
+            # Se elimina la foto reemplazada del servidor
+            # Si la foto es nula, no se hace nada
+            if active_to_edit.photo1 is not None and active_to_edit.photo1 != "" and active_to_edit.photo1 != active.photo1:
+                existing_file_path = Path("files") / "images_active" / active_to_edit.photo1
+
+                # Verificar si el archivo existe y eliminarlo
+                if existing_file_path.exists():
+                    existing_file_path.unlink()
+
+            active_to_edit.photo1 = active.photo1
+
+
+            if active_to_edit.photo2 is not None and active_to_edit.photo2 != "" and active_to_edit.photo2 != active.photo2:
+                existing_file_path = Path("files") / "images_active" / active_to_edit.photo2
+
+                # Verificar si el archivo existe y eliminarlo
+                if existing_file_path.exists():
+                    existing_file_path.unlink()
+
+            active_to_edit.photo2 = active.photo2
+
+            if active_to_edit.photo3 is not None and active_to_edit.photo3 != "" and active_to_edit.photo3 != active.photo3:
+                existing_file_path = Path("files") / "images_active" / active_to_edit.photo3
+
+                # Verificar si el archivo existe y eliminarlo
+                if existing_file_path.exists():
+                    existing_file_path.unlink()
+
+            active_to_edit.photo3 = active.photo3
+
+            if active_to_edit.photo4 is not None and active_to_edit.photo4 != "" and active_to_edit.photo4 != active.photo4:
+                existing_file_path = Path("files") / "images_active" / active_to_edit.photo4
+
+                # Verificar si el archivo existe y eliminarlo
+                if existing_file_path.exists():
+                    existing_file_path.unlink()
+
+            active_to_edit.photo4 = active.photo4
+
             db.commit()
 
             active_content = get_active_by_id(db, active_to_edit.id)
@@ -309,6 +389,8 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activo no encontrado")
     except Exception as e:
+        print(e)
+        traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando activo: {e}")
 
 def delete_active(db: Session, active_id: int, name_user: str):
