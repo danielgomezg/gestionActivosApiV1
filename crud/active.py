@@ -51,6 +51,18 @@ def get_active_by_article_and_barcode(db: Session, article_id: int, bar_code: st
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
+def generate_short_unique_id(data: str, length: int = 20) -> str:
+    hash_object = hashlib.sha256(data.encode())
+    hex_dig = hash_object.hexdigest()
+    return hex_dig[:length]
+
+def get_active_by_virtual_code(db: Session, virtual_code: str):
+    try:
+        result = db.query(Active).filter(Active.virtual_code == virtual_code, Active.removed == 0).first()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
 def get_active_by_id_article(db: Session, article_id: int, limit: int = 100, offset: int = 0):
     try:
         result = db.query(Active).filter(Active.article_id == article_id, Active.removed == 0).options(joinedload(Active.article)).offset(offset).limit(limit).all()
