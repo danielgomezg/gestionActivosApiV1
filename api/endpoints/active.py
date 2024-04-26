@@ -214,13 +214,15 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    if(len(request.bar_code) == 0):
-        return  Response(code = "400", message = "código de barra no valido", result = [])
+    if(len(request.bar_code) == 0 and len(request.virtual_code) == 0):
+        return  Response(code = "400", message = "Código de activo fijo no válido", result = [])
 
-    # valida si existe un codigo de barra con el mismo numero dentro de los articulos
-    active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
-    if active_barcode:
-        return Response(code="400", message="Código de barra ya ingresado", result=[])
+    if(len(request.virtual_code) == 0):
+
+        # valida si existe un codigo de barra con el mismo numero dentro de los articulos
+        active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+        if active_barcode:
+            return Response(code="400", message="Código de activo fijo ya ingresado", result=[])
 
     try:
         # Intenta convertir la fecha a un objeto date

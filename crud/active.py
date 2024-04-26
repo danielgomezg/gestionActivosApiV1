@@ -243,6 +243,7 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
     try:
         _active = Active(
             bar_code=active.bar_code,
+            virtual_code=active.virtual_code,
             comment=active.comment,
             acquisition_date=active.acquisition_date,
             accounting_document = active.accounting_document,

@@ -7,6 +7,7 @@ T = TypeVar('T')
 class ActiveSchema(BaseModel):
     #id: Optional[int] = None
     bar_code: str
+    virtual_code: Optional[str] = None
     comment: Optional[str] = None
     acquisition_date: date
     accounting_document: Optional[str] = None
@@ -27,6 +28,7 @@ class ActiveSchema(BaseModel):
 
 class ActiveEditSchema(BaseModel):
     bar_code: str
+    virtual_code: Optional[str] = None
     comment: Optional[str] = None
     acquisition_date: date
     accounting_document: Optional[str] = None

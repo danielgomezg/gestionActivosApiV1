@@ -10,6 +10,7 @@ class Active(Base):
     __tablename__ = 'activo'
     id = Column(Integer, primary_key=True, autoincrement=True)
     bar_code = Column(String, nullable=False)
+    virtual_code = Column(String, nullable=True)
     comment= Column(String, nullable=True)
     acquisition_date = Column(Date, default=date.today, nullable=False)
     accounting_document = Column(String, nullable=False)
