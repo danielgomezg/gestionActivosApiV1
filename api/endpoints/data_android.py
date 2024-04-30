@@ -56,8 +56,8 @@ def all_data(db: Session = Depends(get_db), current_user_info: Tuple[str, str] =
                         "accounting_document": active.accounting_document, "accounting_record_number": active.accounting_record_number,
                         "name_in_charge_active": active.name_in_charge_active, "rut_in_charge_active": active.rut_in_charge_active, "serie": active.serie,
                         "model":active.model, "state": active.state, "brand": active.brand, "creation_date": active.creation_date, "removed": active.removed,
-                        "office_id": active.office_id, "article_id": active.article_id} for active in actives]
-        categories_data = [{"id": category.id, "description": category.description, "parent_id": category.parent_id, "removed": category.removed} for category in categories]
+                        "office_id": active.office_id, "article_id": active.article_id, "photo1": active.photo1, "photo2": active.photo2, "photo3": active.photo3, "photo4": active.photo4, "virtual_code": active.virtual_code } for active in actives]
+        categories_data = [{"id": category.id, "description": category.description, "parent_id": category.parent_id, "removed": category.removed, "code": category.code} for category in categories]
 
         print("despues")
         data = {"company": companies_data, "sucursales": sucursales_data, "offices": offices_data, "articles":articles_data, "actives":actives_data, "categories":categories_data}
