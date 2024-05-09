@@ -88,7 +88,7 @@ def login_access_android(request: UserSchemaLogin, db: Session = Depends(get_db)
         }
 
         access_token = create_access_token(data={"sub": user_id, "profile": _user.profile_id, "user": additional_info},
-                                           expires_delta=access_token_expires)
+                                           expires_delta=access_token_expires, is_mobile=True)
 
         expire_seconds = access_token_expires.total_seconds()
 

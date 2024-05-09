@@ -331,8 +331,8 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
         sucursal = actives[0].office.sucursal
         company = actives[0].office.sucursal.company
 
-        while len(actives) < 55:
-            actives.extend(copy.deepcopy(actives))
+        #while len(actives) < 55:
+            #actives.extend(copy.deepcopy(actives))
 
         #Fecha y hora
         chile_timezone = pytz.timezone('Chile/Continental')
