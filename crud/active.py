@@ -5,6 +5,7 @@ from models.active import Active
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy import desc
 import uuid
+import random
 import shutil
 import hashlib
 from pathlib import Path
@@ -50,11 +51,6 @@ def get_active_by_article_and_barcode(db: Session, article_id: int, bar_code: st
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
-
-def generate_short_unique_id(data: str, length: int = 20) -> str:
-    hash_object = hashlib.sha256(data.encode())
-    hex_dig = hash_object.hexdigest()
-    return hex_dig[:length]
 
 def get_active_by_virtual_code(db: Session, virtual_code: str):
     try:
@@ -220,7 +216,11 @@ def search_active_offices(db: Session, search: str, office_ids: List[int], limit
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar activos por oficinas por nombre {e}")
 
 def generate_short_unique_id(data: str, length: int = 20) -> str:
-    hash_object = hashlib.sha256(data.encode())
+    # Generar un número aleatorio
+    random_number = random.randint(0, 1000000000)  # Un entero grande
+    # Combinar el string de entrada con el número aleatorio
+    data_with_random = data + str(random_number)
+    hash_object = hashlib.sha256(data_with_random.encode())
     hex_dig = hash_object.hexdigest()
     return hex_dig[:length]
 
@@ -233,7 +233,6 @@ def get_file_url(file: UploadFile, upload_folder: Path) -> str:
         with open(file_path, "wb") as active_file:
             shutil.copyfileobj(file.file, active_file)
 
-        # file_url = f"http://127.0.0.1:9000/files/files_active/{filename_with_uuid}"
         return filename_with_uuid
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar el documento de activo: {e}")

@@ -63,7 +63,7 @@ def get_category_by_id(db: Session, category_id: int):
         result = db.query(Category).filter(Category.id == category_id, Category.removed == 0).first()
         return result
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania {e}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar categoria {e}")
     
 def get_category_by_parent_id(db: Session, parent_id: int, limit: int = 100, offset: int = 0):
     try:
@@ -84,7 +84,7 @@ def get_category_by_parent_id(db: Session, parent_id: int, limit: int = 100, off
         return count, result
     
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar compania {e}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar categoria {e}")
 
 def get_category_by_description(db: Session, description: str):
     try:

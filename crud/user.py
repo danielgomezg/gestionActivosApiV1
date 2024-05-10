@@ -88,15 +88,6 @@ def create_user(db: Session, user: UserSchema):
         db.commit()
         db.refresh(_user)
 
-        # creacion del historial
-        # history_params = {
-        #     "description": "create-user",
-        #     "user_id": _user.id,
-        #     "company_id": _user.company_id,
-        #     "current_session_user_id": id_user
-        # }
-        # create_history(db, HistorySchema(**history_params))
-
         return _user
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando user {e}")
@@ -179,13 +170,16 @@ def authenticate_user(email: str, password: str, db: Session):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al autenticar usuario {e}")
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
+def create_access_token(data: dict, expires_delta: timedelta = None, is_mobile: bool = False):
     to_encode = data.copy()
-    
-    if expires_delta:
-        expire = (datetime.utcnow() + expires_delta).timestamp()
+
+    if is_mobile:
+        expire = (datetime.utcnow() + timedelta(days=365)).timestamp() #1 añom de duracion token mobile
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        if expires_delta:
+            expire = (datetime.utcnow() + expires_delta).timestamp()
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=15)
 
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, key=SECRET_KEY, algorithm=ALGORITHM)
@@ -216,8 +210,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    #Recoradr que es str
-    #return id_user, expiration_time
+
     return name_user, expiration_time
 
 def get_user_disable_current(current_user_info: Tuple[str, Optional[str]] = Depends(get_current_user)):

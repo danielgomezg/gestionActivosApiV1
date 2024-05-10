@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from database import get_db, conexion
 from crud.active import (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
                          get_active_by_office, get_active_by_offices, count_active, get_active_by_article_and_barcode, search_active_sucursal, search_active_offices,
-                         get_image_url, generate_short_unique_id)
+                         get_image_url, generate_short_unique_id, get_active_by_virtual_code)
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from schemas.articleSchema import ArticleSchema
 from schemas.schemaGenerico import Response, ResponseGet
@@ -226,12 +226,22 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
 
             # valida si existe un codigo de barra con el mismo numero dentro de los articulos
             active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+            request.virtual_code = ""
             if active_barcode:
                 return Response(code="400", message="Código de activo fijo ya ingresado", result=[])
         
         else:
             # generar codigo virtual con 20 digitos.
             request.virtual_code = generate_short_unique_id(request.serie)
+            active_vc = get_active_by_virtual_code(db, request.virtual_code)
+            intento = 0
+            int_max = 100
+            while(active_vc and intento < int_max):
+                request.virtual_code = generate_short_unique_id(request.serie)
+                active_vc = get_active_by_virtual_code(db, request.virtual_code)
+                intento += 1
+            if(intento > int_max):
+                return Response(code="400", message=" Error al generar código virtual", result=[])
          
         # Intenta convertir la fecha a un objeto date
         acquisition_date = date_parser.parse(str(request.acquisition_date)).date()

@@ -9,6 +9,7 @@ import uuid
 from urllib.parse import urlparse
 from pathlib import Path
 import hashlib
+import random
 
 #historial
 from schemas.historySchema import HistorySchema
@@ -121,7 +122,13 @@ def search_article_by_company(db: Session, search: str, company_id: int , limit:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar sucursales {e}")
 
 def generate_short_unique_id(data: str, length: int = 20) -> str:
-    hash_object = hashlib.sha256(data.encode())
+    # Generar un número aleatorio
+    random_number = random.randint(0, 1000000000)  # Un entero grande
+
+    # Combinar el string de entrada con el número aleatorio
+    data_with_random = data + str(random_number)
+
+    hash_object = hashlib.sha256(data_with_random.encode())
     hex_dig = hash_object.hexdigest()
     return hex_dig[:length]
 
