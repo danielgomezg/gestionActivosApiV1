@@ -226,6 +226,7 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
 
             # valida si existe un codigo de barra con el mismo numero dentro de los articulos
             active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+            request.virtual_code = ""
             if active_barcode:
                 return Response(code="400", message="Código de activo fijo ya ingresado", result=[])
         
