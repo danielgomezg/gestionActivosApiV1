@@ -53,7 +53,7 @@ def get_articles(db: Session = Depends(get_db), current_user_info: Tuple[str, st
 
     result, count = get_article_all(db, limit, offset)
     if not result:
-        return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
+        return ResponseGet(code= "200", result = [], limit= limit, offset = offset, count = 0).model_dump()
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get('/articles/company/{id_company}')

@@ -61,7 +61,8 @@ origins = [
     "http://localhost:5173",
     "http://45.33.99.148",
     "http://192.168.100.8:5173",
-    "http://45-33-99-148.ip.linodeusercontent.com"
+    "http://45-33-99-148.ip.linodeusercontent.com",
+    "https://45-33-99-148.ip.linodeusercontent.com"
 ]
 
 app.add_middleware(

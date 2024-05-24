@@ -224,3 +224,17 @@ def get_user_disable_current(current_user_info: Tuple[str, Optional[str]] = Depe
     else:
         print("El token ha expirado.")
         return (None, None)
+    
+def restore_password(db: Session, user_id: int):
+    try:
+        user_to_edit = db.query(Usuario).filter(Usuario.id == user_id).first()
+        dni = user_to_edit.rut.replace('.', '').replace('-', '')
+        print(dni)
+        if user_to_edit:
+            user_to_edit._password = bcrypt.hash(dni)
+            db.commit()
+            return user_to_edit
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando usuario: {e}")

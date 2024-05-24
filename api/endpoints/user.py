@@ -4,7 +4,7 @@ from models.user import Usuario
 from fastapi import APIRouter, HTTPException, Path, Depends, status
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.user import create_user, get_user_all, get_user_email, authenticate_user, create_access_token, get_user_disable_current, get_user_by_id, update_user, delete_user, search_users_by_mail_rut
+from crud.user import create_user, get_user_all, get_user_email, authenticate_user, create_access_token, get_user_disable_current, get_user_by_id, update_user, delete_user, search_users_by_mail_rut, restore_password
 from schemas.userSchema import UserSchema, UserEditSchema, UserSchemaLogin
 from schemas.schemaGenerico import Response, ResponseGet
 import re
@@ -215,3 +215,17 @@ def login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Ses
         return {"access_token": access_token, "token_type": "bearer", "expire_token": expire_seconds}
     else:
         raise HTTPException(status_code=401, detail="Usuario incorrecto")
+    
+@router.put('/user/password/reset/{id}')
+def reset_password(id: int, db: Session = Depends(get_db)):
+    try: 
+        user = restore_password(db, id)
+        if user is None:
+            return Response(code="404", message="Usuario no encontrado", result=[]).model_dump()
+        return Response(code="200", message="Contraseña restablecida con éxito", result=[]).model_dump()
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al resetear la contraseña: {e}")
+    
+
+    
