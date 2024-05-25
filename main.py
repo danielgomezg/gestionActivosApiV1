@@ -51,7 +51,6 @@ from models import history as history_model
 from models import category as category_model
 
 
-
 user_model.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
