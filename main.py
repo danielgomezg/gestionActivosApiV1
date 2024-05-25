@@ -51,7 +51,6 @@ from models import history as history_model
 from models import category as category_model
 
 
-
 user_model.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -61,7 +60,8 @@ origins = [
     "http://localhost:5173",
     "http://45.33.99.148",
     "http://192.168.100.8:5173",
-    "http://45-33-99-148.ip.linodeusercontent.com"
+    "http://45-33-99-148.ip.linodeusercontent.com",
+    "https://45-33-99-148.ip.linodeusercontent.com"
 ]
 
 app.add_middleware(
