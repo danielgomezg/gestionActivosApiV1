@@ -28,7 +28,7 @@ oauth2_scheme = OAuth2PasswordBearer("/token")
 SECRET_KEY = config('SECRET_KEY')
 ALGORITHM = config('ALGORITHM')
 
-@router.get("/user/{id}")
+@router.get("/user/{id}", summary="Obtener un usuario por ID", description="Este endpoint obtiene los detalles de un usuario específico basado en su ID.")
 def get_user(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
@@ -40,7 +40,7 @@ def get_user(id: int, db: Session = Depends(get_db), current_user_info: Tuple[st
         return Response(code="404", result=[], message="Usuario no encontrado").model_dump()
     return Response(code= "200", message="Usuario encontrado", result = result).model_dump()
 
-@router.get('/users')
+@router.get('/users' , summary="Obtener todos los usuarios", description="Este endpoint obtiene todos los usuarios registrados en el sistema con paginación.")
 def get_users(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
@@ -52,7 +52,7 @@ def get_users(db: Session = Depends(get_db), current_user_info: Tuple[str, str] 
         return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
-@router.get('/users/search')
+@router.get('/users/search' , summary="Buscar usuarios", description="Este endpoint busca usuarios por su correo electrónico o RUT.")
 def search_users(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
     name_user, expiration_time = current_user_info
     if expiration_time is None:
@@ -63,7 +63,7 @@ def search_users(search: str, db: Session = Depends(get_db), current_user_info: 
         return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
-@router.post('/user')
+@router.post('/user' , summary="Crear un nuevo usuario", description="Este endpoint crea un nuevo usuario con los detalles proporcionados.")
 def create(request: UserSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
@@ -104,7 +104,7 @@ def create(request: UserSchema, db: Session = Depends(get_db), current_user_info
     _user = create_user(db, request)
     return Response(code = "201", message = f"Usuario {_user.firstName} creado", result = _user).model_dump()
 
-@router.put('/user/{id}')
+@router.put('/user/{id}' , summary="Actualizar un usuario", description="Este endpoint actualiza los detalles de un usuario existente basado en su ID.")
 def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
@@ -139,7 +139,7 @@ def update(request: UserEditSchema, id: int, db: Session = Depends(get_db), curr
     _user = update_user(db, id, request)
     return Response(code = "201", message = f"Usuario {_user.firstName} editado", result = _user).model_dump()
 
-@router.delete('/user/{id}')
+@router.delete('/user/{id}' , summary="Eliminar un usuario", description="Este endpoint elimina un usuario específico basado en su ID.")
 def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
@@ -149,7 +149,7 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
     _user = delete_user(db, id)
     return Response(code = "201", message = f"Usuario con id {id} eliminado", result = _user).model_dump()
 
-@router.post('/login')
+@router.post('/login' , summary="Iniciar sesión", description="Este endpoint permite a un usuario iniciar sesión con su correo electrónico y contraseña.")
 def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
     _user = authenticate_user(request.email, request.password, db)
     if(_user):
@@ -188,7 +188,7 @@ def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
     else:
         return Response(code="401", message="Usuario incorrecto", result=[])
 
-@router.post('/token')
+@router.post('/token' , summary="Obtener token de acceso", description="Este endpoint permite a un usuario obtener un token de acceso usando OAuth2.")
 def login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     _user = authenticate_user(form_data.username, form_data.password, db)
     if(_user):

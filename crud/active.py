@@ -300,10 +300,6 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
     try:
         active_to_edit = db.query(Active).filter(Active.id == active_id).first()
         print("active_to_edit")
-        print(active_to_edit.photo1)
-        print(active_to_edit.photo2)
-        print(active_to_edit.photo3)
-        print(active_to_edit.photo4)
 
         if active_to_edit:
             active_to_edit.bar_code = active.bar_code
@@ -317,6 +313,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
             active_to_edit.state = active.state
             active_to_edit.brand = active.brand
             active_to_edit.office_id = active.office_id
+            active_to_edit.article_id = active.article_id
 
             #Se elimina el archivo reemplazado del servidor
             if len(active_to_edit.accounting_document) > 0 and active_to_edit.accounting_document != active.accounting_document:

@@ -42,7 +42,7 @@ def get_active(id: int, db: Session = Depends(get_db), current_user_info: Tuple[
     result = get_active_by_id(db, id)
     if result is None:
         return Response(code= "404", result = [], message="Not found").model_dump()
-    return Response(code= "200", result = result, message="Activo no encontrado").model_dump()
+    return Response(code= "200", result = result, message="Activo encontrado").model_dump()
 
 @router.get('/actives')
 def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current),limit: int = 25, offset: int = 0, companyId: int = Header(None)):
@@ -288,7 +288,7 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
 
-        if (len(request.bar_code) == 0):
+        if (len(request.bar_code) == 0 and len(request.virtual_code) == 0):
             return Response(code="400", message="codigo de barra no valido", result=[])
 
         # valida si existe un codigo de barra con el mismo numero dentro de los articulos
