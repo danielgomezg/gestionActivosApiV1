@@ -245,7 +245,6 @@ def get_image_url(file: UploadFile, upload_folder: Path) -> str:
         file_path = upload_folder / filename_with_uuid
         with open(file_path, "wb") as image_file:
             shutil.copyfileobj(file.file, image_file)
-        # photo_url = f"http://127.0.0.1:9000/files/images_article/{filename_with_uuid}"
         return filename_with_uuid
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar la imagen: {e}")
@@ -269,6 +268,12 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
             photo2=active.photo2,
             photo3=active.photo3,
             photo4=active.photo4,
+            acquisition_value = active.acquisition_date,
+            real_value = active.real_value,
+            parent_code = active.parent_code,
+            depreciation_years = active.depreciation_years,
+            maintenance_date = active.maintenance_date,
+            maintenance_comment = active.maintenance_comment,
             office_id=active.office_id,
             article_id=active.article_id
         )
@@ -287,7 +292,6 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
             "office_id": _active.office_id,
             "name_user": name_user,
             "company_id": id_company
-            #"current_session_user_id": id_user
         }
 
         create_history(db, HistorySchema(**history_params))
@@ -367,6 +371,13 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
 
             active_to_edit.photo4 = active.photo4
 
+            active_to_edit.acquisition_value = active.acquisition_date
+            active_to_edit.real_value = active.real_value
+            active_to_edit.parent_code = active.parent_code
+            active_to_edit.depreciation_years = active.depreciation_years
+            active_to_edit.maintenance_date = active.maintenance_date
+            active_to_edit.maintenance_comment = active.maintenance_comment
+
             db.commit()
 
             active_content = get_active_by_id(db, active_to_edit.id)
@@ -380,7 +391,6 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
                 "office_id": active_to_edit.office_id,
                 "name_user": name_user,
                 "company_id": id_company
-                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 
@@ -410,7 +420,6 @@ def delete_active(db: Session, active_id: int, name_user: str):
                 "office_id": active_to_delete.office_id,
                 "name_user": name_user,
                 "company_id": id_company
-                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 

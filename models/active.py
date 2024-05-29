@@ -25,11 +25,14 @@ class Active(Base):
     photo2 = Column(String, nullable=True)
     photo3 = Column(String, nullable=True)
     photo4 = Column(String, nullable=True)
+    acquisition_value = Column(Integer, default=0, nullable=True)
+    real_value = Column(Integer, default=0, nullable=True)
+    parent_code = Column(String, nullable=True)
+    depreciation_years = Column(Integer, default=0, nullable=True)
+    maintenance_time = Column(Integer, nullable=True)
+    maintenance_comment = Column(String, nullable=True)
     creation_date = Column(Date, default=date.today, nullable=False)
     removed = Column(Integer, default=0, nullable=False)
-
-    #user_id = Column(Integer, ForeignKey('usuario.id'))
-    #user = relationship('Usuario', back_populates='actives')
 
     office_id = Column(Integer, ForeignKey('oficina.id'))
     office = relationship('Office', back_populates='actives')
