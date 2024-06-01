@@ -268,12 +268,6 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
             photo2=active.photo2,
             photo3=active.photo3,
             photo4=active.photo4,
-            acquisition_value = active.acquisition_date,
-            real_value = active.real_value,
-            parent_code = active.parent_code,
-            depreciation_years = active.depreciation_years,
-            maintenance_date = active.maintenance_date,
-            maintenance_comment = active.maintenance_comment,
             office_id=active.office_id,
             article_id=active.article_id
         )
@@ -370,13 +364,6 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
                     existing_file_path.unlink()
 
             active_to_edit.photo4 = active.photo4
-
-            active_to_edit.acquisition_value = active.acquisition_date
-            active_to_edit.real_value = active.real_value
-            active_to_edit.parent_code = active.parent_code
-            active_to_edit.depreciation_years = active.depreciation_years
-            active_to_edit.maintenance_date = active.maintenance_date
-            active_to_edit.maintenance_comment = active.maintenance_comment
 
             db.commit()
 

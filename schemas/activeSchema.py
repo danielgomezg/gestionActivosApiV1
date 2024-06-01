@@ -21,12 +21,6 @@ class ActiveSchema(BaseModel):
     photo2: Optional[str] = None
     photo3: Optional[str] = None
     photo4: Optional[str] = None
-    acquisition_value: Optional[int] = None
-    real_value: Optional[int] = None
-    parent_code: Optional[str] = None
-    depreciation_years: Optional[int] = None
-    maintenance_time: Optional[int] = None
-    maintenance_comment: Optional[str] = None
     office_id: int
     article_id: int
 
@@ -47,11 +41,5 @@ class ActiveEditSchema(BaseModel):
     photo2: Optional[str] = None
     photo3: Optional[str] = None
     photo4: Optional[str] = None
-    acquisition_value: Optional[int] = None
-    real_value: Optional[int] = None
-    parent_code: Optional[str] = None
-    depreciation_years: Optional[int] = None
-    maintenance_time: Optional[int] = None
-    maintenance_comment: Optional[str] = None
     office_id: int
     article_id: int

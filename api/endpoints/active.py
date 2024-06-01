@@ -288,13 +288,14 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
 
-        if (len(request.bar_code) == 0):
-            return Response(code="400", message="codigo de barra no valido", result=[])
+        if (len(request.bar_code) == 0 and request.virtual_code == ""):
+            return Response(code="400", message="Código de activo fijo no válido", result=[])
 
         # valida si existe un codigo de barra con el mismo numero dentro de los articulos
-        active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
-        if active_barcode and id is not active_barcode.id:
-            return Response(code="400", message="Codigo de barra ya ingresado", result=[])
+        if (len(request.bar_code) > 0):
+            active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+            if active_barcode and id is not active_barcode.id:
+                return Response(code="400", message="Codigo de barra ya ingresado", result=[])
 
    
         # Intenta convertir la fecha a un objeto date
@@ -303,20 +304,6 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
         # Verificar el formato específico
         if acquisition_date.strftime('%Y-%m-%d') != str(request.acquisition_date):
             return Response(code="400", message="Formato de fecha de adquisición no válido (debe ser YYYY-MM-DD)", result=[])
-
-        #if (len(request.accounting_document) == 0):
-            #return Response(code="400", message="Documento de adquisición no valido", result=[])
-
-        #if (len(request.accounting_record_number) == 0):
-            #return Response(code="400", message="Numero registro contable no valido", result=[])
-
-        #if (len(request.name_in_charge_active) == 0):
-            #return Response(code="400", message="Nombre del responsable no valido", result=[])
-
-        #patron_rut = r'^\d{1,8}-[\dkK]$'
-        #rut = str(request.rut_in_charge_active.replace(".", ""))
-        #if not re.match(patron_rut, rut):
-            #return Response(code="400", message="Rut del responsable inválido", result=[])
 
         if (len(request.serie) == 0):
             return Response(code="400", message="Número de serie no valido", result=[])

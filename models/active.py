@@ -25,12 +25,6 @@ class Active(Base):
     photo2 = Column(String, nullable=True)
     photo3 = Column(String, nullable=True)
     photo4 = Column(String, nullable=True)
-    acquisition_value = Column(Integer, default=0, nullable=True)
-    real_value = Column(Integer, default=0, nullable=True)
-    parent_code = Column(String, nullable=True)
-    depreciation_years = Column(Integer, default=0, nullable=True)
-    maintenance_time = Column(Integer, nullable=True)
-    maintenance_comment = Column(String, nullable=True)
     creation_date = Column(Date, default=date.today, nullable=False)
     removed = Column(Integer, default=0, nullable=False)
 
@@ -42,6 +36,12 @@ class Active(Base):
 
     # Relacion con historial
     historial = relationship('History', back_populates='active')
+
+    # Relacion con tabla intermedia activeGroup_active
+    activeGroup_active = relationship('Active_GroupActive', back_populates='active')
+
+    # Relacion con tabla intermedia activeGroup_active
+    activeValues = relationship('ActiveValues', back_populates='active')
 
 
 def validateActiveFromFile(active, articleId, officeId):
