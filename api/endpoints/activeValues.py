@@ -10,23 +10,32 @@ from typing import Tuple
 router = APIRouter()
 # action.Base.metadata.create_all(bind=engine)
 
-@router.get('/activeValues')
+@router.get('/actives/values')
 def get_activeValues(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
-    name_user, expiration_time = current_user_info
+    
+    try:
+        name_user, expiration_time = current_user_info
 
-    db = next(conexion(db, companyId))
-    if db is None:
-        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+        db = next(conexion(db, companyId))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
 
-    # Se valida la expiracion del token
-    if expiration_time is None:
-        return Response(code="401", message="token-exp", result=[])
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
 
-    result, count = get_activeValues_all(db)
-    if not result:
-        return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=0).model_dump()
-    return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
-@router.get("/activeValues/{id}", response_model=ActiveValuesSchema)
+        result, count = get_activeValues_all(db)
+      
+        if not result:
+            return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=0).model_dump()
+    
+        return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
+    
+    except Exception as e:
+        return Response(code="404", result=[], message="Error al obtener activeValues").model_dump()
+        
+
+@router.get("/active/values/{id}", response_model=ActiveValuesSchema)
 def get_activeValue(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
@@ -42,7 +51,7 @@ def get_activeValue(id: int, db: Session = Depends(get_db), current_user_info: T
     if result is None:
         raise HTTPException(status_code=404, detail="activeValues no encontrada")
     return result
-@router.post('/activeValues')
+@router.post('/active/values')
 def create(request: ActiveValuesSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
@@ -61,7 +70,7 @@ def create(request: ActiveValuesSchema, db: Session = Depends(get_db), current_u
     _activeValues = create_activeValues(db, request)
     return Response(code = "201", message = "ActiveValues creada", result = _activeValues).model_dump()
 
-@router.put('/activeValues/{id}')
+@router.put('/active/values/{id}')
 def update(request: ActiveValuesEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
@@ -80,7 +89,7 @@ def update(request: ActiveValuesEditSchema, id: int, db: Session = Depends(get_d
     _activeValues = update_activeValues(db, id, request)
     return Response(code = "201", message = "activeValues editada", result = _activeValues).model_dump()
 
-@router.delete('/activeValues/{id}')
+@router.delete('/active/values/{id}')
 def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
