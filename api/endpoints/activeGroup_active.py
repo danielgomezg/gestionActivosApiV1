@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from database import get_db, conexion
 from crud.activeGroup_active import get_activeGroup_active_by_id, get_activeGroup_active_all, create_activeGroup_active
 from schemas.activeGroup_active import ActiveGroup_ActiveSchema
-from schemas.schemaGenerico import Response
+from schemas.schemaGenerico import Response, ResponseGet
 from crud.user import get_user_disable_current
 from typing import Tuple
 from crud.active import get_active_by_id
@@ -13,15 +13,18 @@ router = APIRouter()
 # profile_action.Base.metadata.create_all(bind=engine)
 
 @router.get('/active/activesGroups')
-def get_active_activesGroups(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
+def get_active_activesGroups(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None), ):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
     if db is None:
         return Response(code="404", result=[], message="BD no encontrada").model_dump()
 
-    result = get_activeGroup_active_all(db)
-    return result
+    result, count = get_activeGroup_active_all(db)
+    if not result:
+        return ResponseGet(code= "200", result = [], limit= limit, offset = offset, count = 0).model_dump()
+
+    return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/active/activesGroup/{id}", response_model=ActiveGroup_ActiveSchema)
 def get_active_activesGroup(id: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current), companyId: int = Header(None)):

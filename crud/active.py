@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
-from sqlalchemy import func
+from sqlalchemy import func, select
 from models.active import Active
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy import desc
@@ -12,12 +12,32 @@ from pathlib import Path
 from models.office import Office
 from models.sucursal import Sucursal
 from models.article import Article
+from models.activeGroup_active import Active_GroupActive
 import traceback
 from typing import List
 
 #historial
 from schemas.historySchema import HistorySchema
 from crud.history import create_history
+
+def get_active_all_codes(db: Session, skip: int = 0, limit: int = 100):
+    try:
+        subquery = db.query(Active_GroupActive.active_id).subquery()
+        count = db.query(Active).filter(Active.removed == 0, Active.id.notin_(subquery)).count()
+        result = db.query(Active.id, Active.bar_code, Active.virtual_code).filter(Active.removed == 0, Active.id.notin_(subquery)).all()
+        # Convertir los objetos Active en diccionarios
+        result_dict = [
+            {
+                "id": id,
+                "bar_code": bar_code,
+                "virtual_code": virtual_code
+            }
+            for id, bar_code, virtual_code in result
+        ]
+        return result_dict, count
+    except Exception as e:
+        return [], 0
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activeValues {e}")
 
 def get_active_by_id(db: Session, active_id: int):
     try:
@@ -44,6 +64,40 @@ def get_actives_all_android(db: Session):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activo {e}")
+
+
+def search_active(db: Session, search: str, limit: int = 100, offset: int = 0):
+    try:
+        subquery = select(db.query(Active_GroupActive.active_id).subquery())
+
+        count = db.query(Active). \
+            filter(
+            Active.removed == 0,
+            Active.id.notin_(subquery),
+            (
+                    func.lower(Active.bar_code).like(f"%{search}%") |
+                    func.lower(Active.virtual_code).like(f"%{search}%")
+            )).count()
+
+        if count == 0:
+            return [], count
+
+        query = db.query(Active). \
+            filter(
+            Active.removed == 0,
+            Active.id.notin_(subquery),
+            (
+                func.lower(Active.bar_code).like(f"%{search}%") |
+                func.lower(Active.virtual_code).like(f"%{search}%")
+            )
+        ).offset(offset).limit(limit).all()
+
+        return query, count
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f"Error al buscar activos por codigo virtual y barcode {e}")
+
 
 def get_active_by_article_and_barcode(db: Session, article_id: int, bar_code: str, limit: int = 100, offset: int = 0):
     try:

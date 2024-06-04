@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Header
 from sqlalchemy.orm import Session
 from database import get_db, conexion
-from crud.activeValues import create_activeValues, get_activeValues_by_id, get_activeValues_all, update_activeValues, delete_activeValues
+from crud.activeValues import create_activeValues, get_activeValues_by_id, get_activeValues_all, update_activeValues, delete_activeValues, search_activeValues_all
 from schemas.activeValuesSchema import ActiveValuesSchema, ActiveValuesEditSchema
 from schemas.schemaGenerico import Response, ResponseGet
 from crud.user import  get_user_disable_current
@@ -31,6 +31,30 @@ def get_activeValues(db: Session = Depends(get_db), current_user_info: Tuple[str
     
         return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
     
+    except Exception as e:
+        return Response(code="404", result=[], message="Error al obtener activeValues").model_dump()
+
+
+@router.get('/actives/values/search')
+def search_activeValues(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+    try:
+        name_user, expiration_time = current_user_info
+
+        db = next(conexion(db, companyId))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+
+        result, count = search_activeValues_all(db, search, offset, limit)
+
+        if not result:
+            return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=0).model_dump()
+
+        return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
+
     except Exception as e:
         return Response(code="404", result=[], message="Error al obtener activeValues").model_dump()
         

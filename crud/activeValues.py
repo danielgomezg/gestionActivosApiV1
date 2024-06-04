@@ -3,15 +3,13 @@ from schemas.activeValuesSchema import ActiveValuesSchema
 from models.activeValues import ActiveValues
 from models.active import Active
 from fastapi import HTTPException, status
+from sqlalchemy import func
 
 def get_activeValues_all(db: Session, skip: int = 0, limit: int = 100):
     try:
         count = db.query(Active).filter(Active.removed == 0).count()
-
         # Obtener activos y ralizar left join con activeValues
-        
         result = db.query(Active.id, Active.bar_code, Active.virtual_code, ActiveValues).outerjoin(ActiveValues, Active.id == ActiveValues.active_id).all()
-        print(result)
         # Convertir los objetos Active y ActiveValues en diccionarios
         result_dict = [
             {
@@ -27,6 +25,40 @@ def get_activeValues_all(db: Session, skip: int = 0, limit: int = 100):
 
         return result_dict, count
         
+    except Exception as e:
+        return [], 0
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activeValues {e}")
+
+
+def search_activeValues_all(db: Session, search: str, skip: int = 0, limit: int = 100):
+    try:
+        count = db.query(Active).filter(Active.removed == 0, (
+                    func.lower(Active.bar_code).like(f"%{search}%") |
+                    func.lower(Active.virtual_code).like(f"%{search}%")
+            )).count()
+
+        # Obtener activos y ralizar left join con activeValues
+        result = db.query(Active.id, Active.bar_code, Active.virtual_code, ActiveValues).filter(Active.removed == 0, (
+                    func.lower(Active.bar_code).like(f"%{search}%") |
+                    func.lower(Active.virtual_code).like(f"%{search}%")
+            )).outerjoin(ActiveValues,
+                                                                                                   Active.id == ActiveValues.active_id).all()
+        print(result)
+        # Convertir los objetos Active y ActiveValues en diccionarios
+        result_dict = [
+            {
+                "active": {
+                    "id": id,
+                    "bar_code": bar_code,
+                    "virtual_code": virtual_code
+                },
+                "active_values": active_values.__dict__ if active_values else None
+            }
+            for id, bar_code, virtual_code, active_values in result
+        ]
+
+        return result_dict, count
+
     except Exception as e:
         return [], 0
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activeValues {e}")

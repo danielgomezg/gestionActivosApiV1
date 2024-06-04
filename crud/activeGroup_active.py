@@ -6,7 +6,9 @@ from sqlalchemy import and_
 
 def get_activeGroup_active_all(db: Session, skip: int = 0, limit: int = 100):
     try:
-        return db.query(Active_GroupActive).offset(skip).limit(limit).all()
+        count = db.query(Active_GroupActive).count()
+        result = db.query(Active_GroupActive).offset(skip).limit(limit).all()
+        return result, count
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos_gruposActivos {e}")
 
