@@ -51,6 +51,7 @@ def get_activeValue(id: int, db: Session = Depends(get_db), current_user_info: T
     if result is None:
         raise HTTPException(status_code=404, detail="activeValues no encontrada")
     return result
+
 @router.post('/active/values')
 def create(request: ActiveValuesSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info

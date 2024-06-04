@@ -10,18 +10,19 @@ def get_activeValues_all(db: Session, skip: int = 0, limit: int = 100):
 
         # Obtener activos y ralizar left join con activeValues
         
-        result = db.query(Active.bar_code, Active.virtual_code, ActiveValues).outerjoin(ActiveValues, Active.id == ActiveValues.active_id).all()
+        result = db.query(Active.id, Active.bar_code, Active.virtual_code, ActiveValues).outerjoin(ActiveValues, Active.id == ActiveValues.active_id).all()
         print(result)
         # Convertir los objetos Active y ActiveValues en diccionarios
         result_dict = [
             {
                 "active": {
+                    "id": id,
                     "bar_code": bar_code, 
                     "virtual_code": virtual_code
                 },
                 "active_values": active_values.__dict__ if active_values else None
             }
-            for bar_code, virtual_code, active_values in result
+            for id, bar_code, virtual_code, active_values in result
         ]
 
         return result_dict, count
