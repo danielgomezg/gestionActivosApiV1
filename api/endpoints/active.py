@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from database import get_db, conexion
 from crud.active import (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
                          get_active_by_office, get_active_by_offices, count_active, get_active_by_article_and_barcode, search_active_sucursal, search_active_offices,
-                         get_image_url, generate_short_unique_id, get_active_by_virtual_code)
+                         get_image_url, generate_short_unique_id, get_active_by_virtual_code, get_active_all_codes, search_active)
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from schemas.articleSchema import ArticleSchema
 from schemas.schemaGenerico import Response, ResponseGet
@@ -43,6 +43,31 @@ def get_active(id: int, db: Session = Depends(get_db), current_user_info: Tuple[
     if result is None:
         return Response(code= "404", result = [], message="Not found").model_dump()
     return Response(code= "200", result = result, message="Activo no encontrado").model_dump()
+
+@router.get('/actives/values/codes')
+def get_all_actives_codes(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+    try:
+        name_user, expiration_time = current_user_info
+
+        db = next(conexion(db, companyId))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+        print("+++++")
+        result, count = get_active_all_codes(db)
+        print(count)
+        print(result)
+        if not result:
+            return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=0).model_dump()
+
+        return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
+
+    except Exception as e:
+        return Response(code="404", result=[], message="Error al obtener activeValues").model_dump()
+
 
 @router.get('/actives')
 def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current),limit: int = 25, offset: int = 0, companyId: int = Header(None)):
@@ -132,6 +157,23 @@ def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), cu
 
     result, count = get_active_by_sucursal(db, sucursal_id, limit, offset)
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
+
+@router.get('/active/search/codes')
+def search_by_vt_barcode(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="token-exp", result=[])
+
+    result, count = search_active(db, search, limit, offset)
+    if not result:
+        return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
+    return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 
 @router.get('/active/search/sucursal/{sucursal_id}')
