@@ -1,11 +1,39 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from schemas.activeGroupSchema import ActiveGroupSchema
 from models.activeGroup import ActiveGroup
+from models.activeGroup_active import Active_GroupActive
 from fastapi import HTTPException, status
 
 def get_activeGroup_all(db: Session, skip: int = 0, limit: int = 100):
     try:
-        return db.query(ActiveGroup).offset(skip).limit(limit).all()
+        count = db.query(ActiveGroup).count()
+        if count == 0:
+            return [], 0
+        
+        # 
+        # result = db.query(ActiveGroup).offset(skip).limit(limit).all()
+        result = (
+            db.query(ActiveGroup, func.count(Active_GroupActive.active_id).label('count'))
+            .join(Active_GroupActive, ActiveGroup.id == Active_GroupActive.activeGroup_id)
+            .group_by(ActiveGroup.id)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+        # result = [row._asdict() for row in result]
+        result = [
+            {
+                "id": row.ActiveGroup.id,
+                "name": row.ActiveGroup.name,
+                "actives_count": row.count,
+                "creation_date": row.ActiveGroup.creation_date,
+            }
+            for row in result
+        ]
+
+        return result, count
+    
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activeGroup {e}")
 
