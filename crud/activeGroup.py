@@ -81,13 +81,17 @@ def update_activeGroup(db: Session, activeGroup_id: int, name_edited: str):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando activeGroup: {e}")
 
 def delete_activeGroup(db: Session, activeGroup_id: int):
-    activeGroup_to_delete = db.query(ActiveGroup).filter(ActiveGroup.id == activeGroup_id).first()
+    
     try:
+        db.query(Active_GroupActive).filter(Active_GroupActive.activeGroup_id == activeGroup_id).delete()
+
+        activeGroup_to_delete = db.query(ActiveGroup).filter(ActiveGroup.id == activeGroup_id).first()
         if activeGroup_to_delete:
             db.delete(activeGroup_to_delete)
             db.commit()
             return activeGroup_id
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"activeGroup con id {activeGroup_id} no encontrada")
+    
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando acción: {e}")

@@ -24,7 +24,7 @@ def get_activeValues(db: Session = Depends(get_db), current_user_info: Tuple[str
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
 
-        result, count = get_activeValues_all(db)
+        result, count = get_activeValues_all(db, offset, limit)
       
         if not result:
             return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=0).model_dump()

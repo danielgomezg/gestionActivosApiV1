@@ -9,7 +9,7 @@ def get_activeValues_all(db: Session, skip: int = 0, limit: int = 100):
     try:
         count = db.query(Active).filter(Active.removed == 0).count()
         # Obtener activos y ralizar left join con activeValues
-        result = db.query(Active.id, Active.bar_code, Active.virtual_code, ActiveValues).outerjoin(ActiveValues, Active.id == ActiveValues.active_id).all()
+        result = db.query(Active.id, Active.bar_code, Active.virtual_code, ActiveValues).outerjoin(ActiveValues, Active.id == ActiveValues.active_id).offset(skip).limit(limit).all()
         # Convertir los objetos Active y ActiveValues en diccionarios
         result_dict = [
             {
