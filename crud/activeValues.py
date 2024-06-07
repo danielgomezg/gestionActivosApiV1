@@ -30,6 +30,39 @@ def get_activeValues_all(db: Session, skip: int = 0, limit: int = 100):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activeValues {e}")
 
 
+def search_activeValues_by_vt_bc(db: Session, search: str, skip: int = 0, limit: int = 100):
+    try:
+        count = db.query(Active).filter(Active.removed == 0).filter(
+            (func.lower(Active.bar_code).ilike(f"%{search}%") |
+            func.lower(Active.virtual_code).ilike(f"%{search}%")
+             )).count()
+        
+
+
+        # Obtener activos y ralizar left join con activeValues
+        result = db.query(Active.id, Active.bar_code, Active.virtual_code, ActiveValues).filter(
+            (func.lower(Active.bar_code).ilike(f"%{search}%") |
+            func.lower(Active.virtual_code).ilike(f"%{search}%")
+             )).outerjoin(ActiveValues,Active.id == ActiveValues.active_id).offset(skip).limit(limit).all()
+        # Convertir los objetos Active y ActiveValues en diccionarios
+        result_dict = [
+            {
+                "active": {
+                    "id": id,
+                    "bar_code": bar_code,
+                    "virtual_code": virtual_code
+                },
+                "active_values": active_values.__dict__ if active_values else None
+            }
+            for id, bar_code, virtual_code, active_values in result
+        ]
+
+        return result_dict, count
+
+    except Exception as e:
+        return [], 0
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activeValues {e}")
+
 def search_activeValues_all(db: Session, search: str, skip: int = 0, limit: int = 100):
     try:
         count = db.query(Active).filter(Active.removed == 0, (
@@ -41,8 +74,7 @@ def search_activeValues_all(db: Session, search: str, skip: int = 0, limit: int 
         result = db.query(Active.id, Active.bar_code, Active.virtual_code, ActiveValues).filter(Active.removed == 0, (
                     func.lower(Active.bar_code).like(f"%{search}%") |
                     func.lower(Active.virtual_code).like(f"%{search}%")
-            )).outerjoin(ActiveValues,
-                                                                                                   Active.id == ActiveValues.active_id).all()
+            )).outerjoin(ActiveValues, Active.id == ActiveValues.active_id).offset(skip).limit(limit).all()
         print(result)
         # Convertir los objetos Active y ActiveValues en diccionarios
         result_dict = [
@@ -69,6 +101,8 @@ def get_activeValues_by_id(db: Session, activeValues_id: int):
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar activeValues {e}")
+
+
 
 def create_activeValues(db: Session, activeValues: ActiveValuesSchema):
     try:

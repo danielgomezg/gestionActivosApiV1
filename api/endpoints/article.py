@@ -128,7 +128,6 @@ def create(request: ArticleSchema, db: Session = Depends(get_db), current_user_i
     if(len(request.code) == 0):
         return  Response(code = "400", message = "Código no válido", result = [])
 
-    #article_code = get_article_by_company_and_code(db, request.company_id, request.code)
     article_code = get_article_by_code(db, request.code)
     if article_code:
         return Response(code="400", message="Código del artículo ya ingresado", result=[])
