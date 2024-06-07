@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Header
 from sqlalchemy.orm import Session
 from database import get_db, conexion
-from crud.activeGroup import create_activeGroup, get_activeGroup_by_id, get_activeGroup_all, update_activeGroup, delete_activeGroup
+from crud.activeGroup import create_activeGroup, get_activeGroup_by_id, get_activeGroup_all, update_activeGroup, delete_activeGroup, search_collection
 from crud.activeGroup_active import create_collection_actives, get_actives_by_idCollection, update_collection_actives
 from schemas.activeGroupSchema import ActiveGroupSchema, CollectionSchema
 from schemas.schemaGenerico import Response, ResponseGet
@@ -117,6 +117,24 @@ def create_collection(request: CollectionSchema, db: Session = Depends(get_db), 
     _collection.actives_count = len(_actives)
     
     return Response(code = "201", message = f"Coleccion {_collection.name} creado", result = _collection).model_dump()
+
+@router.get('/actives/collections/search')
+def get_actives_collection_search(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None), limit: int = 25, offset: int = 0):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="token-exp", result=[])
+
+    result, count = search_collection(db, search, limit, offset)
+    if result is None:
+        raise HTTPException(status_code=404, detail="activesGroup no encontrada")
+    
+    return ResponseGet(code= "200", result = result, limit=limit, offset=offset, count = count ).model_dump()
 
 @router.get('/actives/collections/{id}')
 def get_actives_collection(id: int, db: Session = Depends(get_db), current_user: str = Depends(get_user_disable_current), companyId: int = Header(None)):

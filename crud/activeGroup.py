@@ -95,3 +95,14 @@ def delete_activeGroup(db: Session, activeGroup_id: int):
     
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando acción: {e}")
+
+def search_collection(db: Session, search: str, limit: int = 25, offset: int = 0):
+    try:
+        count = db.query(ActiveGroup).filter(ActiveGroup.name.ilike(f"%{search}%")).count()
+        if count == 0:
+            return [], 0
+        
+        result = db.query(ActiveGroup).filter(ActiveGroup.name.ilike(f"%{search}%")).offset(offset).limit(limit).all()
+        return result, count
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar activeGroup {e}")
