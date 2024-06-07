@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Header
 from sqlalchemy.orm import Session
 from database import get_db, conexion
-from crud.activeGroup import create_activeGroup, get_activeGroup_by_id, get_activeGroup_all, update_activeGroup, delete_activeGroup
+from crud.activeGroup import create_activeGroup, get_activeGroup_by_id, get_activeGroup_all, update_activeGroup, delete_activeGroup, get_activeGroup_by_name
 from crud.activeGroup_active import create_collection_actives, get_actives_by_idCollection, update_collection_actives
 from schemas.activeGroupSchema import ActiveGroupSchema, CollectionSchema
 from schemas.schemaGenerico import Response, ResponseGet
@@ -59,6 +59,10 @@ def create(request: ActiveGroupSchema, db: Session = Depends(get_db), current_us
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre de activesGroup no valido", result = [])
 
+    collection_name = get_activeGroup_by_name(db, request.name)
+    if collection_name:
+        return Response(code="400", message="Nombre de la coleccion ya ingresado", result=[])
+
     _activesGroup = create_activeGroup(db, request)
     return Response(code = "201", message = "ActivesGroup creada", result = _activesGroup).model_dump()
 
@@ -76,6 +80,10 @@ def update(request: ActiveGroupSchema, id: int, db: Session = Depends(get_db), c
 
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre de activesGroup no valido", result = [])
+
+    collection_name = get_activeGroup_by_name(db, request.name)
+    if collection_name:
+        return Response(code="400", message="Nombre de la coleccion ya ingresado", result=[])
 
     _activesGroup = update_activeGroup(db, id, request.name)
     return Response(code = "201", message = "ActivesGroup editada", result = _activesGroup).model_dump()
@@ -109,6 +117,10 @@ def create_collection(request: CollectionSchema, db: Session = Depends(get_db), 
 
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre de activesGroup no valido", result = [])
+
+    collection_name = get_activeGroup_by_name(db, request.name)
+    if collection_name:
+        return Response(code="400", message="Nombre de la coleccion ya ingresado", result=[])
 
     _collection = create_activeGroup(db, request)
 
@@ -145,10 +157,13 @@ def update_collection(request: CollectionSchema, id: int, db: Session = Depends(
     if(len(request.name) == 0):
         return  Response(code = "400", message = "Nombre de activesGroup no valido", result = [])
 
+    collection_name = get_activeGroup_by_name(db, request.name)
+    if collection_name:
+        return Response(code="400", message="Nombre de la coleccion ya ingresado", result=[])
+
     _collection = update_activeGroup(db, id, request.name)
 
     # Editar la tabla intermedia
     _actives = update_collection_actives(db, _collection.id, request.activesId)
-    
 
     return Response(code = "200", message = f"Coleccion {_collection.name} editada", result = _collection).model_dump()
