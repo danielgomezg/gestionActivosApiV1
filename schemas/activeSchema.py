@@ -23,6 +23,7 @@ class ActiveSchema(BaseModel):
     photo4: Optional[str] = None
     office_id: int
     article_id: int
+    maintenance_days: Optional[int] = None
 
 class ActiveEditSchema(BaseModel):
     bar_code: str
@@ -43,3 +44,4 @@ class ActiveEditSchema(BaseModel):
     photo4: Optional[str] = None
     office_id: int
     article_id: int
+    maintenance_days: Optional[int] = None

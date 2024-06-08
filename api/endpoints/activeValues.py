@@ -59,8 +59,8 @@ def search_activeValues(search: str, db: Session = Depends(get_db), current_user
         return Response(code="404", result=[], message="Error al obtener activeValues").model_dump()
         
 
-@router.get("/active/values/{id}", response_model=ActiveValuesSchema)
-def get_activeValue(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
+@router.get("/active/values/{activo_id}")
+def get_activeValue(activo_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -71,10 +71,12 @@ def get_activeValue(id: int, db: Session = Depends(get_db), current_user_info: T
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
 
-    result = get_activeValues_by_id(db, id)
+    result = get_activeValues_by_id(db, activo_id)
     if result is None:
-        raise HTTPException(status_code=404, detail="activeValues no encontrada")
-    return result
+        # raise HTTPException(status_code=404, detail="activeValues no encontrada")
+        return Response(code="404", message="", result=result).model_dump()
+    
+    return Response(code="200", message="", result=result).model_dump()
 
 @router.get('/actives/values/search')
 def search_activeValues_by_vt_barcode(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):

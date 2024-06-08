@@ -95,9 +95,9 @@ def search_activeValues_all(db: Session, search: str, skip: int = 0, limit: int 
         return [], 0
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activeValues {e}")
 
-def get_activeValues_by_id(db: Session, activeValues_id: int):
+def get_activeValues_by_id(db: Session, activo_id: int):
     try:
-        result = db.query(ActiveValues).filter(ActiveValues.id == activeValues_id).first()
+        result = db.query(ActiveValues).filter(ActiveValues.active_id == activo_id).first()
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar activeValues {e}")

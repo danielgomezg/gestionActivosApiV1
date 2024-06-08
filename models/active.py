@@ -26,6 +26,8 @@ class Active(Base):
     photo3 = Column(String, nullable=True)
     photo4 = Column(String, nullable=True)
     creation_date = Column(Date, default=date.today, nullable=False)
+    maintenance_ref = Column(Date, default=date.today, nullable=False) # Referencia de mantenimiento
+    maintenance_days = Column(Integer, default=0, nullable=False) # Periodo de mantenimiento
     removed = Column(Integer, default=0, nullable=False)
 
     office_id = Column(Integer, ForeignKey('oficina.id'))

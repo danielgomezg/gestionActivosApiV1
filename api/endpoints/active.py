@@ -263,6 +263,9 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
 
         if(len(request.bar_code) == 0 and request.virtual_code == 'false'):
             return  Response(code = "400", message = "Código de activo fijo no válido", result = [])
+        
+        # if (request.maintenance_days < 10):
+        #     return Response(code="400", message="Días de mantenimiento no valido", result=[])
 
         if(request.virtual_code == 'false'):
 
@@ -339,6 +342,8 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
             if active_barcode and id is not active_barcode.id:
                 return Response(code="400", message="Codigo de barra ya ingresado", result=[])
 
+        # if (request.maintenance_days < 10):
+        #     return Response(code="400", message="Días de mantenimiento no valido", result=[])
    
         # Intenta convertir la fecha a un objeto date
         acquisition_date = date_parser.parse(str(request.acquisition_date)).date()

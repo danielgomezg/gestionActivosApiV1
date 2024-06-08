@@ -323,7 +323,9 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
             photo3=active.photo3,
             photo4=active.photo4,
             office_id=active.office_id,
-            article_id=active.article_id
+            article_id=active.article_id,
+            maintenance_ref=active.acquisition_date,
+            maintenance_days=active.maintenance_days
         )
         db.add(_active)
         db.commit()
@@ -369,6 +371,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
             active_to_edit.state = active.state
             active_to_edit.brand = active.brand
             active_to_edit.office_id = active.office_id
+            active_to_edit.maintenance_days = active.maintenance_days
 
             #Se elimina el archivo reemplazado del servidor
             if len(active_to_edit.accounting_document) > 0 and active_to_edit.accounting_document != active.accounting_document:
