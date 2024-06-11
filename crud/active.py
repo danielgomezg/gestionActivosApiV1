@@ -13,6 +13,7 @@ from models.office import Office
 from models.sucursal import Sucursal
 from models.article import Article
 from models.activeGroup_active import Active_GroupActive
+from datetime import date, datetime, timedelta
 import traceback
 from typing import List
 
@@ -139,6 +140,10 @@ def get_active_by_offices(db: Session, office_ids: List[int], limit: int = 100, 
             if count_articles > limit:
                 limit = count_articles
 
+        count = db.query(Active).filter(Active.office_id.in_(office_ids), Active.removed == 0).count()
+        if count == 0:
+            return [], count
+
         result = (
             db.query(Active)
             .filter(Active.office_id.in_(office_ids), Active.removed == 0)
@@ -149,7 +154,6 @@ def get_active_by_offices(db: Session, office_ids: List[int], limit: int = 100, 
             .all()
         )
 
-        count = db.query(Active).filter(Active.office_id.in_(office_ids), Active.removed == 0).count()
         return result, count
     except Exception as e:
         raise HTTPException(
@@ -179,13 +183,17 @@ def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offs
             if count_articles > limit:
                 limit = count_articles
 
+        count = db.query(Active).join(Office).join(Sucursal).filter(Sucursal.id == sucursal_id, Active.removed == 0).count()
+        if count == 0:
+            return [], count
+
         result = (db.query(Active).\
             join(Office).join(Sucursal).\
             filter(Sucursal.id == sucursal_id, Active.removed == 0).\
             options(joinedload(Active.article).joinedload(Article.category), joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)).order_by(Active.office_id).offset(offset).limit(limit).all())
 
-        count = db.query(Active).join(Office).join(Sucursal).filter(Sucursal.id == sucursal_id, Active.removed == 0).count()
         return result, count
+    
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
@@ -472,3 +480,37 @@ def delete_active(db: Session, active_id: int, name_user: str):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Activo con id {active_id} no encontrado")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando activo: {e}")
+
+def update_maintenance_ref(db: Session, active_id: int, maintenance_ref: date):
+    try:
+        active_to_edit = db.query(Active).filter(Active.id == active_id).first()
+        if active_to_edit:
+            active_to_edit.maintenance_ref = maintenance_ref
+            db.commit()
+
+            return active_to_edit
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activo no encontrado")
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando activo: {e}")
+    
+
+def maintenance_days_remaining(db: Session, actives):
+    for active in actives:
+        if active.maintenance_ref and active.maintenance_days:
+            days_since_last_maintenance = (datetime.now().date() - active.maintenance_ref).days
+            active.maintenance_days_remaining = active.maintenance_days - days_since_last_maintenance
+
+            # Si el tiempo de mantenimiento ha pasado, se establece maintenance_ref a la fecha ref anterior mas los dias de mantenimiento
+            if active.maintenance_days_remaining < 0:
+                _maintenance_ref = active.maintenance_ref + timedelta(days=active.maintenance_days)
+                # update_maintenance_ref(db, active.id, _maintenance_ref)
+                # continue
+
+        else:
+            active.maintenance_days_remaining = None
+
+    return actives
+    

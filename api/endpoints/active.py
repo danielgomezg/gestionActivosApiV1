@@ -4,9 +4,9 @@ from models.article import validateArticleFromFile2
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query, Header
 from sqlalchemy.orm import Session
 from database import get_db, conexion
-from crud.active import (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
+from crud.active import  (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
                          get_active_by_office, get_active_by_offices, count_active, get_active_by_article_and_barcode, search_active_sucursal, search_active_offices,
-                         get_image_url, generate_short_unique_id, get_active_by_virtual_code, get_active_all_codes, search_active)
+                         get_image_url, generate_short_unique_id, get_active_by_virtual_code, get_active_all_codes, search_active, maintenance_days_remaining)
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from schemas.articleSchema import ArticleSchema
 from schemas.schemaGenerico import Response, ResponseGet
@@ -139,6 +139,8 @@ def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), curr
     id_offices_list = id_offices.split(",")
     id_offices_int = [int(id_office) for id_office in id_offices_list]
     result, count = get_active_by_offices(db, id_offices_int, limit, offset)
+    result = maintenance_days_remaining(db, result)
+
     if not result:
         return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
@@ -156,6 +158,8 @@ def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), cu
         return Response(code="401", message="token-exp", result=[])
 
     result, count = get_active_by_sucursal(db, sucursal_id, limit, offset)
+    result = maintenance_days_remaining(db, result)
+
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get('/active/search/codes')
