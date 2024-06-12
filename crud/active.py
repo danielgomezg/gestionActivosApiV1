@@ -487,7 +487,7 @@ def update_maintenance_ref(db: Session, active_id: int, maintenance_ref: date):
         if active_to_edit:
             active_to_edit.maintenance_ref = maintenance_ref
             db.commit()
-
+            db.refresh(active_to_edit)
             return active_to_edit
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activo no encontrado")
@@ -506,11 +506,8 @@ def maintenance_days_remaining(db: Session, actives):
             # Si el tiempo de mantenimiento ha pasado, se establece maintenance_ref a la fecha ref anterior mas los dias de mantenimiento
             if active.maintenance_days_remaining < 0:
                 _maintenance_ref = active.maintenance_ref + timedelta(days=active.maintenance_days)
-                # update_maintenance_ref(db, active.id, _maintenance_ref)
-                # continue
-
-        else:
-            active.maintenance_days_remaining = None
-
+                _active_up = update_maintenance_ref(db, active.id, _maintenance_ref)
+                active = _active_up
+                
     return actives
     
