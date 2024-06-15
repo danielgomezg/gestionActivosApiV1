@@ -17,6 +17,7 @@ def get_activeGroup_all(db: Session, skip: int = 0, limit: int = 100):
             db.query(ActiveGroup, func.count(Active_GroupActive.active_id).label('count'))
             .join(Active_GroupActive, ActiveGroup.id == Active_GroupActive.activeGroup_id)
             .group_by(ActiveGroup.id)
+            .order_by(ActiveGroup.id)
             .offset(skip)
             .limit(limit)
             .all()
