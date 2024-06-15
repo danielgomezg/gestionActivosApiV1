@@ -5,7 +5,6 @@ from datetime import date
 T = TypeVar('T')
 
 class ActiveSchema(BaseModel):
-    #id: Optional[int] = None
     bar_code: str
     virtual_code: Optional[str] = None
     comment: Optional[str] = None
@@ -22,9 +21,9 @@ class ActiveSchema(BaseModel):
     photo2: Optional[str] = None
     photo3: Optional[str] = None
     photo4: Optional[str] = None
-    #creation_date: date
     office_id: int
     article_id: int
+    maintenance_days: Optional[int] = None
 
 class ActiveEditSchema(BaseModel):
     bar_code: str
@@ -43,6 +42,6 @@ class ActiveEditSchema(BaseModel):
     photo2: Optional[str] = None
     photo3: Optional[str] = None
     photo4: Optional[str] = None
-    #creation_date: datetime
     office_id: int
     article_id: int
+    maintenance_days: Optional[int] = None

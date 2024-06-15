@@ -130,7 +130,7 @@ def get_history_por_active(id_active: int, db: Session = Depends(get_db), curren
 #     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 
-@router.post('/action')
+@router.post('/history')
 def create(request: HistorySchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
     name_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)

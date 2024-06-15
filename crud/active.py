@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
-from sqlalchemy import func
+from sqlalchemy import func, select
 from models.active import Active
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy import desc
@@ -12,12 +12,33 @@ from pathlib import Path
 from models.office import Office
 from models.sucursal import Sucursal
 from models.article import Article
+from models.activeGroup_active import Active_GroupActive
+from datetime import date, datetime, timedelta
 import traceback
 from typing import List
 
 #historial
 from schemas.historySchema import HistorySchema
 from crud.history import create_history
+
+def get_active_all_codes(db: Session, skip: int = 0, limit: int = 100):
+    try:
+        subquery = db.query(Active_GroupActive.active_id).subquery()
+        count = db.query(Active).filter(Active.removed == 0, Active.id.notin_(subquery)).count()
+        result = db.query(Active.id, Active.bar_code, Active.virtual_code).filter(Active.removed == 0, Active.id.notin_(subquery)).all()
+        # Convertir los objetos Active en diccionarios
+        result_dict = [
+            {
+                "id": id,
+                "bar_code": bar_code,
+                "virtual_code": virtual_code
+            }
+            for id, bar_code, virtual_code in result
+        ]
+        return result_dict, count
+    except Exception as e:
+        return [], 0
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activeValues {e}")
 
 def get_active_by_id(db: Session, active_id: int):
     try:
@@ -44,6 +65,40 @@ def get_actives_all_android(db: Session):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activo {e}")
+
+
+def search_active(db: Session, search: str, limit: int = 100, offset: int = 0):
+    try:
+        subquery = select(db.query(Active_GroupActive.active_id).subquery())
+
+        count = db.query(Active). \
+            filter(
+            Active.removed == 0,
+            Active.id.notin_(subquery),
+            (
+                    func.lower(Active.bar_code).like(f"%{search}%") |
+                    func.lower(Active.virtual_code).like(f"%{search}%")
+            )).count()
+
+        if count == 0:
+            return [], count
+
+        query = db.query(Active). \
+            filter(
+            Active.removed == 0,
+            Active.id.notin_(subquery),
+            (
+                func.lower(Active.bar_code).like(f"%{search}%") |
+                func.lower(Active.virtual_code).like(f"%{search}%")
+            )
+        ).offset(offset).limit(limit).all()
+
+        return query, count
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f"Error al buscar activos por codigo virtual y barcode {e}")
+
 
 def get_active_by_article_and_barcode(db: Session, article_id: int, bar_code: str, limit: int = 100, offset: int = 0):
     try:
@@ -85,6 +140,10 @@ def get_active_by_offices(db: Session, office_ids: List[int], limit: int = 100, 
             if count_articles > limit:
                 limit = count_articles
 
+        count = db.query(Active).filter(Active.office_id.in_(office_ids), Active.removed == 0).count()
+        if count == 0:
+            return [], count
+
         result = (
             db.query(Active)
             .filter(Active.office_id.in_(office_ids), Active.removed == 0)
@@ -95,7 +154,6 @@ def get_active_by_offices(db: Session, office_ids: List[int], limit: int = 100, 
             .all()
         )
 
-        count = db.query(Active).filter(Active.office_id.in_(office_ids), Active.removed == 0).count()
         return result, count
     except Exception as e:
         raise HTTPException(
@@ -125,13 +183,17 @@ def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offs
             if count_articles > limit:
                 limit = count_articles
 
+        count = db.query(Active).join(Office).join(Sucursal).filter(Sucursal.id == sucursal_id, Active.removed == 0).count()
+        if count == 0:
+            return [], count
+
         result = (db.query(Active).\
             join(Office).join(Sucursal).\
             filter(Sucursal.id == sucursal_id, Active.removed == 0).\
             options(joinedload(Active.article).joinedload(Article.category), joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)).order_by(Active.office_id).offset(offset).limit(limit).all())
 
-        count = db.query(Active).join(Office).join(Sucursal).filter(Sucursal.id == sucursal_id, Active.removed == 0).count()
         return result, count
+    
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
@@ -245,7 +307,6 @@ def get_image_url(file: UploadFile, upload_folder: Path) -> str:
         file_path = upload_folder / filename_with_uuid
         with open(file_path, "wb") as image_file:
             shutil.copyfileobj(file.file, image_file)
-        # photo_url = f"http://127.0.0.1:9000/files/images_article/{filename_with_uuid}"
         return filename_with_uuid
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar la imagen: {e}")
@@ -270,7 +331,9 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
             photo3=active.photo3,
             photo4=active.photo4,
             office_id=active.office_id,
-            article_id=active.article_id
+            article_id=active.article_id,
+            maintenance_ref=active.acquisition_date,
+            maintenance_days=active.maintenance_days
         )
         db.add(_active)
         db.commit()
@@ -287,7 +350,6 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
             "office_id": _active.office_id,
             "name_user": name_user,
             "company_id": id_company
-            #"current_session_user_id": id_user
         }
 
         create_history(db, HistorySchema(**history_params))
@@ -317,6 +379,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
             active_to_edit.state = active.state
             active_to_edit.brand = active.brand
             active_to_edit.office_id = active.office_id
+            active_to_edit.maintenance_days = active.maintenance_days
 
             #Se elimina el archivo reemplazado del servidor
             if len(active_to_edit.accounting_document) > 0 and active_to_edit.accounting_document != active.accounting_document:
@@ -380,7 +443,6 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
                 "office_id": active_to_edit.office_id,
                 "name_user": name_user,
                 "company_id": id_company
-                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 
@@ -410,7 +472,6 @@ def delete_active(db: Session, active_id: int, name_user: str):
                 "office_id": active_to_delete.office_id,
                 "name_user": name_user,
                 "company_id": id_company
-                #"current_session_user_id": id_user
             }
             create_history(db, HistorySchema(**history_params))
 
@@ -419,3 +480,34 @@ def delete_active(db: Session, active_id: int, name_user: str):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Activo con id {active_id} no encontrado")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error eliminando activo: {e}")
+
+def update_maintenance_ref(db: Session, active_id: int, maintenance_ref: date):
+    try:
+        active_to_edit = db.query(Active).filter(Active.id == active_id).first()
+        if active_to_edit:
+            active_to_edit.maintenance_ref = maintenance_ref
+            db.commit()
+            db.refresh(active_to_edit)
+            return active_to_edit
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activo no encontrado")
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando activo: {e}")
+    
+
+def maintenance_days_remaining(db: Session, actives):
+    for active in actives:
+        if active.maintenance_ref and active.maintenance_days:
+            days_since_last_maintenance = (datetime.now().date() - active.maintenance_ref).days
+            active.maintenance_days_remaining = active.maintenance_days - days_since_last_maintenance
+
+            # Si el tiempo de mantenimiento ha pasado, se establece maintenance_ref a la fecha ref anterior mas los dias de mantenimiento
+            if active.maintenance_days_remaining < 0:
+                _maintenance_ref = active.maintenance_ref + timedelta(days=active.maintenance_days)
+                _active_up = update_maintenance_ref(db, active.id, _maintenance_ref)
+                active = _active_up
+                
+    return actives
+    

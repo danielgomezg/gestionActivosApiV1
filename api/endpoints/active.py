@@ -4,9 +4,9 @@ from models.article import validateArticleFromFile2
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query, Header
 from sqlalchemy.orm import Session
 from database import get_db, conexion
-from crud.active import (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
+from crud.active import  (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
                          get_active_by_office, get_active_by_offices, count_active, get_active_by_article_and_barcode, search_active_sucursal, search_active_offices,
-                         get_image_url, generate_short_unique_id, get_active_by_virtual_code)
+                         get_image_url, generate_short_unique_id, get_active_by_virtual_code, get_active_all_codes, search_active, maintenance_days_remaining)
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from schemas.articleSchema import ArticleSchema
 from schemas.schemaGenerico import Response, ResponseGet
@@ -43,6 +43,31 @@ def get_active(id: int, db: Session = Depends(get_db), current_user_info: Tuple[
     if result is None:
         return Response(code= "404", result = [], message="Not found").model_dump()
     return Response(code= "200", result = result, message="Activo no encontrado").model_dump()
+
+@router.get('/actives/values/codes')
+def get_all_actives_codes(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+    try:
+        name_user, expiration_time = current_user_info
+
+        db = next(conexion(db, companyId))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+        print("+++++")
+        result, count = get_active_all_codes(db)
+        print(count)
+        print(result)
+        if not result:
+            return ResponseGet(code="404", result=[], limit=limit, offset=offset, count=0).model_dump()
+
+        return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
+
+    except Exception as e:
+        return Response(code="404", result=[], message="Error al obtener activeValues").model_dump()
+
 
 @router.get('/actives')
 def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current),limit: int = 25, offset: int = 0, companyId: int = Header(None)):
@@ -114,6 +139,8 @@ def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), curr
     id_offices_list = id_offices.split(",")
     id_offices_int = [int(id_office) for id_office in id_offices_list]
     result, count = get_active_by_offices(db, id_offices_int, limit, offset)
+    result = maintenance_days_remaining(db, result)
+
     if not result:
         return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
@@ -131,7 +158,26 @@ def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), cu
         return Response(code="401", message="token-exp", result=[])
 
     result, count = get_active_by_sucursal(db, sucursal_id, limit, offset)
+    result = maintenance_days_remaining(db, result)
+
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
+
+@router.get('/active/search/codes')
+def search_by_vt_barcode(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
+    # Se valida la expiracion del token
+    if expiration_time is None:
+        return Response(code="401", message="token-exp", result=[])
+
+    result, count = search_active(db, search, limit, offset)
+    if not result:
+        return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
+    return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 
 @router.get('/active/search/sucursal/{sucursal_id}')
@@ -221,6 +267,9 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
 
         if(len(request.bar_code) == 0 and request.virtual_code == 'false'):
             return  Response(code = "400", message = "Código de activo fijo no válido", result = [])
+        
+        # if (request.maintenance_days < 10):
+        #     return Response(code="400", message="Días de mantenimiento no valido", result=[])
 
         if(request.virtual_code == 'false'):
 
@@ -288,14 +337,17 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
         if expiration_time is None:
             return Response(code="401", message="token-exp", result=[])
 
-        if (len(request.bar_code) == 0):
-            return Response(code="400", message="codigo de barra no valido", result=[])
+        if (len(request.bar_code) == 0 and request.virtual_code == ""):
+            return Response(code="400", message="Código de activo fijo no válido", result=[])
 
         # valida si existe un codigo de barra con el mismo numero dentro de los articulos
-        active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
-        if active_barcode and id is not active_barcode.id:
-            return Response(code="400", message="Codigo de barra ya ingresado", result=[])
+        if (len(request.bar_code) > 0):
+            active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+            if active_barcode and id is not active_barcode.id:
+                return Response(code="400", message="Codigo de barra ya ingresado", result=[])
 
+        # if (request.maintenance_days < 10):
+        #     return Response(code="400", message="Días de mantenimiento no valido", result=[])
    
         # Intenta convertir la fecha a un objeto date
         acquisition_date = date_parser.parse(str(request.acquisition_date)).date()
@@ -303,20 +355,6 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
         # Verificar el formato específico
         if acquisition_date.strftime('%Y-%m-%d') != str(request.acquisition_date):
             return Response(code="400", message="Formato de fecha de adquisición no válido (debe ser YYYY-MM-DD)", result=[])
-
-        #if (len(request.accounting_document) == 0):
-            #return Response(code="400", message="Documento de adquisición no valido", result=[])
-
-        #if (len(request.accounting_record_number) == 0):
-            #return Response(code="400", message="Numero registro contable no valido", result=[])
-
-        #if (len(request.name_in_charge_active) == 0):
-            #return Response(code="400", message="Nombre del responsable no valido", result=[])
-
-        #patron_rut = r'^\d{1,8}-[\dkK]$'
-        #rut = str(request.rut_in_charge_active.replace(".", ""))
-        #if not re.match(patron_rut, rut):
-            #return Response(code="400", message="Rut del responsable inválido", result=[])
 
         if (len(request.serie) == 0):
             return Response(code="400", message="Número de serie no valido", result=[])

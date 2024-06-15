@@ -7,21 +7,9 @@ import json
 #logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 from fastapi.responses import JSONResponse
 
-from api.endpoints import user
-from api.endpoints import company
-from api.endpoints import profile
-from api.endpoints import office
-from api.endpoints import sucursal
-from api.endpoints import action
-from api.endpoints import profileAction
-from api.endpoints import article
-from api.endpoints import active
-from api.endpoints import history
-from api.endpoints import generation_catalogo
-from api.endpoints import category
-from api.endpoints import data_android
-from api.endpoints import active_teorico
-from api.endpoints import report_conciliacion
+from api.endpoints import (user, company, profile, office, sucursal, action, profileAction,
+                           article, active, history, generation_catalogo, category, data_android, active_teorico,
+                           report_conciliacion, activeGroup, activeValues, activeGroup_active)
 
 #cors
 from fastapi.middleware.cors import CORSMiddleware
@@ -196,3 +184,6 @@ app.include_router(generation_catalogo.router)
 app.include_router(data_android.router)
 app.include_router(active_teorico.router)
 app.include_router(report_conciliacion.router)
+app.include_router(activeValues.router)
+app.include_router(activeGroup_active.router)
+app.include_router(activeGroup.router)
