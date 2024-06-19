@@ -54,7 +54,7 @@ def get_sucursal(id: int, db: Session = Depends(get_db), current_user_info: Tupl
     return Response(code= "200", result = result, message="Sucursal encontrado").model_dump()
 
 @router.get("/sucursalPorCompany/{id_company}")
-def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 100, offset: int = 0):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, id_company))
