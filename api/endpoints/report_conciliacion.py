@@ -108,11 +108,11 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
         worksheet.write('C4', 'Cliente', formato_sub_titulo_2)
         worksheet.merge_range('D4:E4', f'{company.name.upper()}', formato_sub_titulo)
         worksheet.write('C5', 'Fecha', formato_sub_titulo_2)
-        worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
+        worksheet.merge_range('D5:F5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Código activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado",
-                 "Rut encargado", "Cod. articulo", "Categoría", "Oficina"]
+        datos = ["Sucursal", "Oficina", "Código activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado",
+                 "Rut encargado", "Cod. articulo", "Categoría"]
 
         start_table = 7
 
@@ -146,10 +146,9 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
 
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
-            for col, value in enumerate([active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
+            for col, value in enumerate([active.office.sucursal.number + " - " + active.office.sucursal.description, str(active.office.floor) + " - " + active.office.description, active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active,
-                                         active.rut_in_charge_active, str(active.article.code), active.article.category.description,
-                                         str(active.office.floor) + " - " + active.office.description]):
+                                         active.rut_in_charge_active, str(active.article.code), active.article.category.description]):
                 width_column[col] = max(width_column[col], len(value))
                 worksheet.write(row + start_table, col, value, formato_datos)
 
@@ -238,7 +237,7 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
 
             # Crear y configurar la tabla
             table_data = [
-                ["Cod. activo", "Marca", "Modelo", "Serie", "F. Adquisición", "N. registro", "Estado", "Encargado", "Cod. articulo", "Categoría", "Oficina"]]
+                ["Sucursal" ,"Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "F. Adquisición", "N. registro", "Estado", "Cod. articulo", "Categoría"]]
 
             page_number = 1
             #comienzo primera pag
@@ -261,6 +260,8 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
                     #eje_y_table = height - 100
 
                 table_data.append([
+                    active.office.sucursal.number + " - " + active.office.sucursal.description,
+                    str(active.office.floor) + " - " + active.office.description,
                     active.bar_code,
                     active.brand,
                     active.model,
@@ -268,10 +269,9 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
                     str(active.acquisition_date),
                     active.accounting_record_number,
                     active.state,
-                    active.name_in_charge_active,
+                    #active.name_in_charge_active,
                     active.article.code,
-                    active.article.category.description,
-                    str(active.office.floor) + " - " + active.office.description
+                    active.article.category.description
                 ])
 
             # CAmbia eje y si no es la primera pag
@@ -561,6 +561,7 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
 
         company = get_company_by_id(db, companyId)
         actives = get_actives_surplus(db)
+        print(actives[0].office.sucursal.number)
 
         chile_timezone = pytz.timezone('Chile/Continental')
         now = datetime.now(chile_timezone)
@@ -635,11 +636,11 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
         worksheet.write('C4', 'Cliente', formato_sub_titulo_2)
         worksheet.merge_range('D4:E4', f'{company.name.upper()}', formato_sub_titulo)
         worksheet.write('C5', 'Fecha', formato_sub_titulo_2)
-        worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
+        worksheet.merge_range('D5:F5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "N. de registro", "Estado", "Encargado",
-                 "Rut encargado", "Cod. articulo", "Categoría", "Oficina"]
+        datos = ["Sucursal", "Oficina","Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "N. de registro", "Estado", "Encargado",
+                 "Rut encargado", "Cod. articulo", "Categoría"]
 
         start_table = 7
 
@@ -673,10 +674,9 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
 
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
-            for col, value in enumerate([active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
+            for col, value in enumerate([active.office.sucursal.number + " - " + active.office.sucursal.description, str(active.office.floor) + " - " + active.office.description, active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active,
-                                         active.rut_in_charge_active, str(active.article.code), active.article.category.description,
-                                         str(active.office.floor) + " - " + active.office.description]):
+                                         active.rut_in_charge_active, str(active.article.code), active.article.category.description]):
                 width_column[col] = max(width_column[col], len(value))
                 worksheet.write(row + start_table, col, value, formato_datos)
 
@@ -764,7 +764,7 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
 
             # Crear y configurar la tabla
             table_data = [
-                ["C. activo", "Marca", "Modelo", "Serie", "F. Adquisición", "N. registro", "Estado", "Encargado", "C. articulo", "Categoría", "Oficina"]]
+                ["Sucursal", "Oficina", "C. activo", "Marca", "Modelo", "Serie", "F. Adquisición", "N. registro", "Estado", "C. articulo", "Categoría"]]
 
             page_number = 1
             #comienzo primera pag
@@ -786,6 +786,8 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
                     #eje_y_table = height - 100
 
                 table_data.append([
+                    str(active.office.floor) + " - " + active.office.description,
+                    active.office.sucursal.number + " - " + active.office.sucursal.description,
                     active.bar_code,
                     active.brand,
                     active.model,
@@ -793,10 +795,9 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
                     str(active.acquisition_date),
                     active.accounting_record_number,
                     active.state,
-                    active.name_in_charge_active,
+                    #active.name_in_charge_active,
                     active.article.code,
-                    active.article.category.description,
-                    str(active.office.floor) + " - " + active.office.description
+                    active.article.category.description
                 ])
 
             # CAmbia eje y si no es la primera pag

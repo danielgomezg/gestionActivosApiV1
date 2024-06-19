@@ -192,7 +192,7 @@ def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
 def login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     _user = authenticate_user(form_data.username, form_data.password, db)
     if(_user):
-        access_token_expires = timedelta(minutes=180)
+        access_token_expires = timedelta(minutes=360)
         user_id = str(_user.id)
 
         additional_info = {

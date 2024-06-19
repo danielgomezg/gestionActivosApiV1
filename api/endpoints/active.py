@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Query, 
 from sqlalchemy.orm import Session
 from database import get_db, conexion
 from crud.active import  (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
-                         get_active_by_office, get_active_by_offices, count_active, get_active_by_article_and_barcode, search_active_sucursal, search_active_offices,
+                         get_active_by_office, get_active_by_offices, count_active, get_active_by_barcode, search_active_sucursal, search_active_offices,
                          get_image_url, generate_short_unique_id, get_active_by_virtual_code, get_active_all_codes, search_active, maintenance_days_remaining)
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from schemas.articleSchema import ArticleSchema
@@ -68,7 +68,6 @@ def get_all_actives_codes(db: Session = Depends(get_db), current_user_info: Tupl
     except Exception as e:
         return Response(code="404", result=[], message="Error al obtener activeValues").model_dump()
 
-
 @router.get('/actives')
 def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current),limit: int = 25, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
@@ -122,7 +121,6 @@ def get_active_por_office(id_office: int, db: Session = Depends(get_db), current
     if not result:
         return ResponseGet(code= "200", result = [], limit= limit, offset = offset, count = 0).model_dump()
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
-
 
 @router.get("/active/offices/{id_offices}")
 def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
@@ -178,7 +176,6 @@ def search_by_vt_barcode(search: str, db: Session = Depends(get_db), current_use
     if not result:
         return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
-
 
 @router.get('/active/search/sucursal/{sucursal_id}')
 def search_by_sucursal(sucursal_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
@@ -247,7 +244,6 @@ def upload_image(file: UploadFile = File(...), current_user_info: Tuple[str, str
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al procesar la imagen: {e}")
 
-
 @router.post('/active')
 def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
@@ -267,14 +263,14 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
 
         if(len(request.bar_code) == 0 and request.virtual_code == 'false'):
             return  Response(code = "400", message = "Código de activo fijo no válido", result = [])
-        
+
         # if (request.maintenance_days < 10):
         #     return Response(code="400", message="Días de mantenimiento no valido", result=[])
 
-        if(request.virtual_code == 'false'):
+        if(request.virtual_code == 'false' or request.virtual_code == ""):
 
             # valida si existe un codigo de barra con el mismo numero dentro de los articulos
-            active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+            active_barcode = get_active_by_barcode(db, request.bar_code)
             request.virtual_code = ""
             if active_barcode:
                 return Response(code="400", message="Código de activo fijo ya ingresado", result=[])
@@ -348,7 +344,7 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
 
         # if (request.maintenance_days < 10):
         #     return Response(code="400", message="Días de mantenimiento no valido", result=[])
-   
+
         # Intenta convertir la fecha a un objeto date
         acquisition_date = date_parser.parse(str(request.acquisition_date)).date()
 

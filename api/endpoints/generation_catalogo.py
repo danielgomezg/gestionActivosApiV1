@@ -19,7 +19,7 @@ from crud.generation_catalogo import (draw_multiline_text, portada_catalogo, gen
                                       calculator_space_article, next_page)
 from crud.article import get_article_by_id_company
 from crud.company import get_company_by_id
-from crud.active import get_active_by_sucursal, get_active_by_offices
+from crud.active import get_active_by_sucursal, get_active_by_offices, get_active_by_company
 
 router = APIRouter()
 
@@ -380,7 +380,7 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
                 print(f"No se pudo cargar la imagen para la portada: {e}")
 
             # Crear y configurar la tabla
-            table_data = [["C. activo","Marca", "Modelo", "Serie", "F. adquisición", "N. registro","Estado", "Encargado", "C. articulo", "Categoría", "Oficina"]]
+            table_data = [["Oficina", "C. activo","Marca", "Modelo", "Serie", "F. adquisición", "N. registro","Estado", "Encargado", "C. articulo", "Categoría"]]
 
             #y_position = 700
             page_number = 1
@@ -404,6 +404,7 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
                     eje_y_table = height - 100
 
                 table_data.append([
+                    str(active.office.floor) + " - " + active.office.description,
                     active.bar_code,
                     active.brand,
                     active.model,
@@ -414,8 +415,7 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
                     active.name_in_charge_active,
                     #active.rut_in_charge_active,
                     active.article.code,
-                    active.article.category.description,
-                    str(active.office.floor) + " - " + active.office.description
+                    active.article.category.description
                 ])
 
             # CAmbia eje y si no es la primera pag
@@ -503,8 +503,8 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
                 print(f"No se pudo cargar la imagen para la portada: {e}")
 
             # Crear y configurar la tabla
-            table_data = [["C. activo", "Marca", "Modelo", "Serie", "F. adquisición", "N. registro", "Estado",
-                           "Encargado", "Cod. articulo", "Categoría", "Oficina"]]
+            table_data = [["Oficina", "C. activo", "Marca", "Modelo", "Serie", "F. adquisición", "N. registro", "Estado",
+                           "Encargado", "Cod. articulo", "Categoría"]]
 
             page_number = 1
             cant_items = 0
@@ -527,6 +527,7 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
                     eje_y_table = height - 100
 
                 table_data.append([
+                    str(active.office.floor) + " - " + active.office.description,
                     active.bar_code,
                     active.brand,
                     active.model,
@@ -538,7 +539,7 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
                     #active.rut_in_charge_active,
                     active.article.code,
                     active.article.category.description,
-                    str(active.office.floor) + " - " + active.office.description
+
                 ])
 
             # CAmbia eje y si no es la primera pag
@@ -638,7 +639,7 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
         worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Cod. articulo", "Categoría", "Oficina"]
+        datos = ["Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Cod. articulo", "Categoría"]
 
         start_table = 7
 
@@ -672,9 +673,9 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
 
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
-            for col, value in enumerate([active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
+            for col, value in enumerate([str(active.office.floor) + " - " + active.office.description, active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active, str(active.article.code),
-                                         active.article.category.description, str(active.office.floor) + " - " + active.office.description]):
+                                         active.article.category.description]):
 
                 width_column[col] = max(width_column[col], len(value))
                 worksheet.write(row + start_table, col, value, formato_datos)
@@ -775,7 +776,7 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
         worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Cod. articulo", "Categoría", "Oficina"]
+        datos = ["Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Cod. articulo", "Categoría"]
 
         start_table = 7
 
@@ -809,9 +810,9 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
 
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
-            for col, value in enumerate([active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
+            for col, value in enumerate([str(active.office.floor) + " - " + active.office.description, active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active, str(active.article.code),
-                                         active.article.category.description, str(active.office.floor) + " - " + active.office.description]):
+                                         active.article.category.description]):
 
                 width_column[col] = max(width_column[col], len(value))
                 worksheet.write(row + start_table, col, value, formato_datos)
@@ -829,3 +830,247 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/report/excel/active/company/{id_company}")
+def actives_catalog_company_excel(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    try:
+        name_user, expiration_time = current_user_info
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+
+        db = next(conexion(db, id_company))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
+        # Lógica para obtener los detalles de los artículos
+        actives, count = get_active_by_company(db, adjust_limit=True)
+        company = actives[0].office.sucursal.company
+
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
+        date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Lógica para generar el catálogo Excel
+        excel_filename = f'catalogo_{company.name.upper()}.xlsx'
+        excel_path = os.path.join('Generations_files', excel_filename)
+
+        # Crear un libro de trabajo y una hoja de trabajo
+        workbook = xlsxwriter.Workbook(excel_path)
+        worksheet = workbook.add_worksheet()
+
+        # Configurar la ruta de la imagen
+        imagen_path = "images-sca/sca-2.jpeg"
+        factor_x = 0.3
+        factor_y = 0.3
+
+        try:
+            # Insertar la imagen en la hoja de trabajo
+            worksheet.insert_image('G2', imagen_path, {'x_offset': 15, 'y_offset': 10, 'x_scale': factor_x, 'y_scale': factor_y})
+        except Exception as e:
+            print(f"No se pudo cargar la imagen para la portada: {e}")
+
+        #ancho por defecto de las filas
+        worksheet.set_default_row(18)
+
+        # Configurar un formato para el título con la fuente Helvetica
+        formato_titulo = workbook.add_format({
+            'bold': True,
+            'align': 'center',
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',
+            'font_size': 18,
+        })
+
+        worksheet.set_row(1, 25)
+        # Escribir el título en una celda específica
+        worksheet.merge_range('B2:E2', ' Catálogo de activos ', formato_titulo)
+
+        formato_sub_titulo = workbook.add_format({
+            'align': 'left',
+            'indent': 1,
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',
+            'font_size': 13,
+        })
+
+        formato_sub_titulo_2 = workbook.add_format({
+            'align': 'right',
+            'indent': 1,
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',
+            'font_size': 13,
+        })
+
+        worksheet.merge_range('B3:C3', 'Cliente', formato_sub_titulo_2)
+        worksheet.merge_range('D3:E3', f'{company.name.upper()}', formato_sub_titulo)
+        worksheet.merge_range('B4:C4', 'Fecha', formato_sub_titulo_2)
+        worksheet.merge_range('D4:E4', f'{date_time}', formato_sub_titulo)
+
+        # Datos a escribir en el archivo Excel
+        datos = ["Sucursal", "Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Cod. articulo", "Categoría"]
+
+        start_table = 7
+
+        # Configurar un formato para los encabezados
+        formato_encabezado = workbook.add_format({
+            'bold': True,
+            'align': 'center',
+            'valign': 'vcenter',
+            'bg_color': '#D3D3D3',
+            'font_name': 'Helvetica',
+            'font_size': 11,
+            'border': 1
+        })
+
+        # Escribir los encabezados en la primera fila
+        for col, encabezado in enumerate(datos):
+            worksheet.write(start_table, col, encabezado, formato_encabezado)
+
+        # Configurar un formato para los datos
+        formato_datos = workbook.add_format({
+            'align': 'center',
+            'valign': 'vcenter',
+            'font_name': 'Helvetica',
+            'font_size': 9
+        })
+
+        # Escribir los datos en el resto de las filas
+        width_column = [0] * len(datos)
+        for index, value in enumerate(datos):
+            width_column[index] = len(value)
+
+        # Escribir los datos desde la base de datos en el resto de las filas
+        for row, active in enumerate(actives, start=1):
+            for col, value in enumerate([active.office.sucursal.number + " - " + active.office.sucursal.description, str(active.office.floor) + " - " + active.office.description, active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
+                                         active.accounting_record_number, active.state, active.name_in_charge_active, str(active.article.code),
+                                         active.article.category.description]):
+
+                width_column[col] = max(width_column[col], len(value))
+                worksheet.write(row + start_table, col, value, formato_datos)
+
+        # Ajustar automáticamente el ancho de las columnas después de escribir los datos
+        for index, col in enumerate(width_column):
+            worksheet.set_column(index, index, width_column[index] + 3)
+
+        # Cerrar el libro de trabajo (guardará el archivo)
+        workbook.close()
+
+        # Devolver el archivo Excel usando FileResponse
+        return FileResponse(excel_path, filename=excel_filename,
+                            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/report/active/company/{id_company}")
+def actives_catalog_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):
+    try:
+        name_user, expiration_time = current_user_info
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+
+        db = next(conexion(db, id_company))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
+        # Lógica para obtener los detalles de los artículos (por ejemplo, desde una base de datos)
+        actives, count = get_active_by_company(db, adjust_limit=True)
+        company = actives[0].office.sucursal.company
+
+        #while len(actives) < 55:
+            #actives.extend(copy.deepcopy(actives))
+
+        #Fecha y hora
+        chile_timezone = pytz.timezone('Chile/Continental')
+        now = datetime.now(chile_timezone)
+        date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
+
+        # Lógica para generar el catálogo PDF con ReportLab
+        ruta_temporal = os.path.abspath("Generations_files/catalogo_reportlab.pdf")
+        os.makedirs(os.path.dirname(ruta_temporal), exist_ok=True)
+
+        custom_page_size = (816, 1056)
+
+        with (open(ruta_temporal, 'wb') as f):
+            pdf = canvas.Canvas(f, pagesize=landscape(letter))
+
+            width, height = pdf._pagesize
+            print(f"Ancho del PDF: {width}, Alto del PDF: {height}")
+
+            pdf.setTitle(f"Catálogo de Activos de {company.name.upper()}")
+
+            # Dibujar un rectángulo
+            ancho_rect = width - 100
+            alto_rect = 100
+            eje_y = height - (alto_rect + 16)
+            pdf.setLineWidth(1.5)
+            pdf.rect(50, eje_y, ancho_rect, alto_rect)
+
+            # Agregamos el título al PDF
+            pdf.setFont("Helvetica-Bold", 16)
+            pdf.drawString(70, eje_y + 75, f"Catálogo de activos")
+
+            pdf.setFont("Helvetica", 12)
+            pdf.drawString(70, eje_y + 55, f"Cliente")
+            pdf.drawString(145, eje_y + 55, f"{company.name.upper()}")
+
+            image_path = "images-sca/sca-2.jpeg"
+            try:
+                image = ImageReader(image_path)
+                pdf.drawImage(image, x=592, y=eje_y - 10, width=140, height=140, preserveAspectRatio=True)
+            except Exception as e:
+                print(f"No se pudo cargar la imagen para la portada: {e}")
+
+            # Crear y configurar la tabla
+            table_data = [["Sucursal", "Oficina", "C. activo","Marca", "Modelo", "Serie", "F. adquisición", "N. registro","Estado", "C. articulo", "Categoría"]]
+
+            page_number = 1
+            # Iteramos sobre los artículos y los agregamos al PDF
+            eje_y_table = eje_y - 40
+            for i, active in enumerate(actives, start=1):
+
+                if ((eje_y_table - (20 * len(table_data))) < 80 and i < len(actives)):
+                    if (page_number == 1):
+                        draw_table(pdf, table_data, eje_y_table, 35)
+                    else:
+                        draw_table(pdf, table_data, height - 50, 35)
+                    pdf.setFont("Helvetica", 8)
+                    pdf.drawRightString(755, 30, f"Página {page_number}")
+                    pdf.drawString(25, 30, f"{date_time}")
+                    pdf.showPage()
+                    table_data = [table_data[0]]
+                    page_number += 1
+                    eje_y_table = height - 100
+
+                table_data.append([
+                    active.office.sucursal.number + " - " + active.office.sucursal.description,
+                    str(active.office.floor) + " - " + active.office.description,
+                    active.bar_code,
+                    active.brand,
+                    active.model,
+                    active.serie,
+                    str(active.acquisition_date),
+                    active.accounting_record_number,
+                    active.state,
+                    active.article.code,
+                    active.article.category.description
+                ])
+
+            # CAmbia eje y si no es la primera pag
+            if (page_number > 1):
+                eje_y_table = height - 50
+            draw_table(pdf, table_data, eje_y_table, 35)
+
+            pdf.setFont("Helvetica", 8)
+            pdf.drawRightString(755, 30, f"Página {page_number}")
+            pdf.drawString(25, 30, f"{date_time}")
+
+            pdf.save()
+
+        # Devolver el archivo PDF al cliente
+        return FileResponse(ruta_temporal, filename=f"catalogo_{company.name.upper()}.pdf", media_type="application/pdf")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al generar el catálogo de {company.name}: {e}")

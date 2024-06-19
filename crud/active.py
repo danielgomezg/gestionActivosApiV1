@@ -3,7 +3,6 @@ from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from sqlalchemy import func, select
 from models.active import Active
 from fastapi import HTTPException, status, UploadFile
-from sqlalchemy import desc
 import uuid
 import random
 import shutil
@@ -66,7 +65,6 @@ def get_actives_all_android(db: Session):
         print(e)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activo {e}")
 
-
 def search_active(db: Session, search: str, limit: int = 100, offset: int = 0):
     try:
         subquery = select(db.query(Active_GroupActive.active_id).subquery())
@@ -99,10 +97,9 @@ def search_active(db: Session, search: str, limit: int = 100, offset: int = 0):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail=f"Error al buscar activos por codigo virtual y barcode {e}")
 
-
-def get_active_by_article_and_barcode(db: Session, article_id: int, bar_code: str, limit: int = 100, offset: int = 0):
+def get_active_by_barcode(db: Session, bar_code: str, limit: int = 100, offset: int = 0):
     try:
-        result = db.query(Active).filter(Active.article_id == article_id, Active.bar_code == bar_code, Active.removed == 0).options(joinedload(Active.article)).offset(offset).limit(limit).first()
+        result = db.query(Active).filter(Active.bar_code == bar_code, Active.removed == 0).options(joinedload(Active.article)).offset(offset).limit(limit).first()
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
@@ -148,7 +145,7 @@ def get_active_by_offices(db: Session, office_ids: List[int], limit: int = 100, 
             db.query(Active)
             .filter(Active.office_id.in_(office_ids), Active.removed == 0)
             .options(joinedload(Active.article), joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company))
-            .order_by(Active.office_id)
+            .order_by(Active.bar_code.desc())
             .offset(offset)
             .limit(limit)
             .all()
@@ -190,10 +187,41 @@ def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offs
         result = (db.query(Active).\
             join(Office).join(Sucursal).\
             filter(Sucursal.id == sucursal_id, Active.removed == 0).\
-            options(joinedload(Active.article).joinedload(Article.category), joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)).order_by(Active.office_id).offset(offset).limit(limit).all())
+            options(joinedload(Active.article).joinedload(Article.category), joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company))
+                  .order_by(Active.bar_code.desc()).offset(offset).limit(limit).all())
 
         return result, count
-    
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
+def count_active_by_company(db: Session):
+    try:
+        count = db.query(Active).filter( Active.removed == 0).count()
+        return count
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
+def get_active_by_company(db: Session, limit: int = 100, offset: int = 0, adjust_limit: bool = False):
+    try:
+        if adjust_limit:
+            count_actives = count_active_by_company(db)
+            if count_actives > limit:
+                limit = count_actives
+
+        count = count_active_by_company(db)
+        if count == 0:
+            return [], count
+
+        result = (db.query(Active). \
+                  join(Office).join(Sucursal). \
+                  filter(Active.removed == 0). \
+                  options(joinedload(Active.article).joinedload(Article.category),
+                          joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company))
+                  .order_by(Active.bar_code.desc()).offset(offset).limit(limit).all())
+
+        return result, count
+
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
@@ -357,7 +385,6 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando activo {e}")
 
-
 def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_user: str):
     try:
         active_to_edit = db.query(Active).filter(Active.id == active_id).first()
@@ -495,9 +522,24 @@ def update_maintenance_ref(db: Session, active_id: int, maintenance_ref: date):
         print(e)
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando activo: {e}")
-    
+
+#Actualiza la fecha de mantenimiento; parametro updates es una lista de activos
+def update_maintenance_refs(db: Session, updates: list):
+    try:
+        for active_id, maintenance_ref in updates:
+            active_to_edit = db.query(Active).filter(Active.id == active_id).first()
+            if active_to_edit:
+                active_to_edit.maintenance_ref = maintenance_ref
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(e)
+        traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando activos: {e}")
+
 
 def maintenance_days_remaining(db: Session, actives):
+    updates = []
     for active in actives:
         if active.maintenance_ref and active.maintenance_days:
             days_since_last_maintenance = (datetime.now().date() - active.maintenance_ref).days
@@ -506,8 +548,22 @@ def maintenance_days_remaining(db: Session, actives):
             # Si el tiempo de mantenimiento ha pasado, se establece maintenance_ref a la fecha ref anterior mas los dias de mantenimiento
             if active.maintenance_days_remaining < 0:
                 _maintenance_ref = active.maintenance_ref + timedelta(days=active.maintenance_days)
-                _active_up = update_maintenance_ref(db, active.id, _maintenance_ref)
-                active = _active_up
-                
+
+                updates.append((active.id, _maintenance_ref))
+
+                #_active_up = update_maintenance_ref(db, active.id, _maintenance_ref)
+                #active = _active_up
+
+    # Aplicar todas las actualizaciones en una sola transacción
+    if updates:
+        update_maintenance_refs(db, updates)
+
+        # Refrescar los objetos en memoria con los nuevos valores de mantenimiento
+        for active in actives:
+            for update in updates:
+                if active.id == update[0]:
+                    active.maintenance_ref = update[1]
+                    days_since_last_maintenance = (datetime.now().date() - active.maintenance_ref).days
+                    active.maintenance_days_remaining = active.maintenance_days - days_since_last_maintenance
+
     return actives
-    
