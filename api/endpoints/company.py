@@ -17,9 +17,8 @@ from typing import Optional, Tuple
 router = APIRouter()
 #company.Base.metadata.create_all(bind=engine)
 
-
 @router.get('/companies')
-def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0):
     name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -32,7 +31,7 @@ def get_companies(db: Session = Depends(get_db), current_user_info: Tuple[str, s
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get('/companiesIdName')
-def get_companies_id_name(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_companies_id_name(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0):
     name_user, expiration_time = current_user_info
     #Se valida la expiracion del token
     if expiration_time is None:
@@ -45,7 +44,7 @@ def get_companies_id_name(db: Session = Depends(get_db), current_user_info: Tupl
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get('/company/search')
-def search(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def search(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0):
     name_user, expiration_time = current_user_info
     # print("Tiempo de expiración: ", expiration_time)
     # Se valida la expiracion del token
@@ -70,18 +69,6 @@ def get_company(id: int, db: Session = Depends(get_db), current_user_info: Tuple
     if result is None:
         return Response(code= "404", result = [], message="Not found").model_dump()
     return Response(code= "200", result = result, message="Company found").model_dump()
-
-# @router.get("/company/sucursal/office/{office_id}")
-# def get_company_offices(office_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
-#     name_user, expiration_time = current_user_info
-#     # Se valida la expiracion del token
-#     if expiration_time is None:
-#         return Response(code="401", message="token-exp", result=[])
-#
-#     result, count = get_company_by_office(db, office_id, limit, offset)
-#     if not result:
-#         return ResponseGet(code= "200", result = [], limit= limit, offset = offset, count = 0).model_dump()
-#     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.post('/company')
 def create(request: CompanySchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current)):

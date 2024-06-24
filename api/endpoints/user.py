@@ -41,7 +41,7 @@ def get_user(id: int, db: Session = Depends(get_db), current_user_info: Tuple[st
     return Response(code= "200", message="Usuario encontrado", result = result).model_dump()
 
 @router.get('/users')
-def get_users(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_users(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0):
     name_user, expiration_time = current_user_info
     # Se valida la expiracion del token
     if expiration_time is None:
@@ -53,7 +53,7 @@ def get_users(db: Session = Depends(get_db), current_user_info: Tuple[str, str] 
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get('/users/search')
-def search_users(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def search_users(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0):
     name_user, expiration_time = current_user_info
     if expiration_time is None:
         return Response(code="401", message="token-exp", result=[])
@@ -153,7 +153,7 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
 def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
     _user = authenticate_user(request.email, request.password, db)
     if(_user):
-        access_token_expires = timedelta(minutes=300)
+        access_token_expires = timedelta(minutes=480)
         user_id = str(_user.id)
 
         additional_info = {
@@ -192,7 +192,7 @@ def login_access(request: UserSchemaLogin, db: Session = Depends(get_db)):
 def login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     _user = authenticate_user(form_data.username, form_data.password, db)
     if(_user):
-        access_token_expires = timedelta(minutes=360)
+        access_token_expires = timedelta(minutes=480)
         user_id = str(_user.id)
 
         additional_info = {

@@ -24,6 +24,7 @@ class ActiveSchema(BaseModel):
     office_id: int
     article_id: int
     maintenance_days: Optional[int] = None
+    parent_code: Optional[str] = None
 
 class ActiveEditSchema(BaseModel):
     bar_code: str
@@ -45,3 +46,4 @@ class ActiveEditSchema(BaseModel):
     office_id: int
     article_id: int
     maintenance_days: Optional[int] = None
+    parent_code: Optional[str] = None

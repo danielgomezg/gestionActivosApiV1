@@ -28,6 +28,7 @@ class Active(Base):
     creation_date = Column(Date, default=date.today, nullable=False)
     maintenance_ref = Column(Date, default=date.today, nullable=False) # Referencia de mantenimiento
     maintenance_days = Column(Integer, default=0, nullable=True) # Periodo de mantenimiento
+    parent_code = Column(String, nullable=True)
     removed = Column(Integer, default=0, nullable=False)
 
     office_id = Column(Integer, ForeignKey('oficina.id'))

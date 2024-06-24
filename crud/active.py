@@ -218,7 +218,8 @@ def get_active_by_company(db: Session, limit: int = 100, offset: int = 0, adjust
                   filter(Active.removed == 0). \
                   options(joinedload(Active.article).joinedload(Article.category),
                           joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company))
-                  .order_by(Active.bar_code.desc()).offset(offset).limit(limit).all())
+                  .order_by(Office.sucursal_id).offset(offset).limit(limit).all())
+
 
         return result, count
 
@@ -361,7 +362,8 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
             office_id=active.office_id,
             article_id=active.article_id,
             maintenance_ref=active.acquisition_date,
-            maintenance_days=active.maintenance_days
+            maintenance_days=active.maintenance_days,
+            parent_code = active.parent_code
         )
         db.add(_active)
         db.commit()
@@ -388,11 +390,6 @@ def create_active(db: Session, active: ActiveSchema, name_user: str):
 def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_user: str):
     try:
         active_to_edit = db.query(Active).filter(Active.id == active_id).first()
-        print("active_to_edit")
-        print(active_to_edit.photo1)
-        print(active_to_edit.photo2)
-        print(active_to_edit.photo3)
-        print(active_to_edit.photo4)
 
         if active_to_edit:
             active_to_edit.bar_code = active.bar_code
@@ -407,6 +404,7 @@ def update_active(db: Session, active_id: int, active: ActiveEditSchema, name_us
             active_to_edit.brand = active.brand
             active_to_edit.office_id = active.office_id
             active_to_edit.maintenance_days = active.maintenance_days
+            active_to_edit.parent_code = active.parent_code
 
             #Se elimina el archivo reemplazado del servidor
             if len(active_to_edit.accounting_document) > 0 and active_to_edit.accounting_document != active.accounting_document:
@@ -536,7 +534,6 @@ def update_maintenance_refs(db: Session, updates: list):
         print(e)
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando activos: {e}")
-
 
 def maintenance_days_remaining(db: Session, actives):
     updates = []

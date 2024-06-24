@@ -11,7 +11,7 @@ router = APIRouter()
 # action.Base.metadata.create_all(bind=engine)
 
 @router.get('/actives/values')
-def get_activeValues(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def get_activeValues(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     
     try:
         name_user, expiration_time = current_user_info
@@ -34,9 +34,8 @@ def get_activeValues(db: Session = Depends(get_db), current_user_info: Tuple[str
     except Exception as e:
         return Response(code="404", result=[], message="Error al obtener activeValues").model_dump()
 
-
 @router.get('/actives/values/search/all')
-def search_activeValues(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def search_activeValues(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     try:
         name_user, expiration_time = current_user_info
 
@@ -57,7 +56,6 @@ def search_activeValues(search: str, db: Session = Depends(get_db), current_user
 
     except Exception as e:
         return Response(code="404", result=[], message="Error al obtener activeValues").model_dump()
-        
 
 @router.get("/active/values/{activo_id}")
 def get_activeValue(activo_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
@@ -79,7 +77,7 @@ def get_activeValue(activo_id: int, db: Session = Depends(get_db), current_user_
     return Response(code="200", message="", result=result).model_dump()
 
 @router.get('/actives/values/search')
-def search_activeValues_by_vt_barcode(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def search_activeValues_by_vt_barcode(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     try:
         name_user, expiration_time = current_user_info
 

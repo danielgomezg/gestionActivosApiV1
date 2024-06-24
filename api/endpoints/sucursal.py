@@ -19,7 +19,7 @@ router = APIRouter()
 
 
 @router.get('/sucursales')
-def get_sucursales(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def get_sucursales(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     id_user, expiration_time = current_user_info
     
     db = next(conexion(db, companyId))
@@ -54,7 +54,7 @@ def get_sucursal(id: int, db: Session = Depends(get_db), current_user_info: Tupl
     return Response(code= "200", result = result, message="Sucursal encontrado").model_dump()
 
 @router.get("/sucursalPorCompany/{id_company}")
-def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 100, offset: int = 0):
+def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, id_company))
@@ -71,7 +71,7 @@ def get_sucursal_por_company(id_company: int, db: Session = Depends(get_db), cur
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get('/sucursal/search/{company_id}')
-def search_sucursal(company_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def search_sucursal(company_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, company_id))
