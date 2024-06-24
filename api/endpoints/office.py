@@ -18,7 +18,7 @@ router = APIRouter()
 # office.Base.metadata.create_all(bind=engine)
 
 @router.get('/offices')
-def get_offices(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def get_offices(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -35,7 +35,7 @@ def get_offices(db: Session = Depends(get_db), current_user_info: Tuple[str, str
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/officePorSucursal/{id_sucursal}")
-def get_office_por_sucursal(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def get_office_por_sucursal(id_sucursal: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -92,7 +92,6 @@ def create(request: OfficeSchema, db: Session = Depends(get_db), current_user_in
 
     _office = create_office(db, request, name_user)
     return Response(code = "201", message = f"Oficina piso {_office.floor} creada", result = _office).model_dump()
-
 
 @router.put('/office/{id}')
 def update(request: OfficeEditSchema, id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):

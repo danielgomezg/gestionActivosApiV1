@@ -17,7 +17,7 @@ router = APIRouter()
 
 
 @router.get('/categories')
-def get_categories(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def get_categories(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -35,7 +35,7 @@ def get_categories(db: Session = Depends(get_db), current_user_info: Tuple[str, 
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/category/{parent_id}")
-def get_category(parent_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def get_category(parent_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -52,9 +52,8 @@ def get_category(parent_id: int, db: Session = Depends(get_db), current_user_inf
     
     return ResponseGet(code= "200", result = result, limit=limit, offset = offset, count = count).model_dump()
 
-
 @router.get("/categories/finals")
-def get_category_finals(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25,
+def get_category_finals(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300,
                  offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 

@@ -45,7 +45,7 @@ def get_active(id: int, db: Session = Depends(get_db), current_user_info: Tuple[
     return Response(code= "200", result = result, message="Activo no encontrado").model_dump()
 
 @router.get('/actives/values/codes')
-def get_all_actives_codes(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def get_all_actives_codes(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     try:
         name_user, expiration_time = current_user_info
 
@@ -69,7 +69,7 @@ def get_all_actives_codes(db: Session = Depends(get_db), current_user_info: Tupl
         return Response(code="404", result=[], message="Error al obtener activeValues").model_dump()
 
 @router.get('/actives')
-def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current),limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current),limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -88,7 +88,7 @@ def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/activePorArticle/{id_article}")
-def get_active_por_article(id_article: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def get_active_por_article(id_article: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -106,7 +106,7 @@ def get_active_por_article(id_article: int, db: Session = Depends(get_db), curre
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/active/office/{id_office}")
-def get_active_por_office(id_office: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def get_active_por_office(id_office: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -123,7 +123,7 @@ def get_active_por_office(id_office: int, db: Session = Depends(get_db), current
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get("/active/offices/{id_offices}")
-def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -144,7 +144,7 @@ def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), curr
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.get("/active/sucursal/{sucursal_id}")
-def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -161,7 +161,7 @@ def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), cu
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get('/active/search/codes')
-def search_by_vt_barcode(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def search_by_vt_barcode(search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -178,7 +178,7 @@ def search_by_vt_barcode(search: str, db: Session = Depends(get_db), current_use
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.get('/active/search/sucursal/{sucursal_id}')
-def search_by_sucursal(sucursal_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def search_by_sucursal(sucursal_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -195,7 +195,7 @@ def search_by_sucursal(sucursal_id: int, search: str, db: Session = Depends(get_
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.get('/active/search/offices/{id_offices}')
-def search_by_offices(id_offices: str, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def search_by_offices(id_offices: str, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -338,7 +338,7 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
 
         # valida si existe un codigo de barra con el mismo numero dentro de los articulos
         if (len(request.bar_code) > 0):
-            active_barcode = get_active_by_article_and_barcode(db, request.article_id, request.bar_code)
+            active_barcode = get_active_by_barcode(db, request.bar_code)
             if active_barcode and id is not active_barcode.id:
                 return Response(code="400", message="Codigo de barra ya ingresado", result=[])
 
@@ -459,7 +459,7 @@ def active_file(office_id: int, db: Session = Depends(get_db), file: UploadFile 
             print('activeSchema', activeSchema)
 
             # 2. BUSCAR SI EXISTE ACTIVO.
-            active = get_active_by_article_and_barcode(db, article.id, str(int(activeSchema.bar_code)))
+            active = get_active_by_barcode(db, str(int(activeSchema.bar_code)))
 
             if(active):
                 print("existe el activo")

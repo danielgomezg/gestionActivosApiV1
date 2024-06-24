@@ -40,7 +40,7 @@ def get_article(id: int, db: Session = Depends(get_db), current_user_info: Tuple
     return Response(code="200", result=result, message="Articulo encontrado").model_dump()
 
 @router.get('/articles')
-def get_articles(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0, companyId: int = Header(None)):
+def get_articles(db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, companyId))
@@ -57,7 +57,7 @@ def get_articles(db: Session = Depends(get_db), current_user_info: Tuple[str, st
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
 @router.get('/articles/company/{id_company}')
-def get_articles_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def get_articles_por_company(id_company: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, id_company))
@@ -73,9 +73,8 @@ def get_articles_por_company(id_company: int, db: Session = Depends(get_db), cur
         return ResponseGet(code= "404", result = [], limit= limit, offset = offset, count = 0).model_dump()
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
-
 @router.get('/articles/search/{company_id}')
-def search_articles(company_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 25, offset: int = 0):
+def search_articles(company_id: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0):
     name_user, expiration_time = current_user_info
 
     db = next(conexion(db, company_id))
@@ -185,14 +184,12 @@ def delete(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str,
     _article = delete_article(db, id, name_user)
     return Response(code = "201", message = f"Articulo con id {id} eliminado", result = _article).model_dump()
 
-
 @router.get("/image_article/{image_path}")
 async def get_image(image_path: str):
     image = Path("files") / "images_article" / image_path
     if not image.exists():
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(image)
-
 
 @router.post("/article/upload")
 def article_file(db: Session = Depends(get_db), file: UploadFile = File(...), current_user_info: Tuple[str, str] = Depends(get_user_disable_current),
