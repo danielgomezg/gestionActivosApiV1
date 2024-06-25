@@ -147,7 +147,7 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
             for col, value in enumerate([active.office.sucursal.number + " - " + active.office.sucursal.description, str(active.office.floor) + " - " + active.office.description,
-                                         active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code, active.brand, active.model, active.serie,
+                                         active.virtual_code + " (virtual)" if active.bar_code == '' else active.bar_code, active.brand, active.model, active.serie,
                                          active.parent_code if active.parent_code is not None else '', str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active,
                                          active.rut_in_charge_active, str(active.article.code), active.article.category.description]):
@@ -264,7 +264,7 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
                 table_data.append([
                     active.office.sucursal.number + " - " + active.office.sucursal.description,
                     str(active.office.floor) + " - " + active.office.description,
-                    active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code,
+                    active.virtual_code + " (virtual)" if active.bar_code == '' else active.bar_code,
                     active.brand,
                     active.model,
                     active.serie,
@@ -678,7 +678,7 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
             for col, value in enumerate([active.office.sucursal.number + " - " + active.office.sucursal.description, str(active.office.floor) + " - " + active.office.description,
-                                         active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code, active.brand, active.model,
+                                         active.virtual_code + " (virtual)" if active.bar_code == '' else active.bar_code, active.brand, active.model,
                                          active.serie, active.parent_code if active.parent_code is not None else '', str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active,
                                          active.rut_in_charge_active, str(active.article.code), active.article.category.description]):
@@ -793,7 +793,7 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
                 table_data.append([
                     str(active.office.floor) + " - " + active.office.description,
                     active.office.sucursal.number + " - " + active.office.sucursal.description,
-                    active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code,
+                    active.virtual_code + " (virtual)" if active.bar_code == '' else active.bar_code,
                     active.brand,
                     active.model,
                     active.serie,
