@@ -111,7 +111,7 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
         worksheet.merge_range('D5:F5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Sucursal", "Oficina", "Código activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "Num. de registro", "Estado", "Encargado",
+        datos = ["Sucursal", "Oficina", "Código activo", "Marca", "Modelo", "Serie", "C. padre", "Fecha adquisición", "Num. de registro", "Estado", "Encargado",
                  "Rut encargado", "Cod. articulo", "Categoría"]
 
         start_table = 7
@@ -146,7 +146,9 @@ def report_conciliacion_equals_excel(db: Session = Depends(get_db), current_user
 
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
-            for col, value in enumerate([active.office.sucursal.number + " - " + active.office.sucursal.description, str(active.office.floor) + " - " + active.office.description, active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
+            for col, value in enumerate([active.office.sucursal.number + " - " + active.office.sucursal.description, str(active.office.floor) + " - " + active.office.description,
+                                         active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code, active.brand, active.model, active.serie,
+                                         active.parent_code if active.parent_code is not None else '', str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active,
                                          active.rut_in_charge_active, str(active.article.code), active.article.category.description]):
                 width_column[col] = max(width_column[col], len(value))
@@ -237,7 +239,7 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
 
             # Crear y configurar la tabla
             table_data = [
-                ["Sucursal" ,"Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "F. Adquisición", "N. registro", "Estado", "Cod. articulo", "Categoría"]]
+                ["Sucursal" ,"Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "C. padre", "F. Adquisición", "N. registro", "Estado", "Cod. articulo", "Categoría"]]
 
             page_number = 1
             #comienzo primera pag
@@ -248,9 +250,9 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
 
                 if ((eje_y_table - (20 * len(table_data))) < 60 and i < len(actives)):
                     if (page_number == 1):
-                        draw_table(pdf, table_data, eje_y_table, 35)
+                        draw_table(pdf, table_data, eje_y_table, 15)
                     else:
-                        draw_table(pdf, table_data, height - 50, 35)
+                        draw_table(pdf, table_data, height - 50, 15)
                     cant_items = i
                     pdf.setFont("Helvetica", 8)
                     pdf.drawRightString(755, 30, f"Página {page_number}")
@@ -262,10 +264,11 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
                 table_data.append([
                     active.office.sucursal.number + " - " + active.office.sucursal.description,
                     str(active.office.floor) + " - " + active.office.description,
-                    active.bar_code,
+                    active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code,
                     active.brand,
                     active.model,
                     active.serie,
+                    active.parent_code if active.parent_code is not None else '',
                     str(active.acquisition_date),
                     active.accounting_record_number,
                     active.state,
@@ -277,7 +280,7 @@ def report_conciliacion_equals_pdf(db: Session = Depends(get_db), current_user_i
             # CAmbia eje y si no es la primera pag
             if (page_number > 1):
                 eje_y_table = height - 50
-            draw_table(pdf, table_data, eje_y_table, 35)
+            draw_table(pdf, table_data, eje_y_table, 15)
             pdf.setFont("Helvetica", 8)
             pdf.drawRightString(755, 30, f"Página {page_number}")
 
@@ -639,7 +642,7 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
         worksheet.merge_range('D5:F5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Sucursal", "Oficina","Cod. activo", "Marca", "Modelo", "Serie", "Fecha adquisición", "N. de registro", "Estado", "Encargado",
+        datos = ["Sucursal", "Oficina","Cod. activo", "Marca", "Modelo", "Serie", "C. padre", "Fecha adquisición", "N. de registro", "Estado", "Encargado",
                  "Rut encargado", "Cod. articulo", "Categoría"]
 
         start_table = 7
@@ -674,7 +677,9 @@ def report_conciliacion_surplus_excel(db: Session = Depends(get_db), current_use
 
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
-            for col, value in enumerate([active.office.sucursal.number + " - " + active.office.sucursal.description, str(active.office.floor) + " - " + active.office.description, active.bar_code, active.brand, active.model, active.serie, str(active.acquisition_date),
+            for col, value in enumerate([active.office.sucursal.number + " - " + active.office.sucursal.description, str(active.office.floor) + " - " + active.office.description,
+                                         active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code, active.brand, active.model,
+                                         active.serie, active.parent_code if active.parent_code is not None else '', str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active,
                                          active.rut_in_charge_active, str(active.article.code), active.article.category.description]):
                 width_column[col] = max(width_column[col], len(value))
@@ -764,7 +769,7 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
 
             # Crear y configurar la tabla
             table_data = [
-                ["Sucursal", "Oficina", "C. activo", "Marca", "Modelo", "Serie", "F. Adquisición", "N. registro", "Estado", "C. articulo", "Categoría"]]
+                ["Sucursal", "Oficina", "C. activo", "Marca", "Modelo", "Serie", "C. padre", "F. Adquisición", "N. registro", "Estado", "C. articulo", "Categoría"]]
 
             page_number = 1
             #comienzo primera pag
@@ -775,9 +780,9 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
 
                 if ((eje_y_table - (20 * len(table_data))) < 60 and i < len(actives)):
                     if (page_number == 1):
-                        draw_table(pdf, table_data, eje_y_table, 35)
+                        draw_table(pdf, table_data, eje_y_table, 15)
                     else:
-                        draw_table(pdf, table_data, height - 50, 35)
+                        draw_table(pdf, table_data, height - 50, 15)
                     pdf.setFont("Helvetica", 8)
                     pdf.drawRightString(755, 30, f"Página {page_number}")
                     pdf.showPage()
@@ -788,10 +793,11 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
                 table_data.append([
                     str(active.office.floor) + " - " + active.office.description,
                     active.office.sucursal.number + " - " + active.office.sucursal.description,
-                    active.bar_code,
+                    active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code,
                     active.brand,
                     active.model,
                     active.serie,
+                    active.parent_code if active.parent_code is not None else '',
                     str(active.acquisition_date),
                     active.accounting_record_number,
                     active.state,
@@ -804,7 +810,7 @@ def report_conciliacion_surplus_pdf(db: Session = Depends(get_db), current_user_
             if (page_number > 1):
                 eje_y_table = height - 50
 
-            draw_table(pdf, table_data, eje_y_table, 35)
+            draw_table(pdf, table_data, eje_y_table, 15)
             pdf.setFont("Helvetica", 8)
             pdf.drawRightString(755, 30, f"Página {page_number}")
 

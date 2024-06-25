@@ -408,7 +408,7 @@ def actives_catalog_sucursal(id_sucursal: int, db: Session = Depends(get_db), cu
 
                 table_data.append([
                     str(active.office.floor) + " - " + active.office.description,
-                    active.bar_code,
+                    active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code,
                     active.brand,
                     active.model,
                     active.serie,
@@ -469,7 +469,6 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
         chile_timezone = pytz.timezone('Chile/Continental')
         now = datetime.now(chile_timezone)
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
-
 
         # Lógica para generar el catálogo PDF con ReportLab
         ruta_temporal = os.path.abspath("Generations_files/catalogo_reportlab.pdf")
@@ -536,7 +535,7 @@ def actives_catalog_office(id_offices: str , db: Session = Depends(get_db), curr
 
                 table_data.append([
                     str(active.office.floor) + " - " + active.office.description,
-                    active.bar_code,
+                    active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code,
                     active.brand,
                     active.model,
                     active.serie,
@@ -686,7 +685,8 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
 
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
-            for col, value in enumerate([str(active.office.floor) + " - " + active.office.description, active.bar_code, active.brand, active.model, active.serie,
+            for col, value in enumerate([str(active.office.floor) + " - " + active.office.description, active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code,
+                                         active.brand, active.model, active.serie,
                                          active.parent_code if active.parent_code is not None else '', str(active.acquisition_date), active.accounting_record_number, active.state,
                                          active.name_in_charge_active, str(active.article.code), active.article.category.description]):
 
@@ -825,7 +825,8 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
 
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
-            for col, value in enumerate([str(active.office.floor) + " - " + active.office.description, active.bar_code, active.brand, active.model, active.serie,
+            for col, value in enumerate([str(active.office.floor) + " - " + active.office.description, active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code,
+                                         active.brand, active.model, active.serie,
                                          active.parent_code if active.parent_code is not None else '', str(active.acquisition_date),
                                          active.accounting_record_number, active.state, active.name_in_charge_active, str(active.article.code),
                                          active.article.category.description]):
@@ -961,7 +962,7 @@ def actives_catalog_company_excel(id_company: int, db: Session = Depends(get_db)
         # Escribir los datos desde la base de datos en el resto de las filas
         for row, active in enumerate(actives, start=1):
             for col, value in enumerate([active.office.sucursal.number + " - " + active.office.sucursal.description, str(active.office.floor) + " - " + active.office.description,
-                                         active.bar_code, active.brand, active.model, active.serie, active.parent_code if active.parent_code is not None else '',
+                                         active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code, active.brand, active.model, active.serie, active.parent_code if active.parent_code is not None else '',
                                          str(active.acquisition_date), active.accounting_record_number, active.state, active.name_in_charge_active, str(active.article.code),
                                          active.article.category.description]):
 
@@ -1070,7 +1071,7 @@ def actives_catalog_company(id_company: int, db: Session = Depends(get_db), curr
                 table_data.append([
                     active.office.sucursal.number + " - " + active.office.sucursal.description,
                     str(active.office.floor) + " - " + active.office.description,
-                    active.bar_code,
+                    active.virtual_code + " (virtual)" if active.bar_code is '' else active.bar_code,
                     active.brand,
                     active.model,
                     active.serie,
