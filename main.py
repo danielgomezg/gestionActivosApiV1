@@ -37,9 +37,11 @@ from models import article as article_model
 from models import active as active_model
 from models import history as history_model
 from models import category as category_model
+from models import secuenciaVT
 
 
 user_model.Base.metadata.create_all(bind=engine)
+#secuenciaVT.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
