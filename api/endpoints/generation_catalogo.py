@@ -1057,9 +1057,9 @@ def actives_catalog_company(id_company: int, db: Session = Depends(get_db), curr
 
                 if ((eje_y_table - (20 * len(table_data))) < 80 and i < len(actives)):
                     if (page_number == 1):
-                        draw_table(pdf, table_data, eje_y_table, 35)
+                        draw_table(pdf, table_data, eje_y_table, 15)
                     else:
-                        draw_table(pdf, table_data, height - 50, 35)
+                        draw_table(pdf, table_data, height - 50, 15)
                     pdf.setFont("Helvetica", 8)
                     pdf.drawRightString(755, 30, f"Página {page_number}")
                     pdf.drawString(25, 30, f"{date_time}")
@@ -1085,7 +1085,7 @@ def actives_catalog_company(id_company: int, db: Session = Depends(get_db), curr
             # CAmbia eje y si no es la primera pag
             if (page_number > 1):
                 eje_y_table = height - 50
-            draw_table(pdf, table_data, eje_y_table, 35)
+            draw_table(pdf, table_data, eje_y_table, 15)
 
             pdf.setFont("Helvetica", 8)
             pdf.drawRightString(755, 30, f"Página {page_number}")

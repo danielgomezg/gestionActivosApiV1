@@ -54,7 +54,7 @@ def count_active(db: Session):
 
 def get_active_all(db: Session, limit: int = 100, offset: int = 0):
     try:
-        return db.query(Active).filter(Active.removed == 0).offset(offset).limit(limit).all()
+        return db.query(Active).filter(Active.removed == 0).order_by(Active.bar_code.desc()).offset(offset).limit(limit).all()
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activo {e}")
 
@@ -226,6 +226,47 @@ def get_active_by_company(db: Session, limit: int = 100, offset: int = 0, adjust
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
+def search_active_all(db: Session, search: str, limit: int = 100, offset: int = 0):
+    try:
+        count = db.query(Active). \
+            join(Office).join(Sucursal). \
+            filter(
+            Active.removed == 0,
+            (
+                func.lower(Active.bar_code).like(f"%{search}%") |
+                func.lower(Active.virtual_code).like(f"%{search}%") |
+                func.lower(Active.model).like(f"%{search}%") |
+                func.lower(Active.serie).like(f"%{search}%") |
+                func.lower(Active.parent_code).like(f"%{search}%") |
+                func.lower(Active.brand).like(f"%{search}%")
+            )).count()
+
+        if count == 0:
+            return [], count
+
+        query = db.query(Active). \
+            join(Office).join(Sucursal). \
+            filter(
+            Active.removed == 0,
+            (
+                func.lower(Active.bar_code).like(f"%{search}%") |
+                func.lower(Active.virtual_code).like(f"%{search}%") |
+                func.lower(Active.model).like(f"%{search}%") |
+                func.lower(Active.serie).like(f"%{search}%") |
+                func.lower(Active.parent_code).like(f"%{search}%") |
+                func.lower(Active.brand).like(f"%{search}%")
+            )
+        ).options(joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)
+                  ).order_by(Active.bar_code.desc()).offset(offset).limit(limit)
+
+        actives = query.all()
+
+        return actives, count
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f"Error al buscar activos por sucursal por nombre {e}")
+
 def search_active_sucursal(db: Session, search: str, sucursal_id: int, limit: int = 100, offset: int = 0):
     try:
         count = db.query(Active). \
@@ -305,6 +346,49 @@ def search_active_offices(db: Session, search: str, office_ids: List[int], limit
     
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar activos por oficinas por nombre {e}")
+
+def search_active_article(db: Session, search: str, article_id: int, limit: int = 100, offset: int = 0):
+    try:
+        count = db.query(Active). \
+            join(Office).join(Sucursal). \
+            filter(
+            Active.article_id == article_id,
+            Active.removed == 0,
+            (
+                func.lower(Active.bar_code).like(f"%{search}%") |
+                func.lower(Active.virtual_code).like(f"%{search}%") |
+                func.lower(Active.model).like(f"%{search}%") |
+                func.lower(Active.serie).like(f"%{search}%") |
+                func.lower(Active.parent_code).like(f"%{search}%") |
+                func.lower(Active.brand).like(f"%{search}%")
+            )).count()
+
+        if count == 0:
+            return [], count
+
+        query = db.query(Active). \
+            join(Office).join(Sucursal). \
+            filter(
+            Active.article_id == article_id,
+            Active.removed == 0,
+            (
+                func.lower(Active.bar_code).like(f"%{search}%") |
+                func.lower(Active.virtual_code).like(f"%{search}%") |
+                func.lower(Active.model).like(f"%{search}%") |
+                func.lower(Active.serie).like(f"%{search}%") |
+                func.lower(Active.parent_code).like(f"%{search}%") |
+                func.lower(Active.brand).like(f"%{search}%")
+            )
+        ).options(joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company)
+                  ).order_by(Active.bar_code.desc()).offset(offset).limit(limit)
+
+        actives = query.all()
+
+        return actives, count
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f"Error al buscar activos por sucursal por nombre {e}")
 
 def generate_short_unique_id(data: str, length: int = 20) -> str:
     # Generar un número aleatorio

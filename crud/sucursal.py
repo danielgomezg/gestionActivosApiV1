@@ -78,8 +78,11 @@ def search_sucursal_by_company(db: Session, search: str, company_id: int , limit
             Sucursal.company_id == company_id,
             Sucursal.removed == 0,
             (
-                    func.lower(Sucursal.description).like(f"%{search}%") |
-                    func.lower(Sucursal.number).like(f"%{search}%")
+                func.lower(Sucursal.description).like(f"%{search}%") |
+                func.lower(Sucursal.number).like(f"%{search}%") |
+                func.lower(Sucursal.address).like(f"%{search}%") |
+                func.lower(Sucursal.region).like(f"%{search}%") |
+                func.lower(Sucursal.city).like(f"%{search}%")
             )
             ).group_by(Sucursal.id).order_by(desc(Sucursal.id)).offset(offset).limit(limit)
 

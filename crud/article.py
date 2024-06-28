@@ -1,6 +1,6 @@
 import shutil
 from sqlalchemy.orm import Session, joinedload
-from schemas.articleSchema import ArticleSchema, ArticleEditSchema
+from schemas.articleSchema import ArticleSchema, ArticleEditSchema, ArticleSchemaWithCategory
 from models.article import Article
 from fastapi import HTTPException, status, UploadFile
 from sqlalchemy import func, and_, desc
@@ -14,6 +14,9 @@ import random
 #historial
 from schemas.historySchema import HistorySchema
 from crud.history import create_history
+
+from crud.category import get_category_by_id
+from schemas.categorySchema import CategorySchema
 
 def get_article_all(db: Session, limit: int = 100, offset: int = 0):
     try:
@@ -132,7 +135,6 @@ def generate_short_unique_id(data: str, length: int = 20) -> str:
     hex_dig = hash_object.hexdigest()
     return hex_dig[:length]
 
-
 def get_image_url(file: UploadFile, upload_folder: Path) -> str:
     try:
         #unique_id = uuid.uuid4().hex
@@ -147,7 +149,6 @@ def get_image_url(file: UploadFile, upload_folder: Path) -> str:
         return filename_with_uuid
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al guardar la imagen: {e}")
-
 
 def create_article(db: Session, article: ArticleSchema, name_user: str):
     try:
@@ -174,7 +175,22 @@ def create_article(db: Session, article: ArticleSchema, name_user: str):
         }
         create_history(db, HistorySchema(**history_params))
 
-        return _article
+        category = get_category_by_id(db, _article.category_id)
+        article_response = ArticleSchemaWithCategory(
+            name=_article.name,
+            description=_article.description,
+            code=_article.code,
+            photo=_article.photo,
+            creation_date=_article.creation_date,
+            category_id=_article.category_id,
+            category=CategorySchema(
+                parent_id=category.parent_id,
+                code=category.code,
+                description=category.description
+            ),
+            company_id=_article.company_id
+        )
+        return article_response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando articulo {e}")
 
