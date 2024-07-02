@@ -4,7 +4,7 @@ from models.office import Office
 from fastapi import APIRouter, HTTPException, Path, Depends, Header
 from sqlalchemy.orm import Session
 from database import get_db, conexion
-from crud.office import create_office, get_office_by_id, get_offices_all, get_office_by_id_sucursal, delete_office, update_office
+from crud.office import create_office, get_office_by_id, get_offices_all, get_office_by_id_sucursal, delete_office, update_office, search_office_select_by_sucursal
 from schemas.officeSchema import OfficeSchema, OfficeEditSchema
 from schemas.schemaGenerico import ResponseGet, Response
 
@@ -67,6 +67,22 @@ def get_office(id: int, db: Session = Depends(get_db), current_user_info: Tuple[
     if result is None:
         return Response(code="404", result=[], message="Oficina no encontrada").model_dump()
     return Response(code= "200", message="Oficina encontrada" , result = result).model_dump()
+
+@router.get('/office/search/select/{id_sucursal}')
+def search_office_select(id_sucursal: int, search: str, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), limit: int = 300, offset: int = 0, companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    db = next(conexion(db, companyId))
+    if db is None:
+        return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
+    if expiration_time is None:
+        return Response(code="401", message="token-exp", result=[])
+
+    result, count = search_office_select_by_sucursal(db, search, id_sucursal, limit, offset)
+    if not result:
+        return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
+    return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.post('/office')
 def create(request: OfficeSchema, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):

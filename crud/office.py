@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 from schemas.officeSchema import OfficeSchema, OfficeEditSchema
 from models.office import Office
 from fastapi import HTTPException, status
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, cast, String
 
 #historial
 from schemas.historySchema import HistorySchema
@@ -19,7 +19,6 @@ def get_offices_all(db: Session, limit: int = 100, offset: int = 0):
 
 def get_offices_all_android(db: Session):
     return db.query(Office).filter(Office.removed == 0).all()
-
 
 def get_office_by_id_sucursal(db: Session, sucursal_id: int, limit: int = 100, offset: int = 0):
     try:
@@ -38,6 +37,37 @@ def get_office_by_id_sucursal(db: Session, sucursal_id: int, limit: int = 100, o
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al oficina por sucursal {e}")
 
+def search_office_select_by_sucursal(db: Session, search: str, sucursal_id: int , limit: int = 100, offset: int = 0):
+    try:
+        count = db.query(Office). \
+            filter(
+            Office.removed == 0,
+            Office.sucursal_id == sucursal_id,
+            (
+                    func.lower(cast(Office.floor, String)).like(search) |
+                    func.lower(Office.description).like(f"%{search}%")
+            )).count()
+
+        if count == 0:
+            return [], count
+
+        query = db.query(Office). \
+            filter(
+            Office.removed == 0,
+            Office.sucursal_id == sucursal_id,
+            (
+                    func.lower(cast(Office.floor, String)).like(search) |
+                    func.lower(Office.description).like(f"%{search}%")
+            )
+        ).order_by(Office.id.desc()).offset(offset).limit(limit)
+
+        offices = query.all()
+
+        return offices, count
+
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f"Error al buscar oficina por sucursal {e}")
 
 def get_office_by_id(db: Session, office_id: int):
     try:

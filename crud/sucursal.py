@@ -34,7 +34,6 @@ def get_sucursal_all(db: Session, limit: int = 100, offset: int = 0):
 def get_sucursales_all_android(db: Session):
     return db.query(Sucursal).filter(Sucursal.removed == 0).all()
 
-
 def count_sucursal(db: Session):
     try:
         return db.query(Sucursal).filter(Sucursal.removed == 0).count()
@@ -83,6 +82,33 @@ def search_sucursal_by_company(db: Session, search: str, company_id: int , limit
                 func.lower(Sucursal.address).like(f"%{search}%") |
                 func.lower(Sucursal.region).like(f"%{search}%") |
                 func.lower(Sucursal.city).like(f"%{search}%")
+            )
+            ).group_by(Sucursal.id).order_by(desc(Sucursal.id)).offset(offset).limit(limit)
+
+        sucursales = query.all()
+        result = []
+        for sucursal in sucursales:
+            sucursal[0].count_offices = sucursal[1]
+            result.append(sucursal[0])
+        count = db.query(Sucursal).filter(Sucursal.company_id == company_id, Sucursal.removed == 0, (
+                    func.lower(Sucursal.description).like(f"%{search}%") |
+                    func.lower(Sucursal.number).like(f"%{search}%")
+            )).count()
+
+        return result, count
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al buscar sucursales {e}")
+
+def search_sucursal_select_by_company(db: Session, search: str, company_id: int , limit: int = 100, offset: int = 0):
+    try:
+        query = db.query(Sucursal, func.count(Office.id).label("count_offices")). \
+            outerjoin(Office, and_(Office.sucursal_id == Sucursal.id, Office.removed == 0)). \
+            filter(
+            Sucursal.company_id == company_id,
+            Sucursal.removed == 0,
+            (
+                func.lower(Sucursal.description).like(f"%{search}%") |
+                func.lower(Sucursal.number).like(f"%{search}%")
             )
             ).group_by(Sucursal.id).order_by(desc(Sucursal.id)).offset(offset).limit(limit)
 
