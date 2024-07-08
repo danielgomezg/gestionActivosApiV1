@@ -622,14 +622,17 @@ def update_maintenance_refs(db: Session, updates: list):
 def maintenance_days_remaining(db: Session, actives):
     updates = []
     for active in actives:
+        print("----", active.id)
         if active.maintenance_ref and active.maintenance_days:
             days_since_last_maintenance = (datetime.now().date() - active.maintenance_ref).days
+            print(days_since_last_maintenance)
             active.maintenance_days_remaining = active.maintenance_days - days_since_last_maintenance
+            print(active.maintenance_days_remaining)
 
             # Si el tiempo de mantenimiento ha pasado, se establece maintenance_ref a la fecha ref anterior mas los dias de mantenimiento
             if active.maintenance_days_remaining < 0:
                 _maintenance_ref = active.maintenance_ref + timedelta(days=active.maintenance_days)
-
+                print(_maintenance_ref)
                 updates.append((active.id, _maintenance_ref))
 
                 #_active_up = update_maintenance_ref(db, active.id, _maintenance_ref)
