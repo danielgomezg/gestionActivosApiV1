@@ -92,10 +92,13 @@ def articles_catalog(id_company: int, db: Session = Depends(get_db), current_use
                 draw_lines = draw_multiline_text(pdf, 50, (y_position - y_line), f"Categoría: {article.category.description}")
 
                 # Generar y agregar el código de barras
-                ruta_imagen = os.path.join(ruta_barcodes, f"barcode_{article.code}")
-                ruta_imagen_png = ruta_imagen + ".png"
-                generate_barcode(str(article.code), ruta_imagen)
-                pdf.drawImage(ruta_imagen_png, x=420, y=(y_position - (y_line + 60)), width=100, height=100, preserveAspectRatio=True)
+                try:
+                    ruta_imagen = os.path.join(ruta_barcodes, f"barcode_{article.code}")
+                    ruta_imagen_png = ruta_imagen + ".png"
+                    generate_barcode(str(article.code), ruta_imagen)
+                    pdf.drawImage(ruta_imagen_png, x=420, y=(y_position - (y_line + 60)), width=100, height=100, preserveAspectRatio=True)
+                except Exception as e:
+                    print(f"No se pudo cargar el codigo de barra para el artículo {article.name}: {e}")
                 y_line += (20 * draw_lines)
 
                 #Se verifica si la descripcion no sobrepasa los limites del pdf
