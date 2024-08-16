@@ -23,6 +23,7 @@ class ArticleEditSchema(BaseModel):
     category_id: int = None
 
 class ArticleSchemaWithCategory(BaseModel):
+    id: int = None
     name: str = None
     description: Optional[str] = None
     code : str

@@ -7,7 +7,7 @@ from database import get_db, conexion
 from crud.active import  (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
                          get_active_by_office, get_active_by_offices, count_active, get_active_by_barcode, search_active_sucursal, search_active_offices,
                          get_image_url, generate_short_unique_id, get_active_by_virtual_code, get_active_all_codes, search_active, maintenance_days_remaining,
-                          search_active_all, search_active_article)
+                          search_active_all, search_active_article, update_maintenance_active)
 from crud.secuencia_vt import get_secuenciaVT_by_id, get_secuenciaVT_all, create_secuencia_vt, get_next_sequence
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from schemas.articleSchema import ArticleSchema
@@ -86,7 +86,7 @@ def get_actives(db: Session = Depends(get_db), current_user_info: Tuple[str, str
     count = count_active(db)
     if not result:
         return ResponseGet(code= "200", result = [], limit= limit, offset = offset, count = 0).model_dump()
-    result = maintenance_days_remaining(db, result)
+    result = maintenance_days_remaining(result)
 
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
@@ -140,7 +140,7 @@ def get_active_por_offices(id_offices: str , db: Session = Depends(get_db), curr
     id_offices_list = id_offices.split(",")
     id_offices_int = [int(id_office) for id_office in id_offices_list]
     result, count = get_active_by_offices(db, id_offices_int, limit, offset)
-    result = maintenance_days_remaining(db, result)
+    result = maintenance_days_remaining(result)
 
     if not result:
         return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
@@ -159,7 +159,7 @@ def get_actives_por_sucursal(sucursal_id: int, db: Session = Depends(get_db), cu
         return Response(code="401", message="token-exp", result=[])
 
     result, count = get_active_by_sucursal(db, sucursal_id, limit, offset)
-    result = maintenance_days_remaining(db, result)
+    result = maintenance_days_remaining(result)
 
     return ResponseGet(code= "200", result = result, limit= limit, offset = offset, count = count).model_dump()
 
@@ -195,7 +195,7 @@ def search_active_by_all(search: str, db: Session = Depends(get_db), current_use
     result, count = search_active_all(db, search, limit, offset)
     if not result:
         return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
-    result = maintenance_days_remaining(db, result)
+    result = maintenance_days_remaining(result)
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.get('/active/search/sucursal/{sucursal_id}')
@@ -213,7 +213,7 @@ def search_by_sucursal(sucursal_id: int, search: str, db: Session = Depends(get_
     result, count = search_active_sucursal(db, search, sucursal_id, limit, offset)
     if not result:
         return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
-    result = maintenance_days_remaining(db, result)
+    result = maintenance_days_remaining(result)
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.get('/active/search/offices/{id_offices}')
@@ -233,7 +233,7 @@ def search_by_offices(id_offices: str, search: str, db: Session = Depends(get_db
     result, count = search_active_offices(db, search, id_offices_int, limit, offset)
     if not result:
         return ResponseGet(code="200", result=[], limit=limit, offset=offset, count=0).model_dump()
-    result = maintenance_days_remaining(db, result)
+    result = maintenance_days_remaining(result)
     return ResponseGet(code="200", result=result, limit=limit, offset=offset, count=count).model_dump()
 
 @router.get('/active/search/article/{article_id}')
@@ -406,6 +406,27 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
             return Response(code="400", message="id articulo no valido", result=[])
 
         _active = update_active(db, id, request, name_user)
+        return Response(code = "201", message = f"Activo {_active.bar_code} editado", result = _active).model_dump()
+
+    except ValueError as e:
+        print(e)
+        traceback.print_exc()
+        return Response(code="400", message=str(e), result=[])
+
+@router.put('/active/mantencion/{id}')
+def update(id: int, db: Session = Depends(get_db), current_user_info: Tuple[str, str] = Depends(get_user_disable_current), companyId: int = Header(None)):
+    name_user, expiration_time = current_user_info
+
+    try:
+        db = next(conexion(db, companyId))
+        if db is None:
+            return Response(code="404", result=[], message="BD no encontrada").model_dump()
+
+        # Se valida la expiracion del token
+        if expiration_time is None:
+            return Response(code="401", message="token-exp", result=[])
+
+        _active = update_maintenance_active(db, id, name_user)
         return Response(code = "201", message = f"Activo {_active.bar_code} editado", result = _active).model_dump()
 
     except ValueError as e:

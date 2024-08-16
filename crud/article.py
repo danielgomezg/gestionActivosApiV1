@@ -177,6 +177,7 @@ def create_article(db: Session, article: ArticleSchema, name_user: str):
 
         category = get_category_by_id(db, _article.category_id)
         article_response = ArticleSchemaWithCategory(
+            id=_article.id,
             name=_article.name,
             description=_article.description,
             code=_article.code,
@@ -190,6 +191,7 @@ def create_article(db: Session, article: ArticleSchema, name_user: str):
             ),
             company_id=_article.company_id
         )
+        print(article_response)
         return article_response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail=f"Error creando articulo {e}")

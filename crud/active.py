@@ -619,20 +619,21 @@ def update_maintenance_refs(db: Session, updates: list):
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando activos: {e}")
 
-def maintenance_days_remaining(db: Session, actives):
+#NO SE USA
+def maintenance_days_remaining2(db: Session, actives):
     updates = []
     for active in actives:
         print("----", active.id)
         if active.maintenance_ref and active.maintenance_days:
             days_since_last_maintenance = (datetime.now().date() - active.maintenance_ref).days
-            print(days_since_last_maintenance)
+            print("days_since_last_maintenance ", days_since_last_maintenance)
             active.maintenance_days_remaining = active.maintenance_days - days_since_last_maintenance
-            print(active.maintenance_days_remaining)
+            print("maintenance_days_remaining ", active.maintenance_days_remaining)
 
             # Si el tiempo de mantenimiento ha pasado, se establece maintenance_ref a la fecha ref anterior mas los dias de mantenimiento
             if active.maintenance_days_remaining < 0:
                 _maintenance_ref = active.maintenance_ref + timedelta(days=active.maintenance_days)
-                print(_maintenance_ref)
+                print("_maintenance_ref ", _maintenance_ref)
                 updates.append((active.id, _maintenance_ref))
 
                 #_active_up = update_maintenance_ref(db, active.id, _maintenance_ref)
@@ -651,3 +652,57 @@ def maintenance_days_remaining(db: Session, actives):
                     active.maintenance_days_remaining = active.maintenance_days - days_since_last_maintenance
 
     return actives
+
+
+def maintenance_days_remaining(actives):
+    for active in actives:
+        print("----", active.id)
+        if active.maintenance_ref and active.maintenance_days:
+            days_since_last_maintenance = (datetime.now().date() - active.maintenance_ref).days
+            print("days_since_last_maintenance ", days_since_last_maintenance)
+
+            # Calcular los días restantes de mantenimiento
+            remaining_days = active.maintenance_days - days_since_last_maintenance
+            print("remaining_days ", remaining_days)
+
+            # Si el tiempo de mantenimiento ha pasado o es el día de mantenimiento, establecer a 0
+            if remaining_days <= 0:
+                active.maintenance_days_remaining = 0
+            else:
+                active.maintenance_days_remaining = remaining_days
+
+            print("maintenance_days_remaining ", active.maintenance_days_remaining)
+
+    return actives
+
+def update_maintenance_active(db: Session, active_id: int, name_user: str):
+    try:
+        active_to_edit = db.query(Active).filter(Active.id == active_id).first()
+
+        if active_to_edit:
+            _maintenance_ref = datetime.now().date() + timedelta(days=active_to_edit.maintenance_days)
+            active_to_edit.maintenance_ref = _maintenance_ref
+
+            db.commit()
+
+            active_content = get_active_by_id(db, active_to_edit.id)
+            id_company = active_content.article.company_id
+
+            # creacion del historial
+            history_params = {
+                "description": "update-active",
+                "active_id": active_to_edit.id,
+                "article_id": active_to_edit.article_id,
+                "office_id": active_to_edit.office_id,
+                "name_user": name_user,
+                "company_id": id_company
+            }
+            create_history(db, HistorySchema(**history_params))
+
+            return active_to_edit
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activo no encontrado")
+    except Exception as e:
+        print(e)
+        traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error editando activo: {e}")
