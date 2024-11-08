@@ -39,6 +39,13 @@ def get_user_email(db: Session, email: str):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener user por email {e}")
 
+def get_user_rut(db: Session, rut: str):
+    try:
+        result = db.query(Usuario).filter(Usuario.rut == rut, Usuario.removed == 0).first()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener user por rut {e}")
+
 
 def get_user_all(db: Session, limit: int = 100, offset: int = 0):
     #return db.query(Usuario).offset(offset).limit(limit).all()

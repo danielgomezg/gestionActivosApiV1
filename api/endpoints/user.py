@@ -4,7 +4,8 @@ from models.user import Usuario
 from fastapi import APIRouter, HTTPException, Path, Depends, status
 from sqlalchemy.orm import Session
 from database import get_db
-from crud.user import create_user, get_user_all, get_user_email, authenticate_user, create_access_token, get_user_disable_current, get_user_by_id, update_user, delete_user, search_users_by_mail_rut, restore_password
+from crud.user import (create_user, get_user_all, get_user_email, authenticate_user, create_access_token, get_user_disable_current, get_user_by_id, update_user,
+                       delete_user, search_users_by_mail_rut, restore_password, get_user_rut)
 from schemas.userSchema import UserSchema, UserEditSchema, UserSchemaLogin
 from schemas.schemaGenerico import Response, ResponseGet
 import re
@@ -91,6 +92,10 @@ def create(request: UserSchema, db: Session = Depends(get_db), current_user_info
 
     if not re.match(patron_rut, rut):
         return Response(code="400", message="Rut inválido", result=[])
+
+    user_rut = get_user_rut(db, request.rut)
+    if user_rut:
+        return Response(code="400", message="Rut ya registrado", result=[])
 
     if (request.company_id is not None):
         id_compania = get_company_by_id(db, request.company_id)
