@@ -81,10 +81,11 @@ def get_article_by_id_company(db: Session, company_id: int, limit: int = 100, of
                 limit = count_articles
 
         articles = (
-            db.query(Article)
-            .outerjoin(Active, and_(Active.article_id == Article.id, Active.removed == 0))
+            db.query(
+                Article,
+            )
             .filter(Article.company_id == company_id, Article.removed == 0)
-            .options(joinedload(Article.category))
+            .group_by(Article.id)  # Agrupa por el id del artículo para evitar duplicados
             .order_by(desc(Article.id))
             .offset(offset)
             .limit(limit)
