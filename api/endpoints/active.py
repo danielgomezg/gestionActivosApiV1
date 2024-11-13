@@ -318,15 +318,15 @@ def create(request: ActiveSchema, db: Session = Depends(get_db), current_user_in
 
             #Comparar si el codigo de activo fijo su valor es entre 1 a 100.000 (estos numero estan reservados para codigos virtuales)
             try:
-                if int(request.bar_code) <= 100000:
-                    return Response(code="400", message="Código de activo fijo reservado para codigos virtuales (1 a 100.000)", result=[])
+                if int(request.bar_code) <= 5000:
+                    return Response(code="400", message="Código de activo fijo reservado para codigos virtuales (1 a 5.000)", result=[])
             except ValueError:
                 print("Codigo de activo no se puede convertir a un número entero.")
         
         else:
             # generar codigo virtual secuencial
             next_virtual_code = get_next_sequence(db)
-            if next_virtual_code > 100000:
+            if next_virtual_code > 5000:
                 return Response(code="400", message="Se ha alcanzado el límite de códigos virtuales", result=[])
             request.virtual_code = str(next_virtual_code)
          
@@ -382,9 +382,9 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
             if active_barcode and id is not active_barcode.id:
                 return Response(code="400", message="Codigo de barra ya ingresado", result=[])
 
-            # Comparar si el codigo de activo fijo su valor es entre 1 a 100.000 (estos numero estan reservados para codigos virtuales)
+            # Comparar si el codigo de activo fijo su valor es entre 1 a 5.000 (estos numero estan reservados para codigos virtuales)
             try:
-                if int(request.bar_code) <= 100000:
+                if int(request.bar_code) <= 5000:
                     return Response(code="400",
                                     message="Código de activo fijo reservado para codigos virtuales (1 a 100.000)",
                                     result=[])
