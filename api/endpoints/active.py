@@ -7,7 +7,7 @@ from database import get_db, conexion
 from crud.active import  (get_active_all, get_active_by_id, create_active, update_active, delete_active, get_active_by_id_article, get_file_url, get_active_by_sucursal,
                          get_active_by_office, get_active_by_offices, count_active, get_active_by_barcode, search_active_sucursal, search_active_offices,
                          get_image_url, generate_short_unique_id, get_active_by_virtual_code, get_active_all_codes, search_active, maintenance_days_remaining,
-                          search_active_all, search_active_article, update_maintenance_active)
+                          search_active_all, search_active_article, update_maintenance_active, get_active_by_barcode_id)
 from crud.secuencia_vt import get_secuenciaVT_by_id, get_secuenciaVT_all, create_secuencia_vt, get_next_sequence
 from schemas.activeSchema import ActiveSchema, ActiveEditSchema
 from schemas.articleSchema import ArticleSchema
@@ -378,15 +378,15 @@ def update(request: ActiveEditSchema, id: int, db: Session = Depends(get_db), cu
 
         # valida si existe un codigo de barra con el mismo numero dentro de los articulos
         if (len(request.bar_code) > 0):
-            active_barcode = get_active_by_barcode(db, request.bar_code)
-            if active_barcode and id is not active_barcode.id:
-                return Response(code="400", message="Codigo de barra ya ingresado", result=[])
+            active_barcode = get_active_by_barcode_id(db, request.bar_code, id)
+            if active_barcode:
+                return Response(code="400", message="Codigo de activo fijo ya ingresado", result=[])
 
             # Comparar si el codigo de activo fijo su valor es entre 1 a 5.000 (estos numero estan reservados para codigos virtuales)
             try:
                 if int(request.bar_code) <= 5000:
                     return Response(code="400",
-                                    message="Código de activo fijo reservado para codigos virtuales (1 a 100.000)",
+                                    message="Código de activo fijo reservado para codigos virtuales (1 a 5.000)",
                                     result=[])
             except ValueError:
                 print("Codigo de activo no se puede convertir a un número entero.")

@@ -104,6 +104,13 @@ def get_active_by_barcode(db: Session, bar_code: str, limit: int = 100, offset: 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
+def get_active_by_barcode_id(db: Session, bar_code: str, id_current: int, limit: int = 100, offset: int = 0):
+    try:
+        result = db.query(Active).filter(Active.bar_code == bar_code, Active.removed == 0, Active.id != id_current).options(joinedload(Active.article)).offset(offset).limit(limit).first()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
+
 def get_active_by_virtual_code(db: Session, virtual_code: str):
     try:
         result = db.query(Active).filter(Active.virtual_code == virtual_code, Active.removed == 0).first()
