@@ -930,7 +930,7 @@ def actives_catalog_company_excel(id_company: int, db: Session = Depends(get_db)
         worksheet.merge_range('D4:E4', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Sucursal", "Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "Cod. padre", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Cod. articulo", "Categoría"]
+        datos = ["Sucursal", "Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "Cod. padre", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Nombre articulo", "Cod. articulo", "Categoría"]
 
         start_table = 7
 
@@ -966,7 +966,7 @@ def actives_catalog_company_excel(id_company: int, db: Session = Depends(get_db)
         for row, active in enumerate(actives, start=1):
             for col, value in enumerate([active.office.sucursal.number + " - " + active.office.sucursal.description, str(active.office.floor) + " - " + active.office.description,
                                          active.virtual_code + " (virtual)" if active.bar_code == '' else active.bar_code, active.brand, active.model, active.serie, active.parent_code if active.parent_code is not None else '',
-                                         str(active.acquisition_date), active.accounting_record_number, active.state, active.name_in_charge_active, str(active.article.code),
+                                         str(active.acquisition_date), active.accounting_record_number, active.state, active.name_in_charge_active, active.article.name, str(active.article.code),
                                          active.article.category.description]):
 
                 width_column[col] = max(width_column[col], len(value))
@@ -1051,7 +1051,7 @@ def actives_catalog_company(id_company: int, db: Session = Depends(get_db), curr
                 print(f"No se pudo cargar la imagen para la portada: {e}")
 
             # Crear y configurar la tabla
-            table_data = [["Sucursal", "Oficina", "C. activo","Marca", "Modelo", "Serie", "F. adquisición", "N. registro","Estado", "C. articulo", "Categoría"]]
+            table_data = [["Sucursal", "Oficina", "C. activo","Marca", "Modelo", "Serie", "F. adquisición", "Estado", "Nombre articulo", "C. articulo", "Categoría"]]
 
             page_number = 1
             # Iteramos sobre los artículos y los agregamos al PDF
@@ -1079,8 +1079,8 @@ def actives_catalog_company(id_company: int, db: Session = Depends(get_db), curr
                     active.model,
                     active.serie,
                     str(active.acquisition_date),
-                    active.accounting_record_number,
                     active.state,
+                    active.article.name,
                     active.article.code,
                     active.article.category.description
                 ])

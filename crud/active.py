@@ -54,7 +54,10 @@ def count_active(db: Session):
 
 def get_active_all(db: Session, limit: int = 100, offset: int = 0):
     try:
-        return db.query(Active).filter(Active.removed == 0).order_by(Active.bar_code.desc()).offset(offset).limit(limit).all()
+        result = db.query(Active).filter(Active.removed == 0).order_by(Active.bar_code.desc(), Active.virtual_code.desc()).offset(offset).limit(limit).all()
+        # Ordena los resultados en Python
+        sorted_result = sort_bar_codes_desc(result)
+        return sorted_result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activo {e}")
 
@@ -151,7 +154,9 @@ def get_active_by_offices(db: Session, office_ids: List[int], limit: int = 100, 
             .all()
         )
 
-        return result, count
+        # Ordena los resultados en Python
+        sorted_result = sort_bar_codes_desc(result)
+        return sorted_result, count
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -173,6 +178,58 @@ def count_active_by_sucursal(db: Session, sucursal_id: int):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
 
+def sort_bar_codes(results):
+    def key_func(item):
+        bar_code = item.bar_code
+        virtual_code = item.virtual_code
+
+
+
+        # Si `bar_code` es None, estos elementos se ordenan al final, usando `virtual_code` como clave
+        if bar_code == "":
+            try:
+                print("virtual_code " + virtual_code)
+                # Intentar convertir `virtual_code` a un número
+                return (1, int(virtual_code))
+            except (ValueError, TypeError):
+                # Si `virtual_code` no se puede convertir a número, se usa tal cual como un string
+                return (1, virtual_code or "")
+
+        # Si `bar_code` no es None, intenta convertirlo a un número y usarlo para ordenar
+        try:
+            print("bar_code " + bar_code)
+            return (0, int(bar_code))
+        except (ValueError, TypeError):
+            # Si `bar_code` no es un número, usar el string original como clave
+            return (0, bar_code or "")
+
+    # Ordenar los resultados usando la clave personalizada
+    return sorted(results, key=key_func, reverse=True)
+
+def sort_bar_codes_desc(results):
+    def key_func(item):
+        bar_code = item.bar_code
+        virtual_code = item.virtual_code
+
+        # Si `bar_code` es None, estos elementos se ordenan al final, usando `virtual_code` como clave
+        if bar_code == "":
+            try:
+                # Intentar convertir `virtual_code` a un número
+                return (1, -int(virtual_code))  # Negativo para orden descendente
+            except (ValueError, TypeError):
+                # Si `virtual_code` no se puede convertir a número, se usa tal cual como un string
+                return (1, virtual_code or "")
+
+        # Si `bar_code` no es None, intenta convertirlo a un número y usarlo para ordenar
+        try:
+            return (0, -int(bar_code))  # Negativo para orden descendente
+        except (ValueError, TypeError):
+            # Si `bar_code` no es un número, usar el string original como clave
+            return (0, bar_code or "")
+
+    # Ordenar los resultados usando la clave personalizada
+    return sorted(results, key=key_func)
+
 def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offset: int = 0, adjust_limit: bool = False):
     try:
         if adjust_limit:
@@ -190,7 +247,9 @@ def get_active_by_sucursal(db: Session, sucursal_id: int, limit: int = 100, offs
             options(joinedload(Active.article).joinedload(Article.category), joinedload(Active.office).joinedload(Office.sucursal).joinedload(Sucursal.company))
                   .order_by(Active.bar_code.desc()).offset(offset).limit(limit).all())
 
-        return result, count
+        # Ordena los resultados en Python
+        sorted_result = sort_bar_codes_desc(result)
+        return sorted_result, count
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Error al obtener activos {e}")
