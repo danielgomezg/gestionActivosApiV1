@@ -654,7 +654,7 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
         worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "Cod. padre", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Cod. articulo", "Categoría"]
+        datos = ["Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "Cod. padre", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Nombre articulo", "Cod. articulo", "Categoría", "Comentario"]
 
         start_table = 7
 
@@ -691,7 +691,7 @@ def actives_catalog_sucursal_excel(id_sucursal: int, db: Session = Depends(get_d
             for col, value in enumerate([str(active.office.floor) + " - " + active.office.description, active.virtual_code + " (virtual)" if active.bar_code == '' else active.bar_code,
                                          active.brand, active.model, active.serie,
                                          active.parent_code if active.parent_code is not None else '', str(active.acquisition_date), active.accounting_record_number, active.state,
-                                         active.name_in_charge_active, str(active.article.code), active.article.category.description]):
+                                         active.name_in_charge_active, active.article.name, str(active.article.code), active.article.category.description, active.comment]):
 
                 width_column[col] = max(width_column[col], len(value))
                 worksheet.write(row + start_table, col, value, formato_datos)
@@ -794,7 +794,7 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
         worksheet.merge_range('D5:E5', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "Cod. padre", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Cod. articulo", "Categoría"]
+        datos = ["Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "Cod. padre", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Nombre articulo", "Cod. articulo", "Categoría", "Comentario"]
 
         start_table = 7
 
@@ -831,8 +831,8 @@ def actives_catalog_office_excel(id_offices: str , db: Session = Depends(get_db)
             for col, value in enumerate([str(active.office.floor) + " - " + active.office.description, active.virtual_code + " (virtual)" if active.bar_code == '' else active.bar_code,
                                          active.brand, active.model, active.serie,
                                          active.parent_code if active.parent_code is not None else '', str(active.acquisition_date),
-                                         active.accounting_record_number, active.state, active.name_in_charge_active, str(active.article.code),
-                                         active.article.category.description]):
+                                         active.accounting_record_number, active.state, active.name_in_charge_active, active.article.name, str(active.article.code),
+                                         active.article.category.description, active.comment]):
 
                 width_column[col] = max(width_column[col], len(value))
                 worksheet.write(row + start_table, col, value, formato_datos)
@@ -930,7 +930,7 @@ def actives_catalog_company_excel(id_company: int, db: Session = Depends(get_db)
         worksheet.merge_range('D4:E4', f'{date_time}', formato_sub_titulo)
 
         # Datos a escribir en el archivo Excel
-        datos = ["Sucursal", "Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "Cod. padre", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Nombre articulo", "Cod. articulo", "Categoría"]
+        datos = ["Sucursal", "Oficina", "Cod. activo", "Marca", "Modelo", "Serie", "Cod. padre", "Fecha adquisición", "Num. de registro", "Estado", "Encargado", "Nombre articulo", "Cod. articulo", "Categoría", "Comentario"]
 
         start_table = 7
 
@@ -967,7 +967,7 @@ def actives_catalog_company_excel(id_company: int, db: Session = Depends(get_db)
             for col, value in enumerate([active.office.sucursal.number + " - " + active.office.sucursal.description, str(active.office.floor) + " - " + active.office.description,
                                          active.virtual_code + " (virtual)" if active.bar_code == '' else active.bar_code, active.brand, active.model, active.serie, active.parent_code if active.parent_code is not None else '',
                                          str(active.acquisition_date), active.accounting_record_number, active.state, active.name_in_charge_active, active.article.name, str(active.article.code),
-                                         active.article.category.description]):
+                                         active.article.category.description, active.comment]):
 
                 width_column[col] = max(width_column[col], len(value))
                 worksheet.write(row + start_table, col, value, formato_datos)
